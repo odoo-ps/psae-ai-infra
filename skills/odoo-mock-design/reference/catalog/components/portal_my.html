@@ -1,0 +1,76 @@
+<!--
+  portal_my.html — Customer Portal /my landing (account overview). Distinct
+  from portal.html (per-document view) — this is the tile-grid the customer
+  lands on after login. Sourced from
+    odoo/addons/portal/views/portal_templates.xml § portal_my_home, portal_docs_entry
+  Real classes: o_portal_my_home / o_portal_docs / o_portal_category /
+  o_portal_index_card. Each card is a tile carrying icon + title + descriptor
+  + optional count badge. Cards are arranged on a Bootstrap row (g-2) with
+  col-md-6 per card, grouped into o_portal_category rows.
+
+  Render full-bleed under the portal header (same o_header_standard
+  .o_portal_navbar as portal.html) — no backend chrome.
+-->
+<div class="o_portal">
+  <header class="o_header_standard o_portal_navbar">
+    <span class="o_website_logo">MyCompany</span>
+    <nav class="o_website_menu"><span class="nav-link active">Home</span><span class="nav-link">Quotations</span><span class="nav-link">Invoices</span></nav>
+    <div class="o_website_header_right"><span>Joel Willis</span></div>
+  </header>
+  <div class="o_portal_wrap">
+    <div class="o_portal_my_home">
+      <h3 class="o_portal_my_home_title">Documents</h3>
+      <div class="o_portal_docs">
+        <div class="o_portal_category">
+          <a class="o_portal_index_card">
+            <div class="o_portal_index_card_icon"><svg class="o_icon"><use href="#o-folder"/></svg></div>
+            <div class="o_portal_index_card_body">
+              <div class="o_portal_index_card_title"><span class="o_portal_index_card_count">2</span> Quotations</div>
+              <div class="o_portal_index_card_text">Review and accept your quotations</div>
+            </div>
+          </a>
+          <a class="o_portal_index_card">
+            <div class="o_portal_index_card_icon"><svg class="o_icon"><use href="#o-print"/></svg></div>
+            <div class="o_portal_index_card_body">
+              <div class="o_portal_index_card_title"><span class="o_portal_index_card_count">5</span> Invoices &amp; Bills</div>
+              <div class="o_portal_index_card_text">Pay or view your invoices</div>
+            </div>
+          </a>
+          <a class="o_portal_index_card">
+            <div class="o_portal_index_card_icon"><svg class="o_icon"><use href="#o-cart"/></svg></div>
+            <div class="o_portal_index_card_body">
+              <div class="o_portal_index_card_title"><span class="o_portal_index_card_count">3</span> Sales Orders</div>
+              <div class="o_portal_index_card_text">Track your confirmed orders</div>
+            </div>
+          </a>
+          <a class="o_portal_index_card">
+            <div class="o_portal_index_card_icon"><svg class="o_icon"><use href="#o-comment"/></svg></div>
+            <div class="o_portal_index_card_body">
+              <div class="o_portal_index_card_title"><span class="o_portal_index_card_count">1</span> Tickets</div>
+              <div class="o_portal_index_card_text">Open support tickets</div>
+            </div>
+          </a>
+        </div>
+      </div>
+      <h3 class="o_portal_my_home_title">Configuration</h3>
+      <div class="o_portal_docs">
+        <div class="o_portal_category">
+          <a class="o_portal_index_card o_portal_index_card_config">
+            <div class="o_portal_index_card_icon"><svg class="o_icon"><use href="#o-user"/></svg></div>
+            <div class="o_portal_index_card_body">
+              <div class="o_portal_index_card_title">Addresses</div>
+              <div class="o_portal_index_card_text">Add, remove or modify your addresses</div>
+            </div>
+          </a>
+          <a class="o_portal_index_card o_portal_index_card_config">
+            <div class="o_portal_index_card_icon"><svg class="o_icon"><use href="#o-cog"/></svg></div>
+            <div class="o_portal_index_card_body">
+              <div class="o_portal_index_card_title">Connection &amp; Security</div>
+              <div class="o_portal_index_card_text">Configure your connection parameters</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

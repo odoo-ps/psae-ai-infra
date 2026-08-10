@@ -1,0 +1,61 @@
+<!--
+  gantt.html — Gantt timeline (enterprise web_gantt; real classes o_gantt_*).
+  Used for planning / project / MRP scheduling. Render inside the backend shell
+  (navbar + control panel above). Row labels on the left, a date header across
+  the top, and colored pills positioned per row. Pill offset/width are inline %
+  only (geometry, not a re-derived color).
+-->
+<div class="o_gantt_view">
+  <div class="o_gantt_buttons_container">
+    <button class="btn o_btn_outline o_gantt_nav"><svg class="o_icon o_icon_xs"><use href="#o-chevron-left"/></svg></button>
+    <button class="btn o_btn_outline o_gantt_nav"><svg class="o_icon o_icon_xs"><use href="#o-chevron-right"/></svg></button>
+    <span class="o_gantt_scale active">Week <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+    <button class="btn o_btn_outline o_gantt_button_today">Today</button>
+    <span class="o_gantt_range_label">Week 25, Jun 14 - Jun 20</span>
+  </div>
+  <div class="o_gantt_grid">
+    <!-- Day header: each column gets day-of-week + date. Today's column
+         is highlighted via .o_gantt_today_col. Real Odoo also shows a
+         group header label (e.g. "Schedule" / "Open Shifts") above the
+         resource rows — included as .o_gantt_group_header. -->
+    <div class="o_gantt_header_row">
+      <div class="o_gantt_row_title">Schedule</div>
+      <div class="o_gantt_header_cells">
+        <div class="o_gantt_header_cell o_gantt_today_col"><div class="o_gantt_day_dow">Sunday</div><div class="o_gantt_day_num">14</div></div>
+        <div class="o_gantt_header_cell"><div class="o_gantt_day_dow">Monday</div><div class="o_gantt_day_num">15</div></div>
+        <div class="o_gantt_header_cell"><div class="o_gantt_day_dow">Tuesday</div><div class="o_gantt_day_num">16</div></div>
+        <div class="o_gantt_header_cell"><div class="o_gantt_day_dow">Wednesday</div><div class="o_gantt_day_num">17</div></div>
+        <div class="o_gantt_header_cell"><div class="o_gantt_day_dow">Thursday</div><div class="o_gantt_day_num">18</div></div>
+        <div class="o_gantt_header_cell"><div class="o_gantt_day_dow">Friday</div><div class="o_gantt_day_num">19</div></div>
+        <div class="o_gantt_header_cell"><div class="o_gantt_day_dow">Saturday</div><div class="o_gantt_day_num">20</div></div>
+      </div>
+    </div>
+    <div class="o_gantt_group_header">
+      <div class="o_gantt_row_title"><svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg> Open Shifts</div>
+      <div class="o_gantt_cells"><div class="o_gantt_today_col_overlay"></div></div>
+    </div>
+    <div class="o_gantt_row">
+      <div class="o_gantt_row_title">Mitchell Admin</div>
+      <div class="o_gantt_cells">
+        <div class="o_gantt_today_col_overlay"></div>
+        <div class="o_gantt_pill" style="left:14%; width:28%;">Install Drawer</div>
+        <div class="o_gantt_pill o_gantt_pill_2" style="left:57%; width:28%;">QA</div>
+      </div>
+    </div>
+    <div class="o_gantt_row">
+      <div class="o_gantt_row_title">Marc Demo</div>
+      <div class="o_gantt_cells">
+        <div class="o_gantt_today_col_overlay"></div>
+        <div class="o_gantt_pill o_gantt_pill_3" style="left:28%; width:43%;">Delivery Run</div>
+      </div>
+    </div>
+    <div class="o_gantt_row">
+      <div class="o_gantt_row_title">Joel Willis</div>
+      <div class="o_gantt_cells">
+        <div class="o_gantt_today_col_overlay"></div>
+        <div class="o_gantt_pill o_gantt_pill_2" style="left:14%; width:28%;">Site Visit</div>
+        <div class="o_gantt_pill" style="left:71%; width:28%;">Report</div>
+      </div>
+    </div>
+  </div>
+</div>

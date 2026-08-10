@@ -1,0 +1,167 @@
+<!--
+  chatter.html — Odoo chatter, source: mail/chatter/web/chatter.xml +
+  mail/core/common/message.xml.
+
+  Structure is THREE pieces:
+    1. .o-mail-Chatter-top   — STICKY topbar + (toggled) composer + recipients
+    2. .o-mail-Chatter-content — scrollable activities + thread
+    3. Each .o-mail-Message  — 2-COLUMN: 48px sidebar (avatar) + content (header + body)
+
+  Lives to the RIGHT of a form sheet. Wrap with `.o_content_with_chatter`:
+
+    <div class="o_form_view">
+      <div class="o_form_statusbar"> ... </div>
+      <div class="o_content_with_chatter">
+        <div class="o_form_sheet_bg"> ... the sheet ... </div>
+        ... paste this fragment ...
+      </div>
+    </div>
+
+  Drop bits a screen doesn't need: composer + activities are optional; the
+  topbar + thread are the minimum. Keep the .o-mail-Chatter-top + .o-mail-Chatter-content
+  pair even when minimal — that's the recognizable Odoo skeleton.
+
+  Composer visibility: default = HIDDEN (collapsed). The Send message / Log note
+  buttons in the topbar carry data-mock-toggle="composer-msg" / "composer-note"
+  pointing at the matching .o-mail-Composer block to reveal it. The buttons
+  get .active when their composer is open.
+-->
+<aside class="o-mail-Chatter">
+
+  <!-- 1. Sticky top region: topbar + (toggled) composer + recipients. -->
+  <div class="o-mail-Chatter-top">
+
+    <div class="o-mail-Chatter-topbar">
+      <!-- Send message: default = btn-primary; gets .active when composer is open -->
+      <button class="btn btn-primary o-mail-Chatter-sendMessage" data-mock-toggle="composer-msg">
+        Send message
+      </button>
+      <!-- Log note: default = btn-secondary; gets .active (+ btn-primary) when open -->
+      <button class="btn btn-secondary o-mail-Chatter-logNote" data-mock-toggle="composer-note">
+        Log note
+      </button>
+      <!-- Activity (schedule) -->
+      <button class="btn btn-secondary o-mail-Chatter-activity">
+        Activities
+      </button>
+      <!-- Spacer pushes search + followers to the right -->
+      <span class="o-mail-Chatter-topbarGrow"></span>
+      <!-- Search messages -->
+      <button class="o-mail-Chatter-search" title="Search Messages" aria-label="Search Messages">
+        <svg class="o_icon"><use href="#o-search"/></svg>
+      </button>
+      <!-- Followers cluster: a button with user icon + counter superscript -->
+      <div class="o-mail-Followers">
+        <button class="o-mail-Followers-button" title="Followers">
+          <svg class="o_icon o_icon_sm"><use href="#o-user"/></svg>
+          <sup class="o-mail-Followers-counter">2</sup>
+        </button>
+      </div>
+    </div>
+
+    <!-- Composer for "Send message" — hidden until the topbar button toggles it -->
+    <div class="o-mail-Composer is-collapsed" data-mock-toggleable="composer-msg">
+      <div class="o-mail-Chatter-recipients">
+        <span class="o-mail-Chatter-recipients-label">To:</span>
+        <span class="o_tag">Customer (deco.addict@example.com)</span>
+      </div>
+      <span class="o-mail-Composer-input o_input_placeholder">Write a message…</span>
+      <div class="o-mail-Composer-actions">
+        <span class="o-mail-Composer-toolbar">
+          <svg class="o_icon o_icon_sm" title="Attach"><use href="#o-paperclip"/></svg>
+        </span>
+        <button class="btn btn-primary">Send</button>
+      </div>
+    </div>
+
+    <!-- Composer for "Log note" — yellow background, internal-only -->
+    <div class="o-mail-Composer is-collapsed o-mail-Composer-note" data-mock-toggleable="composer-note">
+      <span class="o-mail-Composer-input o_input_placeholder">Log an internal note…</span>
+      <div class="o-mail-Composer-actions">
+        <span class="o-mail-Composer-toolbar">
+          <svg class="o_icon o_icon_sm" title="Attach"><use href="#o-paperclip"/></svg>
+        </span>
+        <button class="btn btn-primary">Log</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 2. Scrollable content: activities (optional) + messages. -->
+  <div class="o-mail-Chatter-content">
+
+    <!-- Activity list (optional) — collapsible "Planned Activities" header -->
+    <div class="o-mail-ActivityList">
+      <div class="o-mail-ActivityList-header">
+        <hr/>
+        <span>
+          <svg class="o_icon o_icon_sm"><use href="#o-caret-down"/></svg>
+          Planned Activities
+        </span>
+        <hr/>
+      </div>
+      <div class="o-mail-Activity">
+        <div class="o-mail-Activity-sidebar">
+          <svg class="o_icon o-mail-Activity-icon"><use href="#o-clock"/></svg>
+        </div>
+        <div class="o-mail-Activity-core">
+          <div class="o-mail-Activity-info">
+            <span class="o-mail-Activity-type">To Do</span>
+            <span class="o-mail-Activity-date">Today</span>
+            <span class="o-mail-Activity-assignee">— Mitchell Admin</span>
+          </div>
+          <div class="o-mail-Activity-body">Call the customer to confirm the lot allocation.</div>
+          <div class="o-mail-Activity-actions">
+            <button class="btn o_btn_outline">Mark Done</button>
+            <button class="btn o_btn_outline">Edit</button>
+            <button class="btn o_btn_outline">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message thread, newest first. Each message = sidebar (avatar) + core (header + body) -->
+    <div class="o-mail-Message">
+      <div class="o-mail-Message-sidebar">
+        <div class="o-mail-Message-avatarContainer">
+          <span class="o-mail-Message-avatar o_avatar_c0">MA</span>
+        </div>
+      </div>
+      <div class="o-mail-Message-core">
+        <div class="o-mail-Message-header">
+          <span class="o-mail-Message-author">Mitchell Admin</span>
+          <span class="o-mail-Message-date">2 hours ago</span>
+        </div>
+        <div class="o-mail-Message-contentContainer">
+          <div class="o-mail-Message-body">Quotation sent to the customer for approval.</div>
+          <ul class="o_mail_tracking_value">
+            <li>
+              <span class="o_mail_tracking_field">Stage:</span>
+              <span class="o_mail_tracking_old">Quotation</span>
+              <span>→</span>
+              <span class="o_mail_tracking_new">Quotation Sent</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="o-mail-Message">
+      <div class="o-mail-Message-sidebar">
+        <div class="o-mail-Message-avatarContainer">
+          <span class="o-mail-Message-avatar o_avatar_csys">S</span>
+        </div>
+      </div>
+      <div class="o-mail-Message-core">
+        <div class="o-mail-Message-header">
+          <span class="o-mail-Message-author">OdooBot</span>
+          <span class="o-mail-Message-date">yesterday</span>
+        </div>
+        <div class="o-mail-Message-contentContainer">
+          <div class="o-mail-Message-body text-muted">Quotation created.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</aside>

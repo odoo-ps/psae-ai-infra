@@ -1,0 +1,144 @@
+<!--
+  chart_views.html — labelled, on-brand placeholders for the chart/grid view
+  types (graph, pivot, calendar). A mock should land its DECISIONS on
+  form/list/kanban; use these only when a reporting step genuinely needs one.
+  NEVER embed a charting library — that breaks self-containment. These are
+  static, recognizably-Odoo placeholders built from odoo.css tokens.
+  Each goes inside .o_action_manager (navbar + control panel above it).
+-->
+
+<!-- GRAPH (bar) — Odoo 19 graph view (real Odoo uses Chart.js; mock uses
+     pure CSS). Y-axis labels on the left, X-axis on the bottom, legend
+     top-right with one chip per series. Bars are inline-% heights ONLY
+     (geometry); color is per-series and comes from a small palette.
+
+     TOOLBAR PLACEMENT — same shape as pivot (see PIVOT block below):
+     graph_controller.xml does NOT set layout-buttons; graph_renderer.xml
+     line 42 renders the buttonTemplate inside the view wrapper, ABOVE
+     the canvas, in a `d-flex gap-1 mt-2 mx-3 mb-3` row. The template
+     (`web.GraphView.Buttons`) carries up to four btn-groups: Measures,
+     mode toggle (Bar/Line/Pie), Stacked/Cumulative (bar+line only), and
+     Sort asc/desc (non-pie). `.o_control_panel_main_buttons` stays
+     empty on a graph view too. -->
+
+<!-- Graph toolbar — Measures + mode toggles + sort, between control panel
+     and canvas. Render only the btn-groups that apply to the active mode
+     (e.g. Stacked is bar+line only; Sort is non-pie). -->
+<div class="o_graph_buttons">
+  <div class="btn-group" role="toolbar" aria-label="Main actions">
+    <button class="btn btn-secondary">Measures <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></button>
+  </div>
+  <div class="btn-group" role="toolbar" aria-label="Change graph">
+    <button class="btn btn-secondary o_graph_button active" title="Bar Chart"><svg class="o_icon"><use href="#o-view-graph"/></svg></button>
+    <button class="btn btn-secondary o_graph_button" title="Line Chart"><svg class="o_icon"><use href="#o-chart-line"/></svg></button>
+    <button class="btn btn-secondary o_graph_button" title="Pie Chart"><svg class="o_icon"><use href="#o-chart-pie"/></svg></button>
+  </div>
+  <div class="btn-group" role="toolbar" aria-label="Stack">
+    <button class="btn btn-secondary o_graph_button active" title="Stacked"><svg class="o_icon"><use href="#o-chart-stack"/></svg></button>
+  </div>
+  <div class="btn-group" role="toolbar" aria-label="Sort graph">
+    <button class="btn btn-secondary o_graph_button" title="Descending"><svg class="o_icon"><use href="#o-sort-desc"/></svg></button>
+    <button class="btn btn-secondary o_graph_button" title="Ascending"><svg class="o_icon"><use href="#o-sort-asc"/></svg></button>
+  </div>
+</div>
+
+<div class="o_graph_view">
+  <div class="o_graph_legend">
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#a8c8e8;"></span> Thomas Passot</span>
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#f2bdb0;"></span> John Miller</span>
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#b5d6c5;"></span> Henry Campbell</span>
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#f0d8a8;"></span> Carrie Helle</span>
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#c5b9d5;"></span> Wendi Baltz</span>
+  </div>
+  <div class="o_graph_plot">
+    <ol class="o_graph_yaxis">
+      <li>6</li><li>5</li><li>4</li><li>3</li><li>2</li><li>1</li><li>0</li>
+    </ol>
+    <div class="o_graph_bars">
+      <div class="o_graph_bar" style="height:40%; background:#c5b9d5;"><span>Jan</span></div>
+      <div class="o_graph_bar" style="height:65%; background:#a8c8e8;"><span>Feb</span></div>
+      <div class="o_graph_bar" style="height:52%; background:#b5d6c5;"><span>Mar</span></div>
+      <div class="o_graph_bar" style="height:88%; background:#f2bdb0;"><span>Apr</span></div>
+      <div class="o_graph_bar" style="height:73%; background:#f0d8a8;"><span>May</span></div>
+      <div class="o_graph_bar" style="height:96%; background:#a8c8e8;"><span>Jun</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- PIVOT — cross-tab grid (real Odoo classes o_pivot / o_pivot_table).
+     Row + column headers carry square [+]/[-] expand-collapse buttons
+     (`.o_pivot_expand_btn`).
+
+     TOOLBAR PLACEMENT — source-of-truth (web/static/src/views/pivot/):
+       • pivot_controller.xml does NOT set the layout-buttons slot, so the
+         control panel's `.o_control_panel_main_buttons` cell is EMPTY for
+         a pivot view (no New button, no toolbar buttons).
+       • pivot_renderer.xml line 6 does `<t t-call="{{ props.buttonTemplate }}"/>`
+         INSIDE the renderer wrapper, ABOVE the `.o_pivot` table. The
+         buttonTemplate is `web.PivotView.Buttons` (pivot_controller.xml line 4)
+         which renders a free-standing `.o_pivot_buttons` row carrying TWO
+         btn-groups:
+           1. Main actions: <ReportViewMeasures/> (the Measures dropdown).
+           2. Pivot settings: Flip Axis (fa-exchange), Expand All
+              (fa-arrows), Download xlsx (fa-download).
+       • Insert in Spreadsheet is NOT in the pivot's toolbar — it's
+         registered in `cogMenuRegistry` by `spreadsheet_edition`
+         (assets/spreadsheet_cog_menu/spreadsheet_cog_menu.js) so it
+         renders as a nested "Spreadsheet" sub-dropdown INSIDE the
+         control panel's cog menu (`.o_cp_action_menus`), next to the
+         breadcrumb — never as a button in the pivot toolbar.
+
+     ANTI-PATTERN (mock-fidelity-anchor flags as fidelity:wrong-slot-for-view):
+       Putting Measures / Flip / Expand / Download in
+       `.o_control_panel_main_buttons`. That slot is reserved for the New
+       button on editable views; pivot is read-only and the slot stays
+       empty. -->
+
+<!-- Pivot toolbar — sits between the control panel and the table.
+     The TWO btn-groups match the controller template's two `role="toolbar"`
+     elements; keep them separate so the visual rhythm matches real Odoo. -->
+<div class="o_pivot_buttons">
+  <div class="btn-group" role="toolbar" aria-label="Main actions">
+    <button class="btn btn-secondary">Measures <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></button>
+  </div>
+  <div class="btn-group" role="toolbar" aria-label="Pivot settings">
+    <button class="btn btn-secondary o_pivot_icon_btn" title="Flip axis"><svg class="o_icon"><use href="#o-exchange"/></svg></button>
+    <button class="btn btn-secondary o_pivot_icon_btn" title="Expand all"><svg class="o_icon"><use href="#o-plus"/></svg></button>
+    <button class="btn btn-secondary o_pivot_icon_btn" title="Download xlsx"><svg class="o_icon"><use href="#o-download"/></svg></button>
+  </div>
+</div>
+
+<div class="o_pivot">
+  <table class="o_pivot_table">
+    <thead>
+      <tr>
+        <th><button class="o_pivot_expand_btn">+</button> Total</th>
+        <th class="o_list_number_th"><button class="o_pivot_expand_btn">+</button> Deco Addict</th>
+        <th class="o_list_number_th"><button class="o_pivot_expand_btn o_pivot_expand_open">−</button> Gemini Furniture</th>
+        <th class="o_list_number_th"><button class="o_pivot_expand_btn">+</button> Azure Interior</th>
+      </tr>
+      <tr class="o_pivot_subheader">
+        <th></th>
+        <th class="o_list_number_th">Expected Revenue</th>
+        <th class="o_list_number_th">Expected Revenue</th>
+        <th class="o_list_number_th">Expected Revenue</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="o_pivot_header"><button class="o_pivot_expand_btn">+</button> Total</td><td class="o_list_number">$ 12,450</td><td class="o_list_number">$ 24,800</td><td class="o_list_number">$ 18,300</td></tr>
+      <tr><td class="o_pivot_header"><button class="o_pivot_expand_btn">+</button> June 2026</td><td class="o_list_number">$ 6,225</td><td class="o_list_number">$ 12,400</td><td class="o_list_number">$ 9,150</td></tr>
+      <tr><td class="o_pivot_header"><button class="o_pivot_expand_btn">+</button> May 2026</td><td class="o_list_number">$ 6,225</td><td class="o_list_number">$ 12,400</td><td class="o_list_number">$ 9,150</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CALENDAR — month grid placeholder. -->
+<div class="o_calendar_view">
+  <div class="o_calendar_grid">
+    <div class="o_cal_dow">Mon</div><div class="o_cal_dow">Tue</div><div class="o_cal_dow">Wed</div>
+    <div class="o_cal_dow">Thu</div><div class="o_cal_dow">Fri</div><div class="o_cal_dow">Sat</div><div class="o_cal_dow">Sun</div>
+    <div class="o_cal_day">1</div><div class="o_cal_day">2<span class="o_cal_event">SO0042</span></div>
+    <div class="o_cal_day">3</div><div class="o_cal_day">4<span class="o_cal_event">Delivery</span></div>
+    <div class="o_cal_day">5</div><div class="o_cal_day">6</div><div class="o_cal_day">7</div>
+  </div>
+</div>

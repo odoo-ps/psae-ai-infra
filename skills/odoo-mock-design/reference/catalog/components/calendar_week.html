@@ -1,0 +1,81 @@
+<!--
+  calendar_week.html — Calendar week-view variant (hour grid).
+  Ported from:
+    odoo/addons/web/static/src/views/calendar/calendar_renderer.scss
+    odoo/addons/calendar/static/src/views/attendee_calendar/
+
+  Odoo 19 calendar opens in WEEK view by default — hour rows on the left,
+  7 day columns across, today's column tinted, today's date number in a red
+  circle in the header. A right sidebar carries a mini-month picker + an
+  Attendees panel (configurable check-list of which attendees' events are
+  shown). The earlier catalog variant (chart_views.html "calendar" block)
+  is a month-grid; keep that for "Month" view, use this for "Week" view.
+
+  Render this INSIDE the .o_action_manager. The control panel above shows
+  the scale switcher (Day / Week / Month / Year) + Today + arrow nav.
+-->
+<div class="o_calendar_view o_calendar_view_week">
+  <!-- Week toolbar: arrows + scale + Today + range label -->
+  <div class="o_calendar_toolbar">
+    <span class="o_cal_nav_arrow"><svg class="o_icon"><use href="#o-chevron-left"/></svg></span>
+    <span class="o_cal_nav_arrow"><svg class="o_icon"><use href="#o-chevron-right"/></svg></span>
+    <span class="o_cal_scale active">Week <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+    <button class="btn o_btn_outline o_cal_today_btn">Today</button>
+    <span class="o_cal_range_label">June 2026 <span class="text-muted">Week 24</span></span>
+  </div>
+
+  <div class="o_calendar_week_layout">
+    <!-- Main hour grid -->
+    <div class="o_calendar_week_grid">
+      <!-- Day header row -->
+      <div class="o_cal_week_header">
+        <div class="o_cal_week_corner"></div>
+        <div class="o_cal_week_day"><span class="o_cal_day_dow">SUN</span><span class="o_cal_day_num">7</span></div>
+        <div class="o_cal_week_day"><span class="o_cal_day_dow">MON</span><span class="o_cal_day_num">8</span></div>
+        <div class="o_cal_week_day"><span class="o_cal_day_dow">TUE</span><span class="o_cal_day_num">9</span></div>
+        <div class="o_cal_week_day"><span class="o_cal_day_dow">WED</span><span class="o_cal_day_num">10</span></div>
+        <div class="o_cal_week_day"><span class="o_cal_day_dow">THU</span><span class="o_cal_day_num">11</span></div>
+        <div class="o_cal_week_day"><span class="o_cal_day_dow">FRI</span><span class="o_cal_day_num">12</span></div>
+        <div class="o_cal_week_day o_cal_today"><span class="o_cal_day_dow">SAT</span><span class="o_cal_day_num">13</span></div>
+      </div>
+
+      <!-- Hours grid (6am - 7pm shown; extend by repeating .o_cal_hour_row) -->
+      <div class="o_cal_hours">
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">6am</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">7am</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">8am</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">9am</span><div class="o_cal_hour_cells"><div></div><div><span class="o_cal_event">Deco Addict — Kickoff</span></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">10am</span><div class="o_cal_hour_cells"><div></div><div></div><div><span class="o_cal_event">Gemini — Site Visit</span></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">11am</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div><span class="o_cal_event">Demo: Acme</span></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">12pm</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">1pm</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">2pm</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div><span class="o_cal_event">Internal — Pipeline review</span></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">3pm</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">4pm</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div><span class="o_cal_event">Wood Corner — Sign-off</span></div><div class="o_cal_today_col"></div></div></div>
+        <div class="o_cal_hour_row"><span class="o_cal_hour_label">5pm</span><div class="o_cal_hour_cells"><div></div><div></div><div></div><div></div><div></div><div></div><div class="o_cal_today_col"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Right sidebar: mini-month + attendees -->
+    <aside class="o_calendar_sidebar">
+      <div class="o_cal_mini_nav">
+        <span class="o_cal_nav_arrow"><svg class="o_icon"><use href="#o-chevron-left"/></svg></span>
+        <span class="o_cal_nav_arrow"><svg class="o_icon"><use href="#o-chevron-right"/></svg></span>
+        <span class="o_cal_mini_label">June 2026</span>
+      </div>
+      <div class="o_cal_mini">
+        <div class="o_cal_mini_dow">S</div><div class="o_cal_mini_dow">M</div><div class="o_cal_mini_dow">T</div><div class="o_cal_mini_dow">W</div><div class="o_cal_mini_dow">T</div><div class="o_cal_mini_dow">F</div><div class="o_cal_mini_dow">S</div>
+        <div class="o_cal_mini_day o_cal_mini_other">31</div><div class="o_cal_mini_day">1</div><div class="o_cal_mini_day">2</div><div class="o_cal_mini_day">3</div><div class="o_cal_mini_day">4</div><div class="o_cal_mini_day">5</div><div class="o_cal_mini_day">6</div>
+        <div class="o_cal_mini_day">7</div><div class="o_cal_mini_day">8</div><div class="o_cal_mini_day">9</div><div class="o_cal_mini_day">10</div><div class="o_cal_mini_day">11</div><div class="o_cal_mini_day">12</div><div class="o_cal_mini_day o_cal_mini_today">13</div>
+        <div class="o_cal_mini_day">14</div><div class="o_cal_mini_day">15</div><div class="o_cal_mini_day">16</div><div class="o_cal_mini_day">17</div><div class="o_cal_mini_day">18</div><div class="o_cal_mini_day">19</div><div class="o_cal_mini_day">20</div>
+        <div class="o_cal_mini_day">21</div><div class="o_cal_mini_day">22</div><div class="o_cal_mini_day">23</div><div class="o_cal_mini_day">24</div><div class="o_cal_mini_day">25</div><div class="o_cal_mini_day">26</div><div class="o_cal_mini_day">27</div>
+        <div class="o_cal_mini_day">28</div><div class="o_cal_mini_day">29</div><div class="o_cal_mini_day">30</div><div class="o_cal_mini_day o_cal_mini_other">1</div><div class="o_cal_mini_day o_cal_mini_other">2</div><div class="o_cal_mini_day o_cal_mini_other">3</div><div class="o_cal_mini_day o_cal_mini_other">4</div>
+      </div>
+      <div class="o_cal_attendees">
+        <div class="o_cal_attendees_title"><input type="checkbox" checked/> Attendees <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></div>
+        <div class="o_cal_attendee"><input type="checkbox" checked/> <span class="o_user_avatar" style="background:#714B67;color:#fff;width:18px;height:18px;font-size:9px;">A</span> Administrator</div>
+        <div class="o_cal_add_attendee">+ Add Attendees</div>
+      </div>
+    </aside>
+  </div>
+</div>

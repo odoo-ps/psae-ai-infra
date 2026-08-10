@@ -1,0 +1,222 @@
+<!--
+  pos.html — Point of Sale order screen.
+  Source: point_of_sale/static/src/app/components/navbar/navbar.{xml,scss},
+          .../app/components/orderline/orderline.xml,
+          .../app/screens/product_screen/**, .../app/screens/payment_screen/**,
+          .../app/components/popups/select_lot_popup.
+
+  POS is a FULL-SCREEN touch app — it does NOT use the backend navbar/control
+  panel. Render `.pos` as the whole screen body (NO `.o_web_client` wrapper).
+
+  ===== TOPHEADER STRUCTURE (real Odoo 19 — navbar.xml) =====
+
+  `<div class="pos-topheader">`                                  ← outer bar
+    `<div class="pos-leftheader">`                               ← left side (flex-grow)
+      `<div class="navbar-menu">`                                ← Register / Orders
+        `<button class="register-label btn btn-light btn-lg lh-lg active">Register</button>`
+        `<button class="orders-button btn btn-light btn-lg lh-lg">Orders</button>`
+      `</div>`
+      `<div class="navbar-separator"></div>`                     ← 1px vertical rule
+      `<OrderTabs class="h-50"/>`                                ← order tabs (.pos-tab list)
+    `</div>`
+    `<div class="pos-centerheader">                              ← logo (only when no order open)
+      `<div class="pos-logo">MyCompany</div>`
+    `</div>`
+    `<div class="pos-rightheader">`                              ← right side (flex-grow)
+      `<div class="status-buttons">`                             ← search + barcode + cashier + burger
+        `<Input class="pos-topbar-search"/>`                     ← product search input
+        `<button class="btn btn-light btn-lg lh-lg">              ← barcode toggle (text "Stop" when scanning)
+          <i class="fa fa-barcode"/></button>`
+        `<CashierName/>`                                         ← hidden on mobile (ui.isSmall)
+        `<Dropdown> <button class="btn btn-light btn-lg lh-lg">`
+          `<i class="fa fa-bars"/></button> ... burger menu ...`
+        `</Dropdown>`
+      `</div>`
+    `</div>`
+  `</div>`
+
+  REAL ODOO HAS **NO cashier-info block** in the topheader. The cashier name
+  is rendered by a single `<CashierName>` component on the right, hidden
+  entirely on small screens. **Do NOT invent** a `.pos-topbar-info` or
+  `.pos-cashier` / `.pos-session` block in the header — that drift was
+  caught in TEST002 and is flagged by mock-fidelity-anchor.
+
+  ===== POS-NATIVE VOCABULARY (CUSTOM POS UI) =====
+
+  Custom POS UI (a trade-in panel, a lot picker, an approval prompt) is
+  rendered as a **Dialog POPUP OVER the product screen** — real POS popups
+  are standard web Dialog modals (point_of_sale/.../popups/select_lot_popup).
+  Compose them from dialog.html (`.modal` or `.o_dialog_backdrop` /
+  `.o_dialog`) placed INSIDE this `.pos`, with `btn-lg` footer buttons.
+
+  Do NOT drop backend `.o_field_row` / `.o_list_view` form chrome into
+  `.rightpane` — that clashes with the POS visual language. The
+  mock-fidelity-anchor flags this as `fidelity:surface-backend-leak`.
+
+    | Need                              | Use (POS-native)                | Do NOT use                                                  |
+    |-----------------------------------|---------------------------------|-------------------------------------------------------------|
+    | Label / value row in a popup      | `.pos-popup-row`                | `.o_field_row` + `.o_form_label` + `.o_field_widget`        |
+    | Inline list (key / value pairs)   | `.pos-popup-list > li`          | `.o_list_view` / `.o_list_table`                            |
+    | Status note in `.leftpane`        | `.pos-callout` + `_info|...`    | `<div style="background:color-mix(...);border:...;">`       |
+    | Guard / warning inside a popup    | `.o_dialog_alert_warn`          | bare `<p>` with inline red text                             |
+-->
+<div class="pos">
+
+  <!-- Topheader: Register/Orders + tabs (left) + logo (center) + search/scan/cashier/menu (right). -->
+  <div class="pos-topheader">
+    <div class="pos-leftheader">
+      <div class="navbar-menu">
+        <button class="register-label btn btn-light btn-lg lh-lg active">Register</button>
+        <button class="orders-button btn btn-light btn-lg lh-lg">Orders</button>
+      </div>
+      <div class="navbar-separator"></div>
+      <!-- Order tabs (the open orders). Each tab is a .pos-tab; the active one
+           gets .active (or .pos-tab-order for the currently-displayed order). -->
+      <div class="pos-topbar-tabs">
+        <span class="pos-tab pos-tab-order">Order 0042</span>
+        <span class="pos-tab">Order 0043</span>
+      </div>
+    </div>
+    <div class="pos-rightheader">
+      <div class="status-buttons">
+        <div class="pos-topbar-search">
+          <svg class="o_icon"><use href="#o-search"/></svg>
+          <span class="pos-topbar-search-input">Search products…</span>
+        </div>
+        <button class="btn btn-light btn-lg lh-lg" title="Scan barcode">
+          <svg class="o_icon"><use href="#o-search"/></svg>
+        </button>
+        <!-- CashierName — Odoo hides this on ui.isSmall. -->
+        <span class="o_user_avatar" title="Cashier — Mitchell Admin">MA</span>
+        <button class="btn btn-light btn-lg lh-lg" title="Menu">
+          <svg class="o_icon"><use href="#o-ellipsis-v"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pos-content">
+    <!-- LEFT: current order / cart -->
+    <div class="leftpane">
+      <div class="order-container">
+        <ul class="orderlines">
+          <!-- SLOT: order lines. `.orderline-num` is the line index badge,
+               `.orderline-body` stacks name + info, `.orderline-price` right. -->
+          <li class="orderline selected">
+            <span class="orderline-num">1</span>
+            <div class="orderline-body">
+              <span class="product-name">Drawer Black</span>
+              <span class="orderline-info">2 x $ 120.00</span>
+            </div>
+            <span class="orderline-price">$ 240.00</span>
+          </li>
+          <li class="orderline">
+            <span class="orderline-num">2</span>
+            <div class="orderline-body">
+              <span class="product-name">Conference Chair</span>
+              <span class="orderline-info">1 x $ 33.00</span>
+            </div>
+            <span class="orderline-price">$ 33.00</span>
+          </li>
+        </ul>
+      </div>
+      <div class="order-totals">
+        <div class="order-tax-row"><span>Taxes</span><span class="order-total">$ 35.61</span></div>
+        <div class="order-total-row"><span>Total</span><span class="order-total">$ 273.00</span></div>
+      </div>
+
+      <!-- Optional inline callout in the leftpane — status prompts the
+           cashier needs to see before tendering (eWallet credit available,
+           customer attached, loyalty redemption ready). Use `.pos-callout`
+           with `_info` / `_success` / `_warning` / `_danger` modifiers —
+           NEVER inline `style="background:color-mix(...); border:..."`.
+           Drop the block when the screen has no such prompt.
+        <div class="pos-callout pos-callout-success">
+          <strong>eWallet credit available:</strong> $ 312.00 (Liang Chen)
+        </div>
+      -->
+
+      <!-- Optional control buttons row (customer, notes, refund, …) -->
+      <div class="pos-actions-row">
+        <button class="pos-action-btn">Customer</button>
+        <button class="pos-action-btn">Note</button>
+        <button class="pos-action-btn">Refund</button>
+      </div>
+      <div class="pos-pads">
+        <div class="numpad">
+          <button class="numpad-btn">1</button><button class="numpad-btn">2</button><button class="numpad-btn">3</button><button class="numpad-btn mode active">Qty</button>
+          <button class="numpad-btn">4</button><button class="numpad-btn">5</button><button class="numpad-btn">6</button><button class="numpad-btn mode">Disc</button>
+          <button class="numpad-btn">7</button><button class="numpad-btn">8</button><button class="numpad-btn">9</button><button class="numpad-btn mode">Price</button>
+          <button class="numpad-btn">+/-</button><button class="numpad-btn">0</button><button class="numpad-btn">.</button><button class="numpad-btn numpad-btn-danger"><svg class="o_icon"><use href="#o-times"/></svg></button>
+        </div>
+        <button class="pay-order-button" data-mock-toast="Payment registered." data-mock-toast-type="success">Payment</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: categories + product grid -->
+    <div class="rightpane">
+      <div class="pos-categories">
+        <span class="category-button active">Office Furniture</span>
+        <span class="category-button category-chairs">Chairs</span>
+        <span class="category-button category-desks">Desks</span>
+        <span class="category-button category-misc">Misc</span>
+      </div>
+      <div class="product-list">
+        <div class="product"><div class="product-image"></div><div class="product-name">Drawer Black</div><div class="product-price">$ 120.00</div></div>
+        <div class="product category-chairs"><div class="product-image"></div><div class="product-name">Conference Chair</div><div class="product-price">$ 33.00</div></div>
+        <div class="product category-desks"><div class="product-image"></div><div class="product-name">Desk Organizer</div><div class="product-price">$ 5.40</div></div>
+        <div class="product"><div class="product-image"></div><div class="product-name">Cabinet</div><div class="product-price">$ 320.00</div></div>
+        <div class="product category-misc"><div class="product-image"></div><div class="product-name">Monitor Stand</div><div class="product-price">$ 3.19</div></div>
+        <div class="product category-misc"><div class="product-image"></div><div class="product-name">Whiteboard</div><div class="product-price">$ 89.00</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYMENT-SCREEN variant: replace `.rightpane`'s content with the payment
+       methods list, and relabel `.pay-order-button` to "Validate":
+
+    <div class="rightpane">
+      <div class="paymentmethods-container">
+        <div class="paymentmethods">
+          <div class="paymentmethod selected">
+            <svg class="o_icon"><use href="#o-cart"/></svg>
+            <span>Cash</span>
+            <span class="paymentmethod-amount">$ 273.00</span>
+          </div>
+          <div class="paymentmethod">Card</div>
+          <div class="paymentmethod">Customer Account</div>
+        </div>
+      </div>
+    </div>
+  -->
+
+  <!-- CUSTOM POS POPUP (trade-in panel / lot picker / approval) — a standard
+       Dialog modal OVER the POS, NOT backend form rows in the rightpane. Place
+       inside `.pos` so the fixed backdrop dims the product screen. Footer uses
+       `btn-lg`. Body rows are simple label/value lines (`.pos-popup-row`) and
+       an optional compact `.pos-popup-list`; an over-limit guard is an inline
+       `.o_dialog_alert_warn` — never a backend `.o_list_view`.
+
+    <div class="o_dialog_backdrop is-open">
+      <div class="o_dialog">
+        <div class="o_dialog_header">
+          <span>Trade-In — Voucher TI-0042</span>
+          <svg class="o_icon" data-mock-modal-close><use href="#o-times"/></svg>
+        </div>
+        <div class="o_dialog_body">
+          <div class="pos-popup-row"><span>Customer</span><span>Liang Chen</span></div>
+          <div class="pos-popup-row"><span>Agreed value</span><span class="fw-bold">$ 312.00</span></div>
+          <ul class="pos-popup-list">
+            <li><span>Screen condition</span><span class="o_tag">Good</span></li>
+            <li><span>Battery health</span><span class="o_tag">Fair</span></li>
+          </ul>
+          <div class="o_dialog_alert o_dialog_alert_warn">Reduction exceeds the band — manager approval required.</div>
+        </div>
+        <div class="o_dialog_footer">
+          <button class="btn btn-primary btn-lg">Accept Device</button>
+          <button class="btn btn-secondary btn-lg" data-mock-modal-close>Discard</button>
+        </div>
+      </div>
+    </div>
+  -->
+</div>

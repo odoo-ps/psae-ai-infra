@@ -1,0 +1,39 @@
+<!--
+  report.html — Printed QWeb PDF document (the report a user prints/emails, e.g. a
+  Sales Order / Quotation / Invoice PDF). It is a paginated A4 "paper" sheet, NOT
+  a backend view — render it full-bleed on a gray backdrop (its own surface, no
+  navbar). Uses the report layout shape (header / informations / lines / totals /
+  footer). Tokens only — no external fonts or logos.
+-->
+<div class="o_report_bg">
+  <div class="o_report_paper">
+    <div class="o_report_header">
+      <div class="o_report_company"><div class="o_report_logo">MyCompany</div><div class="text-muted">250 Executive Park Blvd, San Francisco</div></div>
+      <div class="o_report_doc_title">Quotation <strong># S00078</strong></div>
+    </div>
+
+    <div class="o_report_informations">
+      <div><span class="text-muted">Customer</span><div>Deco Addict<br/>77 Santa Barbara Rd, Pleasant Hill CA</div></div>
+      <div><span class="text-muted">Order Date</span><div>06/12/2026</div>
+           <span class="text-muted">Expiration</span><div>06/20/2026</div></div>
+    </div>
+
+    <table class="o_report_table">
+      <thead><tr><th>Description</th><th class="o_list_number_th">Quantity</th><th class="o_list_number_th">Unit Price</th><th class="o_list_number_th">Taxes</th><th class="o_list_number_th">Amount</th></tr></thead>
+      <tbody>
+        <tr><td>Drawer Black [E-COM12]<div class="text-muted">Lots: LOT-0007 (3.00), LOT-0011 (2.00)</div></td>
+            <td class="o_list_number">5.00</td><td class="o_list_number">$ 120.00</td><td class="o_list_number">15%</td><td class="o_list_number">$ 600.00</td></tr>
+      </tbody>
+    </table>
+
+    <div class="o_report_totals">
+      <table>
+        <tr><td>Untaxed Amount</td><td class="o_list_number">$ 600.00</td></tr>
+        <tr><td>Tax 15%</td><td class="o_list_number">$ 90.00</td></tr>
+        <tr class="o_report_total_row"><td>Total</td><td class="o_list_number">$ 690.00</td></tr>
+      </table>
+    </div>
+
+    <div class="o_report_footer">MyCompany — Quotation S00078 — Page 1 / 1</div>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+<!--
+  no_content.html — Odoo "no records yet" empty state (web.ActionHelper).
+  Source: addons/web/static/src/views/action_helper.{xml,js}
+
+  Render this INSIDE the view body when the workflow shows an empty list,
+  empty kanban, empty calendar, etc. — typically the "before any record exists"
+  step of a workflow, or a filtered view that returned nothing.
+
+  Real Odoo composes the helper from two paragraphs: a bold title and a
+  one-sentence hint. The model's own `_get_view` can replace both with a
+  richer custom helper string (e.g. "Create your first quotation" + tips).
+  Keep the wording grounded in the brief — same body-copy rules apply.
+
+  Two shapes:
+   1. The DEFAULT helper (showDefaultHelper) — "No data to display / Try to
+      add some records, or make sure there is no active filter."
+   2. A MODEL-CUSTOM helper (props.noContentHelp HTML) — usually with an
+      illustration glyph above and an "+ Add" CTA below.
+-->
+<div class="o_view_nocontent">
+  <div class="o_nocontent_help">
+    <!-- Optional: a simple decorative circle. Drop this block when the
+         helper is purely text. -->
+    <div class="o_nocontent_illustration">
+      <svg class="o_icon"><use href="#o-folder"/></svg>
+    </div>
+    <p class="o_view_nocontent_empty_folder">
+      <!-- SLOT: title — what's missing in the user's words.
+           E.g. "No quotations yet", "No timesheet entries this week" -->
+    </p>
+    <p>
+      <!-- SLOT: one-sentence hint — what the user can do next.
+           E.g. "Create your first quotation to start building the sales pipeline." -->
+    </p>
+    <!-- Optional CTA — Odoo helpers often include one. -->
+    <!--
+    <p>
+      <a class="btn btn-primary" data-mock-goto="...">Create</a>
+    </p>
+    -->
+  </div>
+</div>

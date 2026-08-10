@@ -1,0 +1,84 @@
+<!--
+  walkthrough_bar.html — the fixed bottom navigation bar. Include EXACTLY ONE
+  per package, as a sibling of the .mock-screen sections (not inside one).
+  walkthrough.js fills in title/desc/counter/dots/workflow-selector/chip-row
+  automatically from the document's declared screens + variant axes.
+
+  STRUCTURE (3 stacked columns):
+
+    ┌──────────────────┬─────────────────────────┬─────────────────────┐
+    │ Workflow: ___ ▾  │ Step title              │ STATE: Draft ▾ │…   │
+    │ ──────────────── │ Step desc (1 line)      │ ──────────────────  │
+    │ ◀ Prev │ Next ▶  │ 3 / 5  ● ● ● ● ●        │ ANNOTATIONS: Show ▾ │
+    └──────────────────┴─────────────────────────┴─────────────────────┘
+       Nav cluster        Step cluster                Control cluster
+       240px (fixed)      flex-grow                   290px (fixed)
+
+  Each cluster is a vertical-stack of two rows. When the top row of a
+  cluster is hidden (workflow chip hidden in single-workflow mode, or
+  variant chips row hidden on a screen with no axes), CSS `:has()` flips
+  the visible row from `flex: 1 1 0` to `flex: 0 0 auto` and the cluster's
+  `justify-content: center` centers it vertically — so the lone visible
+  half keeps its natural button-row / chip-row height instead of stretching
+  to the full 80px cluster. Same predictable cluster footprint on every
+  screen; content variations stay contained inside their cluster.
+
+  The variant-chip row + annotations chip both follow the same chip
+  pattern: LABEL (uppercase gray) + VALUE (brand purple) + caret. When
+  two variant chips are present, a vertical divider draws between them.
+
+  Multi-workflow Next button has four labels (handled by walkthrough.js; the
+  button's chevron icon provides the forward-direction arrow in every case):
+    "Start: <name>"   on the main cover (names the first workflow)
+    "Get Started"     on every per-workflow overview (enters the workflow)
+    "<name>"          on the last screen of a non-final workflow (names
+                      the destination workflow)
+    "Next"            anywhere else
+-->
+<div class="mock-walkthrough" id="mock-walkthrough">
+
+  <!-- ===== Cluster 1: Nav — workflow chip (top) + Prev/Next (bottom) ===== -->
+  <div class="mock-wt-nav-cluster">
+    <div class="mock-wt-workflow" hidden>
+      <!-- workflow chip filled by walkthrough.js — same buildChip() pattern
+           as the variant + annotations chips on the right, so all dropdowns
+           in the bar share one skin (closed) and one custom menu (open). -->
+    </div>
+    <div class="mock-wt-controls">
+      <button class="mock-wt-btn" data-mock-prev>
+        <svg class="o_icon"><use href="#o-chevron-left"/></svg> Previous
+      </button>
+      <button class="mock-wt-btn primary" data-mock-next>
+        <span class="mock-wt-btn-label">Next</span>
+        <svg class="o_icon"><use href="#o-chevron-right"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Cluster 2: Step — title + desc (top) + counter + dots (bottom) ===== -->
+  <div class="mock-wt-step-cluster">
+    <div class="mock-wt-step">
+      <div class="mock-wt-title"><!-- filled by walkthrough.js --></div>
+      <div class="mock-wt-desc"><!-- filled by walkthrough.js --></div>
+    </div>
+    <div class="mock-wt-paging">
+      <span class="mock-wt-counter">1 / 1</span>
+      <div class="mock-wt-dots"><!-- filled by walkthrough.js --></div>
+    </div>
+  </div>
+
+  <!-- ===== Cluster 3: Control — variant chips (top) + annotations chip (bottom) ===== -->
+  <div class="mock-wt-control-cluster">
+    <div class="mock-wt-chips" hidden>
+      <!-- chips filled by walkthrough.js when the active screen declares
+           data-mock-variant-axes; row hidden via [hidden] attr otherwise,
+           and CSS :has() centers the annotations row below in that case -->
+    </div>
+    <div class="mock-wt-toggle">
+      <!-- annotations chip filled by walkthrough.js — same label/value/caret
+           pattern as the variant chips above, with Show/Hide options.
+           Selecting Hide adds .mock-annotations-off to <body> -->
+    </div>
+  </div>
+
+</div>

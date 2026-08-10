@@ -1,0 +1,118 @@
+<!--
+  form_view.html — Odoo form view (form_controller.scss / form_renderer):
+  statusbar + title + two-column groups + notebook tabs.
+  Wrap in .o_web_client > navbar + control_panel + this. To add a chatter, use
+  the .o_content_with_chatter layout (see chatter.html).
+  SMART BUTTONS (button box) render in the CONTROL PANEL — Odoo 19's
+  form_controller.xml passes the button-box into the layout's
+  `layout-actions` slot (`.o_control_panel_actions`), centered between
+  the breadcrumb (left) and the search bar (right). Do NOT place them
+  inside the form sheet. See control_panel.html for the slot.
+  Flag a CUSTOM (solution-added) field's label with a help "?" carrying its
+  attributes — <label>Lot Allocations <span class="o_field_help"
+  data-help="…" data-field="…" data-model="…" data-type="…">?</span></label>
+  (see reference/interactions.md § Custom-field help).
+-->
+<div class="o_form_view">
+
+  <!-- Statusbar: left buttons + right status pipeline -->
+  <div class="o_form_statusbar">
+    <div class="o_statusbar_buttons">
+      <!-- SLOT: workflow buttons, e.g. -->
+      <button class="btn btn-primary">Confirm</button>
+      <button class="btn o_btn_outline">Cancel</button>
+    </div>
+    <div class="o_statusbar_status">
+      <!-- SLOT: status stages; mark the current one o_arrow_button_current -->
+      <span class="o_arrow_button">Quotation</span>
+      <span class="o_arrow_button o_arrow_button_current">Quotation Sent</span>
+      <span class="o_arrow_button">Sales Order</span>
+    </div>
+  </div>
+
+  <div class="o_form_sheet_bg">
+    <div class="o_form_sheet">
+
+      <!-- Optional corner ribbon (locked / cancelled / done). The band text is
+           the `data-text` ATTRIBUTE — the CSS draws it via ::after. Child text
+           renders UNSTYLED (the "blank / capped ribbon" bug), so leave the
+           element empty. Add text-bg-danger for Cancelled, text-bg-success for
+           Done. The .o_form_sheet is the position:relative anchor.
+        <div class="o_widget_web_ribbon" data-text="Locked"></div> -->
+
+      <!-- (Smart buttons live in the control panel — see control_panel.html
+           o_control_panel_actions. Do NOT place a button-box here.) -->
+
+      <!-- Title -->
+      <div class="oe_title">
+        <h1 class="o_form_title"><!-- SLOT: record title, e.g. SO0042 --></h1>
+      </div>
+
+      <!-- Two-column field groups -->
+      <div class="o_group">
+        <div class="o_inner_group">
+          <!-- SLOT: left column fields -->
+          <div class="o_field_row">
+            <label class="o_form_label">Customer</label>
+            <!-- Relational value = teal action-color link (o_form_link). -->
+            <div class="o_field_widget"><a class="o_form_link">Deco Addict</a></div>
+          </div>
+          <div class="o_field_row">
+            <label class="o_form_label">Expiration</label>
+            <div class="o_field_widget">06/30/2026</div>
+          </div>
+        </div>
+        <div class="o_inner_group">
+          <!-- SLOT: right column fields -->
+          <div class="o_field_row">
+            <label class="o_form_label">Salesperson</label>
+            <div class="o_field_widget">Mitchell Admin</div>
+          </div>
+          <div class="o_field_row">
+            <label class="o_form_label">Payment Terms</label>
+            <div class="o_field_widget o_field_empty">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtotal footer (sale / purchase / invoice) — append BELOW the order-
+           lines list. Use the table markup verbatim; the CSS class
+           o_subtotal_label / o_subtotal_amount align labels left and values
+           right with tabular numbers. The o_total row is emphasized.
+        <div class="o_subtotal_footer">
+          <table>
+            <tr><td class="o_subtotal_label">Untaxed Amount</td>
+                <td class="o_subtotal_amount">11,453.00</td></tr>
+            <tr><td class="o_subtotal_label">Taxes</td>
+                <td class="o_subtotal_amount">1,717.95</td></tr>
+            <tr class="o_total"><td class="o_subtotal_label">Total</td>
+                <td class="o_subtotal_amount">$ 13,170.95</td></tr>
+          </table>
+        </div>
+        Anti-pattern: <div class="o_subtotal_row"><span>label</span><span>value</span></div>
+        renders without label/value separation because the catalog CSS targets
+        the table form. Always use the table block. -->
+
+      <!-- Notebook (tabs). Make tabs actually switch: pair data-mock-tab on the
+           header with data-mock-tabpanel on the panel; mark the open pair
+           active / is-active-tab. walkthrough.js wires the click. -->
+      <div class="o_notebook">
+        <div class="o_notebook_headers">
+          <span class="nav-link active" data-mock-tab="lines">Order Lines</span>
+          <span class="nav-link" data-mock-tab="other">Other Info</span>
+        </div>
+        <div class="o_notebook_content">
+          <div data-mock-tabpanel="lines" class="is-active-tab">
+            <!-- SLOT: open tab content. Often an editable list (see list_view.html). -->
+          </div>
+          <div data-mock-tabpanel="other">
+            <!-- SLOT: Other Info groups. Discover standard-field placement at
+                 runtime from the odoo/ source (see reference/field_placement.md)
+                 — e.g. sale.order Salesperson & Warehouse live here, not main. -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

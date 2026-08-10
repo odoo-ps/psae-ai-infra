@@ -1,0 +1,68 @@
+<!--
+  grid.html — Grid view (enterprise web_grid; real classes o_grid_view /
+  o_grid_renderer / o_grid_cell / o_grid_row_total). Used for timesheets &
+  planning: rows = task/project, columns = a time period (days of the week),
+  editable hour cells with row + column totals. Render inside the backend shell.
+-->
+<div class="o_grid_view">
+  <!-- Top affordance row: timer + hotkey hint. Real timesheet_grid opens
+       in week view with a prominent ▶ START button and keyboard tips. -->
+  <div class="o_grid_timer">
+    <button class="btn btn-primary o_grid_start"><svg class="o_icon o_icon_xs"><use href="#o-chevron-right"/></svg> START</button>
+    <span class="o_grid_timer_hint">
+      <div>Press <kbd>Enter</kbd> or <kbd>[a]</kbd> to launch the timer</div>
+      <div>Press <kbd>Shift</kbd> + <kbd>[A]</kbd> to add 15 min</div>
+    </span>
+  </div>
+  <div class="o_grid_buttons">
+    <button class="btn o_btn_outline o_grid_button_today">Today</button>
+    <span class="o_gantt_scale active">Week <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+    <button class="btn o_btn_outline o_grid_nav"><svg class="o_icon o_icon_xs"><use href="#o-chevron-left"/></svg></button>
+    <button class="btn o_btn_outline o_grid_nav"><svg class="o_icon o_icon_xs"><use href="#o-chevron-right"/></svg></button>
+  </div>
+  <table class="o_grid_renderer">
+    <thead>
+      <tr>
+        <th></th>
+        <!-- Day headers show "DayShort, Mon DD" — full date wraps onto a
+             second line for legibility. Mark today's column with
+             .o_grid_cell_today (light teal-blue tint). -->
+        <th class="o_list_number_th"><div class="o_grid_day_dow">Sun,</div><div class="o_grid_day_num">Jun 7</div></th>
+        <th class="o_list_number_th"><div class="o_grid_day_dow">Mon,</div><div class="o_grid_day_num">Jun 8</div></th>
+        <th class="o_list_number_th"><div class="o_grid_day_dow">Tue,</div><div class="o_grid_day_num">Jun 9</div></th>
+        <th class="o_list_number_th"><div class="o_grid_day_dow">Wed,</div><div class="o_grid_day_num">Jun 10</div></th>
+        <th class="o_list_number_th"><div class="o_grid_day_dow">Thu,</div><div class="o_grid_day_num">Jun 11</div></th>
+        <th class="o_list_number_th"><div class="o_grid_day_dow">Fri,</div><div class="o_grid_day_num">Jun 12</div></th>
+        <th class="o_list_number_th o_grid_cell_today"><div class="o_grid_day_dow">Sat,</div><div class="o_grid_day_num">Jun 13</div></th>
+        <th class="o_list_number_th o_grid_total_col">Time Spent</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Home Construction <span class="text-muted">/ Install drawers</span></td>
+        <td class="o_grid_cell">2:00</td><td class="o_grid_cell">3:00</td><td class="o_grid_cell">1:30</td>
+        <td class="o_grid_cell">—</td><td class="o_grid_cell">2:00</td><td class="o_grid_cell o_grid_cell_today">—</td>
+        <td class="o_grid_cell">—</td><td class="o_grid_row_total">8:30</td>
+      </tr>
+      <tr>
+        <td>Office Fit-out <span class="text-muted">/ QA &amp; handover</span></td>
+        <td class="o_grid_cell">1:00</td><td class="o_grid_cell">2:00</td><td class="o_grid_cell">4:00</td>
+        <td class="o_grid_cell">3:00</td><td class="o_grid_cell">1:00</td><td class="o_grid_cell o_grid_cell_today">—</td>
+        <td class="o_grid_cell">—</td><td class="o_grid_row_total">11:00</td>
+      </tr>
+      <tr>
+        <td><span class="o_list_link o_grid_add_line">Add a line</span></td>
+        <td class="o_grid_cell"></td><td class="o_grid_cell"></td><td class="o_grid_cell"></td><td class="o_grid_cell"></td>
+        <td class="o_grid_cell"></td><td class="o_grid_cell o_grid_cell_today"></td><td class="o_grid_cell"></td><td class="o_grid_row_total"></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="o_grid_total_row">
+        <td>Total</td>
+        <td class="o_list_number">3:00</td><td class="o_list_number">5:00</td><td class="o_list_number">5:30</td>
+        <td class="o_list_number">3:00</td><td class="o_list_number">3:00</td><td class="o_list_number">0:00</td>
+        <td class="o_list_number">0:00</td><td class="o_list_number o_grid_total_col">19:30</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

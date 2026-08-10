@@ -1,0 +1,49 @@
+<!--
+  onboarding.html — App setup onboarding banner.
+  Source: addons/onboarding/views/onboarding_views.xml
+          addons/onboarding/static/src/scss/
+
+  Apps like Accounting / Sales / CRM / Recruitment open their dashboard
+  with a horizontal banner of setup steps. Each step is a card with a
+  progress check-mark + title + one-line description. Clicking a step
+  opens the relevant config wizard.
+
+  State classes on `.o_onboarding_step`:
+    .o_onboarding_step                  — not done (gray ○)
+    .o_onboarding_step_done             — done    (green ✓)
+    .o_onboarding_step_just_done        — just completed (green ✓ + glow)
+
+  Drop the whole `.o_onboarding_container` directly under the control panel
+  on the dashboard screen. Hide when the user has dismissed it (close ×) or
+  when all steps are done.
+-->
+<div class="o_onboarding_container">
+  <div class="o_onboarding_step o_onboarding_step_done">
+    <div class="o_onboarding_step_marker">
+      <svg class="o_icon"><use href="#o-check"/></svg>
+    </div>
+    <div class="o_onboarding_step_body">
+      <div class="o_onboarding_step_title"><!-- SLOT: e.g. Company Data --></div>
+      <div class="o_onboarding_step_description"><!-- SLOT: e.g. Logo, address, currency --></div>
+    </div>
+  </div>
+  <div class="o_onboarding_step o_onboarding_step_just_done">
+    <div class="o_onboarding_step_marker">
+      <svg class="o_icon"><use href="#o-check"/></svg>
+    </div>
+    <div class="o_onboarding_step_body">
+      <div class="o_onboarding_step_title"><!-- SLOT: e.g. Chart of Accounts --></div>
+      <div class="o_onboarding_step_description"><!-- SLOT: e.g. Pick a template --></div>
+    </div>
+  </div>
+  <div class="o_onboarding_step">
+    <div class="o_onboarding_step_marker">3</div>
+    <div class="o_onboarding_step_body">
+      <div class="o_onboarding_step_title"><!-- SLOT: e.g. Invoice Layout --></div>
+      <div class="o_onboarding_step_description"><!-- SLOT: e.g. Header, colors, footer --></div>
+    </div>
+  </div>
+  <span class="o_onboarding_step_close" title="Dismiss">
+    <svg class="o_icon"><use href="#o-times"/></svg>
+  </span>
+</div>

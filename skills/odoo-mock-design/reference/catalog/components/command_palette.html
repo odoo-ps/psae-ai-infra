@@ -1,0 +1,53 @@
+<!--
+  command_palette.html — Ctrl+K global command/search modal.
+  Source: addons/web/static/src/core/commands/command_palette.{xml,scss}
+
+  An on-demand modal listing commands, app links, and recent records,
+  driven by a search input at the top. Real Odoo opens this on Ctrl+K
+  (or Cmd+K on macOS). The palette is built on top of the standard
+  Dialog — same backdrop, same close behaviour — with `size="md"` and
+  no header.
+
+  Render this as an in-place dialog (data-mock-modal="cmdk") triggered
+  from the navbar's search icon or a Ctrl+K affordance on the cover
+  screen. Use it when a workflow step is "the user searches/jumps via
+  the command palette" rather than browsing menus.
+
+  Sections (Categories) carry their name as a small uppercase header.
+  Each command row has an icon glyph + text + optional hotkey badge.
+  The CURRENT row gets `.focused` (matches `state.selectedCommand`).
+-->
+<div class="o_dialog_backdrop" data-mock-modal="cmdk">
+  <div class="o_dialog o_command_palette">
+    <div class="o_dialog_body">
+      <div class="o_command_palette_search">
+        <svg class="o_icon"><use href="#o-search"/></svg>
+        <input type="text" placeholder="Search commands, records, apps…"/>
+      </div>
+      <div class="o_command_palette_listbox">
+        <div class="o_command_category">
+          <span>Apps</span>
+          <div class="o_command focused">
+            <svg class="o_icon"><use href="#o-app-sales"/></svg>
+            <span class="o_command_name"><!-- SLOT: e.g. Sales --></span>
+            <span class="o_command_hotkey"><kbd>G</kbd><kbd>S</kbd></span>
+          </div>
+          <div class="o_command">
+            <svg class="o_icon"><use href="#o-app-inventory"/></svg>
+            <span class="o_command_name"><!-- SLOT: e.g. Inventory --></span>
+          </div>
+        </div>
+        <div class="o_command_category">
+          <span>Recent</span>
+          <div class="o_command">
+            <svg class="o_icon"><use href="#o-folder"/></svg>
+            <span class="o_command_name"><!-- SLOT: e.g. SO0042 — Deco Addict --></span>
+          </div>
+        </div>
+      </div>
+      <div class="o_command_palette_footer">
+        <kbd>↑</kbd> <kbd>↓</kbd> to navigate, <kbd>⏎</kbd> to select, <kbd>Esc</kbd> to dismiss
+      </div>
+    </div>
+  </div>
+</div>

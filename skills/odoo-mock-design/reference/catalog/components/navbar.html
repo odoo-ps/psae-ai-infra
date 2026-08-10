@@ -1,0 +1,72 @@
+<!--
+  navbar.html — Odoo top navbar (navbar.scss .o_main_navbar).
+  Ported from: odoo/addons/web/static/src/webclient/navbar/navbar.{xml,scss} +
+               enterprise/web_enterprise/static/src/webclient/navbar/navbar.{xml,scss,variables.scss}
+
+  Odoo 19 ENTERPRISE: white background, dark text, 46px tall. The brand
+  purple (#714B67) appears as an ACCENT (buttons / active state) — NOT
+  the navbar background (that's the older 15-17 community-purple chrome).
+  Community keeps the dark purple navbar via the body.o-community
+  override in odoo.css.
+
+  Composition per real Odoo:
+    [.o_menu_toggle: 4-square icon + brand name][.o_menu_sections: app top-menu dropdowns]
+    [.o_menu_systray, margin-left:auto:
+       liveness dot · chat (with badge) · clock · X-close · company dropdown · avatar]
+
+  Put at the top of every backend screen's .o_web_client.
+-->
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle" title="Home menu">
+    <!-- Odoo 19 uses a 3x3 dot grid for the apps-launcher icon, not th-large.
+         Inline SVG so it doesn't depend on font glyphs. -->
+    <svg class="o_menu_toggle_icon" width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+      <g fill="currentColor"><rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/></g>
+      <g fill="currentColor"><rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/></g>
+      <g fill="currentColor"><rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/></g>
+    </svg>
+    <!-- SLOT (optional): app brand icon. Include when the screen sits inside
+         a specific app and you want the brand mark visible next to the name.
+         Real Odoo swaps the 3x3 grid for this icon on hover; we just show
+         it static.
+      <img class="o_menu_brand_icon" src="…" alt="" />
+    -->
+    <span class="o_menu_brand"><!-- SLOT: App name, e.g. Sales --></span>
+  </a>
+  <div class="o_menu_sections">
+    <!-- SLOT: top menu entries for this app. Each is a dropdown trigger —
+         render the caret so the affordance reads. Omit entirely when the
+         app exposes its sub-nav via the breadcrumb row instead (e.g. CRM
+         in Odoo 19 has no inline menu sections — its Pipeline / Customers
+         / Reporting items live under the breadcrumb dropdown). -->
+    <span class="o_nav_entry">Orders <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+    <span class="o_nav_entry">Products <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+    <span class="o_nav_entry">Reporting <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+    <span class="o_nav_entry">Configuration <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+  </div>
+  <div class="o_menu_systray">
+    <!-- Real Odoo 19 systray, left-to-right:
+           Liveness indicator → unread chat badge → clock (activities) →
+           X-close (collapse all menus) → company switcher → user avatar.
+         Keep the order — readers recognize it. -->
+    <span class="o_systray_item o_status_systray" title="Realtime status">
+      <span class="o_status_dot"></span>
+    </span>
+    <span class="o_systray_item o_chat_systray" title="Messages">
+      <svg class="o_icon"><use href="#o-comment"/></svg>
+      <!-- SLOT: unread chat count. Omit the <span> entirely when zero. -->
+      <span class="o_systray_badge">4</span>
+    </span>
+    <span class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+    </span>
+    <span class="o_systray_item" title="Close all menus">
+      <svg class="o_icon"><use href="#o-times"/></svg>
+    </span>
+    <span class="o_systray_item o_company_switcher">
+      <!-- SLOT: current company name -->My Company
+      <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg>
+    </span>
+    <span class="o_user_avatar"><!-- SLOT: user initials, e.g. AB --></span>
+  </div>
+</nav>

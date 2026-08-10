@@ -1,0 +1,26 @@
+<!--
+  search_panel.html — Odoo left-hand search panel (categories/filters), used by
+  list & kanban views when a model has a category hierarchy. Place it to the
+  LEFT of the view body inside a flex row:
+
+    <div style="display:flex; flex:1 1 auto; min-height:0;">
+      ... paste this fragment ...
+      <div class="o_list_view"> ... </div>
+    </div>
+-->
+<aside class="o_search_panel" style="flex:0 0 220px; padding:12px; border-right:1px solid var(--o-border-color); background:var(--o-view-background-color);">
+  <!-- SLOT: category sections -->
+  <div style="font-weight:var(--o-font-weight-bold); margin-bottom:6px;">Status</div>
+  <ul style="list-style:none; padding:0; margin:0 0 16px;">
+    <li style="padding:4px 6px; border-radius:4px; background:var(--o-gray-200);">All</li>
+    <li style="padding:4px 6px;">Quotation</li>
+    <li style="padding:4px 6px;">Sales Order</li>
+    <li style="padding:4px 6px;">Cancelled</li>
+  </ul>
+
+  <div style="font-weight:var(--o-font-weight-bold); margin-bottom:6px;">Salesperson</div>
+  <ul style="list-style:none; padding:0; margin:0;">
+    <li style="padding:4px 6px;"><input type="checkbox"/> Mitchell Admin</li>
+    <li style="padding:4px 6px;"><input type="checkbox"/> Marc Demo</li>
+  </ul>
+</aside>

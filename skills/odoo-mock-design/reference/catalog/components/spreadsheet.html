@@ -1,0 +1,55 @@
+<!--
+  spreadsheet.html — Odoo Spreadsheet (o-spreadsheet; real classes o-spreadsheet
+  / o-grid / o-bottom-bar / o-sheet-item). Opens inside the backend (Documents /
+  Dashboards), so render navbar + a slim breadcrumb above, then this fills the
+  action area. Static grid — do NOT wire a spreadsheet engine; it's a mock.
+-->
+<div class="o-spreadsheet">
+  <!-- Toolbar — formatting controls. All icons are inline SVG from
+       icons.svg (no emoji / unicode glyphs — those drift across OS/fonts). -->
+  <div class="o-topbar-toolbar">
+    <span class="o-tool" title="Undo"><svg class="o_icon"><use href="#o-undo"/></svg></span>
+    <span class="o-tool" title="Redo"><svg class="o_icon"><use href="#o-redo"/></svg></span>
+    <span class="o-tool" title="Paint format"><svg class="o_icon"><use href="#o-paint-brush"/></svg></span>
+    <span class="o-tool-sep"></span>
+    <span class="o-tool" title="Format as currency">$</span>
+    <span class="o-tool" title="Format as percent">%</span>
+    <span class="o-tool-sep"></span>
+    <span class="o-tool active" title="Bold"><strong>B</strong></span>
+    <span class="o-tool" title="Italic"><em>I</em></span>
+    <span class="o-tool" title="Fill color"><svg class="o_icon"><use href="#o-fill-bucket"/></svg></span>
+    <span class="o-tool-sep"></span>
+    <span class="o-tool" title="Borders"><svg class="o_icon"><use href="#o-borders"/></svg></span>
+    <span class="o-tool" title="Merge cells"><svg class="o_icon"><use href="#o-merge-cells"/></svg></span>
+    <span class="o-tool" title="Align"><svg class="o_icon"><use href="#o-align-left"/></svg></span>
+    <span class="o-tool" title="Wrap text"><svg class="o_icon"><use href="#o-wrap-text"/></svg></span>
+    <span class="o-tool-sep"></span>
+    <span class="o-tool" title="Insert link"><svg class="o_icon"><use href="#o-link"/></svg></span>
+    <span class="o-tool" title="Sum"><svg class="o_icon"><use href="#o-sigma"/></svg></span>
+    <span class="o-tool o-tool-cta" title="Insert chart"><svg class="o_icon"><use href="#o-view-graph"/></svg> Insert chart</span>
+  </div>
+  <!-- Formula bar -->
+  <div class="o-formula-bar">
+    <span class="o-cell-ref">B4</span>
+    <span class="o-composer">=SUM(B2:B3)</span>
+  </div>
+  <!-- Grid -->
+  <div class="o-grid">
+    <table class="o-grid-table">
+      <thead><tr><th class="o-corner"></th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+      <tbody>
+        <tr><th class="o-row-number">1</th><td class="o-cell o-cell-head">Region</td><td class="o-cell o-cell-head">Q1</td><td class="o-cell o-cell-head">Q2</td><td class="o-cell o-cell-head">Total</td></tr>
+        <tr><th class="o-row-number">2</th><td class="o-cell">North</td><td class="o-cell o-num">12,500</td><td class="o-cell o-num">14,200</td><td class="o-cell o-num">26,700</td></tr>
+        <tr><th class="o-row-number">3</th><td class="o-cell">South</td><td class="o-cell o-num">9,800</td><td class="o-cell o-num">11,050</td><td class="o-cell o-num">20,850</td></tr>
+        <tr><th class="o-row-number">4</th><td class="o-cell o-cell-total">Total</td><td class="o-cell o-num o-cell-total o-cell-selected">22,300</td><td class="o-cell o-num o-cell-total">25,250</td><td class="o-cell o-num o-cell-total">47,550</td></tr>
+        <tr><th class="o-row-number">5</th><td class="o-cell"></td><td class="o-cell"></td><td class="o-cell"></td><td class="o-cell"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Sheet tabs -->
+  <div class="o-bottom-bar">
+    <span class="o-sheet-item active">Dashboard</span>
+    <span class="o-sheet-item">Data</span>
+    <span class="o-sheet-item o-add-sheet">+</span>
+  </div>
+</div>

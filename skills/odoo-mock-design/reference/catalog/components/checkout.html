@@ -1,0 +1,263 @@
+<!--
+  checkout.html — Website e-commerce checkout (website_sale checkout +
+  payment-method picker + confirmation page). Used by every payment-provider
+  mock (Tap, Stripe, Razorpay, Adyen, etc.) to render the customer-facing
+  surfaces where the provider appears.
+
+  Source: odoo/addons/website_sale/static/src/scss/website_sale.scss
+  (`.checkout` block) + odoo/addons/payment/static/src/scss/
+  payment_form.scss (`.payment_option`) + `/shop/confirmation` page rendered
+  by `website_sale.confirmation` template.
+
+  ===== HARD RULE — WEBSITE-NATIVE VOCABULARY =====
+
+  Inside `.o_website`, NEVER use backend form chrome (`o_field_row`,
+  `o_form_label`, `o_field_widget`, `o_group`, `o_inner_group`,
+  `o_list_view`) — those leak the backend look-and-feel into a public
+  surface and are flagged by mock-fidelity-anchor as
+  `fidelity:surface-backend-leak`. The website checkout has its own
+  catalog vocabulary documented below.
+
+    | Need                                       | Use (website-native)                                    | Do NOT use                                  |
+    |--------------------------------------------|---------------------------------------------------------|---------------------------------------------|
+    | Two-column layout (main + summary aside)   | `.o_wsale_checkout` (grid wrapper)                      | `.o_form_sheet` + columns                   |
+    | Picker for payment provider                | `.o_wsale_payment_methods` + `.o_wsale_payment_method`  | radio buttons in `.o_field_row`             |
+    | Active card highlight                      | `.o_wsale_pm_active` modifier                           | inline `style="border:2px solid..."`        |
+    | Saved-card variant                         | `.o_wsale_pm_saved` modifier                            | new class name                              |
+    | Order summary aside                        | `.o_wsale_checkout_summary` + `.o_wsale_summary_row`    | `.o_subtotal_footer` (that's the form view) |
+    | Submit + back buttons                      | `.o_wsale_checkout_actions`                             | inline margin/flex wrapper                  |
+    | Confirmation / failure / pending pages     | `.o_wsale_confirmation` + outcome modifier              | new layout from scratch                     |
+    | Customer-input rows (Save my card, terms)  | `<div class="s_website_form_field">` (existing family)  | `.o_field_row` + `.o_form_label`            |
+
+  Pair with header from `website.html` — same `.o_header_standard` and
+  `.o_website_iconbtn` / `.o_wsale_my_cart` — so the page chrome reads
+  as one continuous storefront across shop / cart / checkout / confirmation.
+-->
+
+<!-- ===== Checkout payment-method picker — the canonical pattern ===== -->
+<div class="o_website">
+  <header class="o_header_standard">
+    <span class="o_website_logo">MyCompany</span>
+    <nav class="o_website_menu">
+      <span class="nav-link">Shop</span>
+      <span class="nav-link">Home</span>
+      <span class="nav-link">Contact us</span>
+    </nav>
+    <div class="o_website_header_right">
+      <span class="o_website_iconbtn o_wsale_my_cart">
+        <svg class="o_icon"><use href="#o-cart"/></svg>
+        Cart <span class="o_wsale_cart_badge">2</span>
+      </span>
+      <span>Joel Willis</span>
+    </div>
+  </header>
+
+  <div class="o_wsale_checkout">
+    <!-- Main column — heading + picker + customer-input rows + actions -->
+    <div class="o_wsale_checkout_main">
+      <h2>Checkout — Payment</h2>
+      <p class="text-muted">Order total <strong>AED 450.00</strong></p>
+
+      <!-- Payment-method picker: outlined cards, radio + icon + label.
+           Each `<label class="o_wsale_payment_method">` is an entire row;
+           hovering shifts the border; the selected row carries
+           `.o_wsale_pm_active`. Three example methods below; in the
+           rendered mock use only providers the spec actually enables. -->
+      <div class="o_wsale_payment_methods">
+        <label class="o_wsale_payment_method">
+          <input type="radio" name="payment_provider"/>
+          <span class="o_wsale_pm_icon"><svg class="o_icon"><use href="#o-cog"/></svg></span>
+          <span class="o_wsale_pm_label">
+            <strong>Stripe</strong><br/>
+            <small class="text-muted">Visa, Mastercard</small>
+          </span>
+        </label>
+        <label class="o_wsale_payment_method o_wsale_pm_active">
+          <input type="radio" name="payment_provider" checked/>
+          <span class="o_wsale_pm_icon"><svg class="o_icon"><use href="#o-cog"/></svg></span>
+          <span class="o_wsale_pm_label">
+            <strong>Tap</strong><br/>
+            <small class="text-muted">Visa · Mastercard · Mada</small>
+          </span>
+        </label>
+      </div>
+
+      <!-- Customer-input row — Save my card / Accept terms / etc. Uses the
+           existing s_website_form_* family from website_form.html. -->
+      <div class="s_website_form_field">
+        <label class="s_website_form_label">
+          <input type="checkbox" checked/> I have read and accept the
+          <a href="#">terms and conditions</a>.
+        </label>
+      </div>
+
+      <div class="o_wsale_checkout_actions">
+        <button class="btn btn-primary btn-lg">Pay AED 450.00</button>
+        <button class="btn o_btn_outline">Back to cart</button>
+      </div>
+    </div>
+
+    <!-- Order summary aside — sticky right column with line items + total -->
+    <aside class="o_wsale_checkout_summary">
+      <div class="o_wsale_summary_title">Order summary</div>
+      <div class="o_wsale_summary_row"><span>Drawer Black × 1</span><span>AED 280.00</span></div>
+      <div class="o_wsale_summary_row"><span>Conference Chair × 2</span><span>AED 132.00</span></div>
+      <div class="o_wsale_summary_row"><span>Shipping</span><span>AED 38.00</span></div>
+      <div class="o_wsale_summary_row o_wsale_summary_total"><span>Total</span><span>AED 450.00</span></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ===== Saved-card variant — `.o_wsale_pm_saved` modifier =====
+
+  When a returning customer's saved card is offered as a one-click option
+  alongside the "Pay with a new card" entry, mark its row with both
+  `o_wsale_pm_active` and `o_wsale_pm_saved` so the green tint distinguishes
+  it from fresh-card providers.
+
+  <label class="o_wsale_payment_method o_wsale_pm_active o_wsale_pm_saved">
+    <input type="radio" name="payment_provider" checked/>
+    <span class="o_wsale_pm_icon"><svg class="o_icon"><use href="#o-check"/></svg></span>
+    <span class="o_wsale_pm_label">
+      <strong>Tap · Visa •••• 4242</strong><br/>
+      <small class="text-muted">Saved · expires 03/29</small>
+    </span>
+  </label>
+  <label class="o_wsale_payment_method">
+    <input type="radio" name="payment_provider"/>
+    <span class="o_wsale_pm_icon"><svg class="o_icon"><use href="#o-plus"/></svg></span>
+    <span class="o_wsale_pm_label">
+      <strong>Pay with a new card</strong><br/>
+      <small class="text-muted">Redirects to Tap's hosted page</small>
+    </span>
+  </label>
+-->
+
+<!-- ===== Confirmation / failure / pending page =====
+
+  Three outcomes share the same layout; the modifier on `.o_wsale_confirmation`
+  drives the icon colour. Default is success (brand-primary tint, check icon);
+  `.o_wsale_confirmation_error` is the failed-payment page (danger tint,
+  times-circle icon); `.o_wsale_confirmation_pending` is the abandoned-redirect
+  fallback (gray tint, clock icon) used when the customer closed the browser
+  before the redirect completed.
+
+  <div class="o_website">
+    <header class="o_header_standard">...</header>
+
+    <div class="o_wsale_confirmation">
+      <div class="o_wsale_confirmation_icon">
+        <svg class="o_icon o_icon_xl"><use href="#o-check"/></svg>
+      </div>
+      <h1>Thank you for your order</h1>
+      <p class="text-muted">Order <strong>S00078</strong> · paid via Tap</p>
+      <p>You will receive a confirmation email shortly.</p>
+      <div class="o_wsale_checkout_actions">
+        <button class="btn btn-primary">View order</button>
+        <button class="btn o_btn_outline">Continue shopping</button>
+      </div>
+    </div>
+
+    Error variant (failed payment):
+    <div class="o_wsale_confirmation o_wsale_confirmation_error">
+      <div class="o_wsale_confirmation_icon">
+        <svg class="o_icon o_icon_xl"><use href="#o-times-circle"/></svg>
+      </div>
+      <h1>Payment was not successful</h1>
+      <p class="text-muted">Tap returned: <code>declined: insufficient_funds</code></p>
+      <p>Your cart is untouched. Try another card or another payment method.</p>
+      <div class="o_wsale_checkout_actions">
+        <button class="btn btn-primary">Retry payment</button>
+        <button class="btn o_btn_outline">Back to cart</button>
+      </div>
+    </div>
+
+    Pending variant (abandoned redirect, webhook will resolve):
+    <div class="o_wsale_confirmation o_wsale_confirmation_pending">
+      <div class="o_wsale_confirmation_icon">
+        <svg class="o_icon o_icon_xl"><use href="#o-clock"/></svg>
+      </div>
+      <h1>Payment is being confirmed</h1>
+      <p class="text-muted">We didn't receive the redirect — happens when the
+        browser closes mid-flow.</p>
+      <p>You will receive an email once the confirmation lands; no further
+        action needed.</p>
+      <div class="o_wsale_checkout_actions">
+        <button class="btn o_btn_outline">Back to my orders</button>
+      </div>
+    </div>
+  </div>
+-->
+
+<!-- ===== Portal saved-cards / payment-methods table =====
+
+  Renders inside `.o_portal` (NOT `.o_website`). Replaces the backend
+  `.o_list_table` pattern that would otherwise leak backend chrome into the
+  portal body. Use this whenever the portal page lists rows of saved
+  tokens / payment methods / similar small-domain records the customer
+  manages themselves.
+
+  <div class="o_portal">
+    <header class="o_header_standard o_portal_navbar">...</header>
+    <div class="o_portal_wrap">
+      <div class="o_portal_breadcrumb">
+        <span class="o_list_link">My Account</span> / <strong>Payment Methods</strong>
+      </div>
+      <div class="o_portal_doc">
+        <div class="o_portal_doc_main">
+          <h2>Saved Payment Methods</h2>
+
+          <table class="o_portal_method_list">
+            <thead>
+              <tr>
+                <th>Card</th>
+                <th>Provider</th>
+                <th>Saved</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="o_portal_method_card">
+                  Visa •••• 4242
+                  <small>expires 03/29</small>
+                </td>
+                <td class="o_portal_method_meta">Tap</td>
+                <td class="o_portal_method_meta">06/18/2026</td>
+                <td><span class="badge text-bg-success">Active</span></td>
+                <td class="o_portal_method_actions">
+                  <button class="btn o_btn_outline">Delete</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="o_portal_method_card">
+                  Mastercard •••• 1881
+                  <small>expired 11/25</small>
+                </td>
+                <td class="o_portal_method_meta">Tap</td>
+                <td class="o_portal_method_meta">02/14/2025</td>
+                <td><span class="badge text-bg-light">Archived</span></td>
+                <td class="o_portal_method_actions"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="o_portal_note o_portal_note_info">
+            Card details are stored at the provider's secure vault — never
+            on Odoo's servers.
+          </div>
+        </div>
+        <aside class="o_portal_sidebar">
+          <div class="o_portal_sidebar_amount">
+            <div class="text-muted">Saved cards</div>
+            <div class="o_portal_amount">1</div>
+          </div>
+          <div class="o_portal_sidebar_note">
+            Subscriptions and one-click checkout use your most recent active card.
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+-->

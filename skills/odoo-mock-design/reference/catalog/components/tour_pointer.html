@@ -1,0 +1,34 @@
+<!--
+  tour_pointer.html — `o_tour_pointer` guided-tour bubble.
+  Source: addons/web_tour/static/src/tour_pointer/tour_pointer.{xml,scss}
+
+  Used by `web_tour`'s tour service to highlight the next step in an
+  onboarding walkthrough. The bubble points at a target element with a
+  directional caret (left / right / top / bottom) and carries a step number
+  + short copy.
+
+  In a mock, drop the pointer next to the element it would teach (a button,
+  a field) and rely on `position:absolute` — its parent should be
+  `position:relative` (.mock-anchor wrapper) so the absolute coords are
+  scoped. The variant class (o_tour_pointer_left / _right / _top / _bottom)
+  controls which side the caret sticks out from.
+
+  This is for ONBOARDING / TOUR steps only — for inline annotations of a
+  solution element, use the standard `.mock-marker` instead (per
+  style_guide.md § Annotations).
+-->
+<!--
+  Example placement: next to the Confirm button on a quote.
+  <span class="mock-anchor">
+    <button class="btn btn-primary">Confirm</button>
+    <span class="o_tour_pointer o_tour_pointer_left"
+          style="top: 0; left: calc(100% + 12px);">
+      <span class="o_tour_step">3</span>
+      <span>Click Confirm to turn this quote into a Sales Order.</span>
+    </span>
+  </span>
+-->
+<span class="o_tour_pointer o_tour_pointer_left">
+  <span class="o_tour_step"><!-- SLOT: step number, e.g. 1 --></span>
+  <span><!-- SLOT: one-sentence instruction in user voice --></span>
+</span>

@@ -1,0 +1,205 @@
+<!--
+  apps_menu.html — Odoo home menu / apps switcher (the tile grid you land on
+  after login). Ported from:
+    enterprise/web_enterprise/static/src/webclient/home_menu/home_menu.xml
+    enterprise/web_enterprise/static/src/webclient/home_menu/home_menu.scss
+    enterprise/web_enterprise/static/src/webclient/home_menu/home_menu.variables.scss
+
+  Variables matched from real Odoo:
+    $o-home-menu-container-size:        850px
+    $o-home-menu-app-icon-max-width:    70px
+    $o-home-menu-app-icon-padding:      10px
+    $o-home-menu-app-icon-bg-color:     #fff   (white card, NOT brand color)
+    home_menu_background bg:            $o-gray-200 + light wallpaper image
+
+  Real Odoo's `web_icon` resolves to a per-app PNG (e.g.
+  `odoo/addons/sale/static/description/icon.png`). For pixel-perfect
+  fidelity, swap any `<svg class="o_app_icon_glyph">` for
+  `<img class="o_app_icon o_app_icon_image" src="...">`. The catalog ships
+  the SVG-sprite variant (see `catalog/app-icons.svg`) — simpler shapes in
+  brand colors, no external assets, recognizable as the app.
+
+  REMEMBER to inline-paste BOTH sprites into the package's index.html:
+    1. `catalog/icons.svg`     (UI icons: chevrons, plus, cog, …)
+    2. `catalog/app-icons.svg` (app brand icons: discuss, crm, sales, …)
+  External `<use href="file.svg#id">` is blocked over file:// — see
+  page_skeleton.html.
+
+  Each `.o_app` carries an inline `style="color:#xxx"` for the app's brand
+  tint (the SVG uses `currentColor`). The tile itself stays WHITE with a
+  subtle shadow — real Odoo 19 enterprise renders the icon AS a small
+  colored mark INSIDE a white card, not as a colored tile.
+
+  Wrap the fragment inside a `.mock-screen` whose body IS a `.o_web_client`
+  with `.o_home_menu_background`. The navbar above stays light per real
+  Odoo's `.o_home_menu_background .o_main_navbar { background: transparent }`.
+-->
+<div class="o_home_menu">
+  <div class="o_home_menu_container">
+    <div class="o_apps" role="listbox">
+      <!-- SLOT: one .o_app per visible application. The COLOR carries the
+           app's brand; the SHAPE is the standard sprite glyph from
+           catalog/app-icons.svg. -->
+
+      <a class="o_app" role="option" style="color:#1aa1cd;" data-mock-goto="crm-kanban">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-crm"/></svg></div>
+        <div class="o_caption">CRM</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#7c7bad;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-sales"/></svg></div>
+        <div class="o_caption">Sales</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#f06050;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-accounting"/></svg></div>
+        <div class="o_caption">Accounting</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#f4a460;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-inventory"/></svg></div>
+        <div class="o_caption">Inventory</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#5c8ed7;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-purchase"/></svg></div>
+        <div class="o_caption">Purchase</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#27a978;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-project"/></svg></div>
+        <div class="o_caption">Project</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#1d8348;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-hr"/></svg></div>
+        <div class="o_caption">Employees</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#e9b425;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-discuss"/></svg></div>
+        <div class="o_caption">Discuss</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#714B67;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-website"/></svg></div>
+        <div class="o_caption">Website</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#017e84;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-pos"/></svg></div>
+        <div class="o_caption">Point of Sale</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#875a7b;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-settings"/></svg></div>
+        <div class="o_caption">Settings</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#4a4a55;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-studio"/></svg></div>
+        <div class="o_caption">Studio</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#9d3c69;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-calendar"/></svg></div>
+        <div class="o_caption">Calendar</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#1e74c5;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-contacts"/></svg></div>
+        <div class="o_caption">Contacts</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#3c8dbc;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-documents"/></svg></div>
+        <div class="o_caption">Documents</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#df7c2f;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-dashboards"/></svg></div>
+        <div class="o_caption">Dashboards</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#287f59;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-timesheets"/></svg></div>
+        <div class="o_caption">Timesheets</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#666;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-fleet"/></svg></div>
+        <div class="o_caption">Fleet</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#714b67;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-sign"/></svg></div>
+        <div class="o_caption">Sign</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#ec6256;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-helpdesk"/></svg></div>
+        <div class="o_caption">Helpdesk</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#009ba8;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-mrp"/></svg></div>
+        <div class="o_caption">Manufacturing</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#c1547a;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-marketing"/></svg></div>
+        <div class="o_caption">Marketing</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#34a297;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-fsm"/></svg></div>
+        <div class="o_caption">Field Service</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#1199b3;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-subscriptions"/></svg></div>
+        <div class="o_caption">Subscriptions</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#ef7032;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-rental"/></svg></div>
+        <div class="o_caption">Rental</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#5e7896;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-maintenance"/></svg></div>
+        <div class="o_caption">Maintenance</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#c084a6;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-recruitment"/></svg></div>
+        <div class="o_caption">Recruitment</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#4f8d4f;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-survey"/></svg></div>
+        <div class="o_caption">Surveys</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#c84682;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-elearning"/></svg></div>
+        <div class="o_caption">eLearning</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#4a6ed0;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-mass-mailing"/></svg></div>
+        <div class="o_caption">Email Marketing</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#00a09b;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-quality"/></svg></div>
+        <div class="o_caption">Quality</div>
+      </a>
+
+      <a class="o_app" role="option" style="color:#4a4a55;">
+        <div class="o_app_icon"><svg class="o_app_icon_glyph"><use href="#o-app-apps"/></svg></div>
+        <div class="o_caption">Apps</div>
+      </a>
+    </div>
+  </div>
+</div>

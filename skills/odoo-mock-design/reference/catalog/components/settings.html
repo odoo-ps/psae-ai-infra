@@ -1,0 +1,137 @@
+<!--
+  settings.html — Settings page (res.config.settings).
+  Ported from:
+    odoo/addons/web/static/src/webclient/settings_form_view/settings_form_view.xml
+    odoo/addons/web/static/src/webclient/settings_form_view/settings_form_view.scss
+    odoo/addons/base/static/src/views/setting_view/setting_view.scss
+
+  Real Odoo 19 settings:
+   - Left tab nav is a long list of every installed app (CRM, Sales,
+     Calendar, Website, Purchase, Inventory, Maintenance, Invoicing,
+     Project, Sign, Timesheets, Planning, Employees, Documents,
+     Attendances, Fleet, Point of Sale, …). Each entry has the app's
+     brand-colored icon. General Settings sits at the top.
+   - Right column groups settings under FULL-WIDTH gray header bands
+     (Users, Languages, Companies, Web Server, …) — NOT just bold
+     text labels. Inside each section, two-column layout: form/control
+     on the left, related info / link on the right.
+   - Save / Discard buttons sit beside the "Settings" page title at
+     the top, NOT in the control panel.
+   - The search bar lives INSIDE the control panel as `.o_cp_searchview`
+     (full-width row, wraps below the breadcrumbs via `flex-wrap`). It
+     is NOT placed inside `.o_base_settings` — that's a flex-direction:
+     row container holding exactly two children (the tab sidebar and the
+     settings content). Adding a third child breaks the row layout.
+-->
+<!-- Control panel: breadcrumbs row + search-bar row (search wraps to its
+     own row because `.o_cp_searchview` has `width: 100%` and the control
+     panel has `flex-wrap: wrap`). Save/Discard sit beside the breadcrumb. -->
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons">
+        <button class="btn btn-primary">Save</button>
+        <button class="btn o_btn_outline">Discard</button>
+      </div>
+      <ol class="o_breadcrumb">
+        <li class="o_last_breadcrumb_item">Settings</li>
+      </ol>
+    </div>
+  </div>
+  <div class="o_cp_searchview">
+    <div class="o_searchview form-control">
+      <svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg>
+      <span class="o_searchview_input">Search...</span>
+    </div>
+  </div>
+</div>
+
+<div class="o_form_view o_base_settings">
+  <div class="o_setting_search_panel">
+    <!-- The General Settings tab sits at top with a hexagonal "Odoo S"
+         icon in brand orange. Every other app shows its catalog brand
+         color + sprite glyph. Mocks should ship the apps the deployment
+         actually has installed — drop the rest. -->
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#d28033;"><use href="#o-app-settings"/></svg> General Settings</span>
+    <span class="settings_tab active"><svg class="o_settings_tab_icon" style="color:#1aa1cd;"><use href="#o-app-crm"/></svg> CRM</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#7c7bad;"><use href="#o-app-sales"/></svg> Sales</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#9d3c69;"><use href="#o-app-calendar"/></svg> Calendar</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#714B67;"><use href="#o-app-website"/></svg> Website</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#5c8ed7;"><use href="#o-app-purchase"/></svg> Purchase</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#f4a460;"><use href="#o-app-inventory"/></svg> Inventory</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#1aa1cd;"><use href="#o-app-accounting"/></svg> Invoicing</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#27a978;"><use href="#o-app-project"/></svg> Project</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#287f59;"><use href="#o-app-timesheets"/></svg> Timesheets</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#1d8348;"><use href="#o-app-hr"/></svg> Employees</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#3c8dbc;"><use href="#o-app-documents"/></svg> Documents</span>
+    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#017e84;"><use href="#o-app-pos"/></svg> Point of Sale</span>
+  </div>
+
+  <div class="o_settings_container">
+    <div class="app_settings_block">
+      <!-- SLOT: top-of-page tip / hero (omit on most pages) -->
+      <h2 class="o_settings_title">CRM</h2>
+
+      <!-- Section: full-width gray band header + two-column content rows -->
+      <div class="o_setting_band">Predictive Lead Scoring</div>
+      <div class="o_setting_section">
+        <div class="o_setting_box_split">
+          <div class="o_setting_left_col">
+            <label class="o_form_label">Predictive Lead Scoring</label>
+            <div class="text-muted">Score leads based on their probability to be won, using statistical learning.</div>
+          </div>
+          <div class="o_setting_right_col">
+            <a class="o_form_link">→ Compute Now</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="o_setting_band">Lead Generation</div>
+      <div class="o_setting_section">
+        <div class="o_setting_box">
+          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
+          <div class="o_setting_right_pane">
+            <span class="o_form_label">Visits to Leads</span>
+            <div class="text-muted">Convert visitors of your website into leads and perform statistical analysis on visits.</div>
+          </div>
+        </div>
+        <div class="o_setting_box">
+          <div class="o_setting_left_pane"><label class="o_switch"></label></div>
+          <div class="o_setting_right_pane">
+            <span class="o_form_label">Lead Mining</span>
+            <div class="text-muted">Find new potential leads from a database of over 8 million companies.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="o_setting_band">Pipeline</div>
+      <div class="o_setting_section">
+        <div class="o_setting_box">
+          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
+          <div class="o_setting_right_pane">
+            <span class="o_form_label">Leads</span>
+            <div class="text-muted">Add a qualification step before the creation of an opportunity.</div>
+          </div>
+        </div>
+        <div class="o_setting_box">
+          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
+          <div class="o_setting_right_pane">
+            <span class="o_form_label">Recurring Revenues</span>
+            <div class="text-muted">Manage subscriptions and recurring revenues on opportunities.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="o_setting_band">Quotations &amp; Orders</div>
+      <div class="o_setting_section">
+        <div class="o_setting_box">
+          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
+          <div class="o_setting_right_pane">
+            <span class="o_form_label">Customer Portal</span>
+            <div class="text-muted">Let customers track their quotations and orders from their portal.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

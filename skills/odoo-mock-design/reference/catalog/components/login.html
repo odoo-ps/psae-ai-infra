@@ -1,0 +1,74 @@
+<!--
+  login.html — Odoo login screen (web.login_layout + web.login).
+  Ported from: odoo/addons/web/views/webclient_templates.xml (templates
+  web.login_layout @ line 110 and web.login @ line 136).
+
+  Real Odoo uses bootstrap classes (.card, .form-control, .btn-primary,
+  .alert) inside the login_layout — the catalog's odoo.css ships a
+  minimal Odoo-flavoured surrogate of those for self-containment.
+
+  Use this fragment when a mock's first screen is the unauthenticated
+  surface (e.g. an end-to-end tour that starts cold). For an embedded
+  workflow that begins inside the backend, skip this and start at the
+  apps menu or a list/kanban screen.
+
+  Wrap the fragment inside a `.mock-screen` whose body is NOT a
+  .o_web_client (no navbar, no control panel on the login surface).
+-->
+<div class="o_login_layout">
+  <div class="o_login_card">
+    <!-- Brand header — real layout uses /web/binary/company_logo at runtime.
+         For a mock we use the catalog's bundled wordmark. -->
+    <div class="o_login_card_header">
+      <img src="assets/odoo-logo.png" alt="Odoo" class="o_login_logo"/>
+    </div>
+
+    <form class="o_login_form" action="#" method="post" onsubmit="event.preventDefault();">
+      <!-- Database picker — shown only when len(databases) > 1 in real Odoo.
+           Include it when the mock wants to depict a multi-DB context;
+           omit otherwise. -->
+      <div class="o_login_field">
+        <label class="o_login_label">Database</label>
+        <div class="o_login_input_group">
+          <input type="text" name="db" value="odoo-prod" class="o_login_input" readonly="readonly"/>
+          <button type="button" class="o_login_input_addon" title="Select database">
+            <svg class="o_icon"><use href="#o-caret-down"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="o_login_field">
+        <label class="o_login_label">Email</label>
+        <input type="text" placeholder="Enter your email" name="login" value="mitchell.admin@example.com"
+               class="o_login_input" autocomplete="username"/>
+      </div>
+
+      <div class="o_login_field">
+        <label class="o_login_label">Password</label>
+        <div class="o_login_input_group">
+          <input type="password" placeholder="Enter your password" name="password" value="••••••••"
+                 class="o_login_input" autocomplete="current-password"/>
+          <button type="button" class="o_login_input_addon" title="Show password">
+            <svg class="o_icon"><use href="#o-user"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Optional flash messages — uncomment to depict an auth failure:
+        <p class="o_login_alert o_login_alert_danger">Wrong login/password.</p>
+      -->
+
+      <div class="o_login_buttons">
+        <!-- SLOT: wire to the next screen via data-mock-goto on the submit button. -->
+        <button type="submit" class="btn btn-primary">Log in</button>
+      </div>
+    </form>
+
+    <div class="o_login_card_footer">
+      <a class="o_login_footer_link">Manage Databases</a>
+      <span class="o_login_footer_sep">·</span>
+      <a class="o_login_footer_link">Reset Password</a>
+      <div class="o_login_powered">Powered by <strong>Odoo</strong></div>
+    </div>
+  </div>
+</div>

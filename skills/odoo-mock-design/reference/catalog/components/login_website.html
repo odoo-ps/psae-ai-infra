@@ -1,0 +1,80 @@
+<!--
+  login_website.html — Login form embedded inside the website frontend
+  chrome. Use this variant whenever the tenant has `website` installed
+  (which is the default for any Odoo 19 deployment with a public site).
+  The plain card-only variant (`login.html`) is for backend-only installs.
+
+  Real Odoo route: `/web/login` reuses website's `website.layout`
+  template when the `website` module is loaded, so the form sits
+  inside the website header + footer instead of on a bare gray card.
+  See: odoo/addons/auth_signup/views/auth_signup_login_templates.xml
+       enterprise/website_helpdesk/... (website.layout reference)
+
+  Compose the page like:
+    <section class="mock-screen" data-screen="login" ...>
+      <div class="o_website">
+        <header class="o_header_standard"> ... </header>
+        ... paste this fragment's <main> ...
+        <footer class="o_website_footer"> ... </footer>
+      </div>
+    </section>
+-->
+<header class="o_header_standard">
+  <span class="o_website_logo">Your Logo</span>
+  <nav class="o_website_menu">
+    <span class="nav-link">Home</span>
+    <span class="nav-link">Shop</span>
+    <span class="nav-link">Contact us</span>
+  </nav>
+  <div class="o_website_header_right">
+    <span class="o_wsale_my_cart"><svg class="o_icon"><use href="#o-search"/></svg></span>
+    <span class="o_wsale_my_cart"><svg class="o_icon"><use href="#o-list"/></svg></span>
+    <span class="o_website_signin">Sign in</span>
+  </div>
+</header>
+
+<main class="o_login_website_main">
+  <form class="o_login_website_form" action="#" onsubmit="event.preventDefault();">
+    <div class="o_login_field">
+      <label class="o_login_label">Email</label>
+      <input type="text" placeholder="Enter your email" name="login" class="o_login_input" autocomplete="username"/>
+    </div>
+    <div class="o_login_field">
+      <div class="o_login_label_row">
+        <label class="o_login_label">Password</label>
+        <a class="o_login_footer_link">Reset Password</a>
+      </div>
+      <div class="o_login_input_group">
+        <input type="password" placeholder="Enter your password" name="password" class="o_login_input" autocomplete="current-password"/>
+        <button type="button" class="o_login_input_addon" title="Show password">
+          <svg class="o_icon"><use href="#o-user"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="o_login_buttons">
+      <!-- SLOT: wire data-mock-goto on the submit button to the post-login screen. -->
+      <button type="submit" class="btn btn-primary">Log in</button>
+    </div>
+    <div class="o_login_dont_have_account">Don't have an account?</div>
+    <div class="o_login_separator">— <em>or</em> —</div>
+    <button type="button" class="btn o_btn_outline o_login_passkey">
+      <svg class="o_icon"><use href="#o-key"/></svg> Use a Passkey
+    </button>
+  </form>
+</main>
+
+<footer class="o_website_footer">
+  <div class="o_footer_col">
+    <h4>Useful Links</h4>
+    <a>Home</a><a>About us</a><a>Products</a><a>Services</a><a>Legal</a><a>Contact us</a>
+  </div>
+  <div class="o_footer_col">
+    <h4>About us</h4>
+    <p>We are a team of passionate people whose goal is to improve everyone's life through disruptive products.</p>
+  </div>
+  <div class="o_footer_col">
+    <h4>Connect with us</h4>
+    <a><svg class="o_icon"><use href="#o-comment"/></svg> Contact us</a>
+    <a><svg class="o_icon"><use href="#o-paperclip"/></svg> info@yourcompany.example.com</a>
+  </div>
+</footer>

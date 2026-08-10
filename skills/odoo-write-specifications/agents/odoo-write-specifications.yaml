@@ -1,0 +1,137 @@
+version: 1
+display_name: Write Specifications
+short_description: Interview business + technical stakeholders and draft a concise, table-based, professionally formatted .docx Odoo functional specification incrementally — section-by-section as each answer lands. Each spec gets its own folder under <repo>/specifications/<task-code> - <client> - <auto-derived-slug>/ containing the .docx at the root + a _reference/ subfolder with the builder. No plan mode; the docx grows on disk during the interview. Front matter (cover + auto-populating Table of Contents) plus 5 numbered top-level sections (Odoo Version, Business Case, Apps Impacted, Functional Layout, Per-Workflow Detail), 11 per-workflow table-based subsections (Success Criteria, User Stories & Steps, New Models, New Fields, Navigation, Screens, Automated Behaviours, Business Rules, Reports, Data Migration, Access & Permissions). No top-level Success Criteria; no Glossary appendix. Strict-N/A discipline on un-customized subsections.
+default_prompt: >
+  Use the Write Specifications skill. **Do NOT enter plan mode** — this skill
+  is explicitly exempt from P11 (see the incremental-documentation carve-out
+  in skills/_shared/principles.md). Read skills/odoo-write-specifications/SKILL.md
+  plus the role checklists at skills/_shared/role_checklists/
+  before asking anything. Architecture detection (P13) is also SKIPPED — this
+  skill produces a docx, not deployable code.
+  **INTERVIEW INVARIANT (non-negotiable, every turn):** one atomic question per
+  turn via AskUserQuestion with 2–4 options drawn from the relevant role
+  checklist + implicit Other. Never bundle two sub-questions, never ask a
+  plain-text question outside AskUserQuestion. Reflection between asks is its
+  own turn; the next ask is a NEW AskUserQuestion call. Drift surfaces at
+  section transitions — be deliberate there.
+  Ask in this LOGICAL order: Q1 task code, Q2 client name (both via
+  AskUserQuestion — first and consecutively with **no file writes during
+  these two turns**). Then Q3 (Odoo version — just the version number,
+  e.g. 19.0; via AskUserQuestion; renders as the single-line Section 1),
+  Q4 (type of development, multi-select via AskUserQuestion — informs
+  Section 4 wording). Then **Q5 (business need brief)** — this is the ONE
+  question that does NOT use AskUserQuestion. Ask in plain prose: "Tell
+  me the business need in your own words — what's the problem, who's
+  living with it, and why it matters. A paragraph or two is enough; I'll
+  parse it into the Business Case section." The user replies with
+  free-text; the skill parses it into the Business Case 3-row table
+  (Problem / Affected role / Why it matters) AND uses the same parse to
+  auto-derive the 3-word kebab functionality slug — no question is asked
+  for the slug. **After Q5 lands**, create <repo>/specifications/<task-code>
+  - <client> - <derived-slug>/ + a _reference/ subfolder inside it, move
+  the per-task builder to <spec-folder>/_reference/_build_<task-code>.py,
+  and rename _draft.docx to the final
+  <spec-folder>/<task-code> - <client> - <derived-slug>.docx. Opening
+  the spec folder shows the .docx prominently with a single _reference/
+  subfolder beside it. If the user later changes Q1 / Q2 / Q5 mid-interview,
+  the spec folder + its contents are renamed atomically. Then resume
+  AskUserQuestion mode for Q6 (workflow count + names; rendered as a
+  TABLE in Section 5, no block diagram, 10-12 word summary per row —
+  bucket pick and name list are two separate AskUserQuestion calls, not
+  bundled). The docx writes to _draft.docx while Q1/Q2/Q3/Q4/Q5 are being
+  asked; once Q5 (the brief) lands the slug is derived and _draft.docx is
+  renamed to its final filename. After EVERY answered question, regenerate
+  the docx via the python-docx builder (pre-Q5 it lives at the temporary
+  _draft location; post-Q5 at
+  <spec-folder>/_reference/_build_<task-code>.py — the skill copies
+  skills/odoo-write-specifications/reference/scripts/_build_spec.py to that
+  location on slug derivation and customises the SPEC_DATA block). The
+  docx outline begins with the cover, then a Word `TOC` field (auto-
+  populates from Heading 1–3 styles on open), then numbered sections 1.
+  Odoo Version (sourced from Q3), 2. Business Case (sourced from Q5),
+  3. Apps Impacted / New Apps Proposed (sourced from Q4 + per-workflow
+  synthesis; both sub-tables 3 cols: App | Objective | Functional
+  changes/capabilities), 4. Functional Layout (sourced from Q6),
+  5. Per-Workflow Detail. **No top-level Success Criteria; no Glossary
+  appendix.** AFTER Q6 lands but BEFORE the per-workflow deep-dive,
+  **critique the brief** per § Critical Brief Evaluation in SKILL.md
+  operating on the Q5 brief + Q6 workflows: scope sanity, standard-Odoo
+  overlap, value clarity, complexity vs value. One critique ask per turn
+  (interview invariant); each may revise Q5 or Q6 in place; Section 3
+  captures reuse-vs-net-new decisions; user overrides on standard-Odoo-
+  overlap fold into Section 3 wording inline (no Open Nits appendix).
+  AFTER the critique completes but BEFORE the per-workflow walkthrough,
+  run the **Diagram-choice checkpoint** per § Diagram-choice checkpoint
+  in SKILL.md: compute per-workflow diagram shape (BPMN if ≥2 actors or
+  non-linear flow; flow_strip if 1 actor and ≥3 sequential steps; else
+  none); if any BPMN chosen, pre-flight Pillow via
+  `./v19/odoo/.venv/bin/python -c "import PIL"` and if missing, ask the user
+  via AskUserQuestion (P4 confirm-before-destructive) — Install Pillow
+  now (proceed with BPMN) OR Skip Pillow (demote BPMN choices to
+  flow_strip in the inventory). Pillow is in Odoo's standard
+  requirements.txt so it's present in any Odoo dev venv and on Odoo.sh
+  — the missing-Pillow case applies only to a bare Python venv. Then
+  narrate the (possibly post-demotion) diagram inventory in one block
+  and ask ONCE via AskUserQuestion to accept-or-override the choices.
+  Then for EACH workflow walk the role checklists asking only what
+  materially changes the spec (P12). **Every role question is a separate
+  AskUserQuestion turn — bundling is the most common drift point in the
+  per-workflow deep dive.** The 11 per-workflow subsections are ALL
+  table-based and describe ONLY what's new:
+    (1) Success Criteria — workflow-aggregate Criterion | How we measure it;
+    (2) User Stories & Steps — # | User Story | Actor | Step (4 cols, no
+        per-step Success Criterion column);
+    (3) New Models — Purpose | Name | Technical Name | Parent Menu |
+        Views Required | Required Features (6 cols; N/A with reason if no
+        new model);
+    (4) New Fields & Information — Model | Field Name | Captures | Type |
+        Options/Remarks | Location/Visibility (6 cols; Type carries
+        relation target inline);
+    (5) Navigation & Menus;
+    (6) Screens & Interactions (merged with User Touchpoints);
+    (7) Automated Behaviours;
+    (8) Business Rules & Validations;
+    (9) Reports & Analytics;
+    (10) Data Migration;
+    (11) Access & Permissions — two sub-tables: 11.{n}.1 New Groups
+         (Group | Reason created | What it achieves) + 11.{n}.2 Existing
+         Groups mentioned (Group | Reason in spec | Change).
+  **Strict-N/A discipline**: when a subsection has no customization,
+  emit `N/A — <specific reason>` (e.g. 'standard credit-control flow
+  unchanged'); vague reasons ('not applicable', 'TBD', 'not specified')
+  are rejected by Stage-1 lint. The docx's primary focus is the
+  customization required — make custom development as explicit as
+  possible; standard Odoo behaviour is implied unless modified.
+  **Tone enforcement (read SKILL.md § Tone enforcement BEFORE writing
+  any cell)**: six style principles apply throughout — (1) business
+  language first; (2) describe what changes, not what stays; (3)
+  customization is the docx's primary focus; (4) **specificity over
+  abstraction** — concrete Odoo-mapped phrasing over consulting jargon
+  (e.g. 'approval workflow on Internal Transfers' not 'approval
+  governance'); regional/regulatory acronyms expanded on first use
+  (ZATCA, GDPR, GST, etc.); generic terms with ≥2 Odoo implementations
+  disambiguated on first use (e.g. 'approval' = Approvals app
+  front-end and/or Studio rules back-end); (5) **prose discipline** —
+  no operator symbols in body prose (no →, +, =, > between concept
+  words; no AND in caps); title-case for named roles / features,
+  lowercase for adjectival qualifiers ('sender Store Keeper'); (6)
+  **cross-workflow references restate the condition** — never
+  reference internal labels like 'Workflow N skip-rule a'; restate
+  the trigger or condition each time. Plus **BPMN task action labels
+  are verb phrases** (not states) and **compound-trigger table rows
+  split** into one-trigger-one-outcome per row. AFTER the per-workflow walkthrough completes, fire ALL
+  14 anchors at skills/_shared/anchors/ in ONE message foreground as a quality
+  review (write-specs runs 14 anchors; plan-dev runs 15, the extra one being
+  scaffolding-anchor, which is plan-dev-specific and skipped for the docx)
+  review (NOT a gate — the docx is already on disk). Present blockers one
+  at a time per the interview invariant; user accepts or rejects each;
+  apply approved patches by editing SPEC_DATA and re-running the builder.
+  NITS DO NOT GET APPENDED to the docx (Open Nits appendix removed for
+  conciseness) — fold a nit inline into the relevant subsection if worth
+  keeping, otherwise drop. Run Stage 1 lint via _lint_spec.py before
+  declaring done. Final docx at
+  <repo>/specifications/<task-code> - <client> - <derived-slug>/<task-code>
+  - <client> - <derived-slug>.docx, with its builder + supporting files
+  under <spec-folder>/_reference/. No plan file at <repo>/plans/. The docx
+  itself is the deliverable. No Acknowledgement page. No Revisions table.
+  No Sponsor / Acceptor / Alternatives-Considered fields.

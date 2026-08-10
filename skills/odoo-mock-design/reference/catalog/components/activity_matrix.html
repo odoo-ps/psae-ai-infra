@@ -1,0 +1,47 @@
+<!--
+  activity.html — Activity view (mail; real classes o_activity_view / o_activity_*).
+  A matrix of records (rows) × activity types (columns) with count cells; the
+  control panel sits above. Use when the step is "what's due / overdue across
+  records". Cells carry a count + a state colour (planned / today / overdue).
+-->
+<div class="o_activity_view">
+  <table class="o_activity_table">
+    <thead>
+      <tr>
+        <th></th>
+        <th class="o_activity_type_cell">Email</th>
+        <th class="o_activity_type_cell">Call</th>
+        <th class="o_activity_type_cell">To Do</th>
+        <th class="o_activity_type_cell">Meeting</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="o_activity_record">SO0042 — Deco Addict</td>
+        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_overdue">2</span></td>
+        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_today">1</span></td>
+        <td class="o_activity_cell o_activity_empty_cell"></td>
+        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_planned">1</span></td>
+      </tr>
+      <tr>
+        <td class="o_activity_record">SO0041 — Gemini Furniture</td>
+        <td class="o_activity_cell o_activity_empty_cell"></td>
+        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_planned">1</span></td>
+        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_today">3</span></td>
+        <td class="o_activity_cell o_activity_empty_cell"></td>
+      </tr>
+      <tr>
+        <td class="o_activity_record">SO0039 — Azure Interior</td>
+        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_planned">1</span></td>
+        <td class="o_activity_cell o_activity_empty_cell"></td>
+        <td class="o_activity_cell o_activity_empty_cell"></td>
+        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_overdue">1</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="o_activity_legend">
+    <span><span class="o_activity_dot o_activity_filter_planned"></span> Planned</span>
+    <span><span class="o_activity_dot o_activity_filter_today"></span> Today</span>
+    <span><span class="o_activity_dot o_activity_filter_overdue"></span> Overdue</span>
+  </div>
+</div>

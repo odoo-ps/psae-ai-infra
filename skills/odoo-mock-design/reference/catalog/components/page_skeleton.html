@@ -1,0 +1,112 @@
+<!--
+  page_skeleton.html — the master scaffold for a generated mock package's
+  index.html. The skill copies this, fills the SLOT comments with one
+  .mock-screen per workflow step (composed from the other fragments), and
+  pastes the icon sprite + walkthrough_bar.
+
+  Asset references are RELATIVE to the package root (./assets/...). Never
+  reference back into the skill folder — assets are copied into the package.
+  Keep these <link>/<script> lines as-is; the lint requires local-only refs.
+
+  Cover discipline is single-sourced from:
+    - reference/cover_discipline.md (structural rules)
+    - reference/templates/cover_callouts.html (canonical callout wording)
+  The SLOTs below leave room for the per-package values + the conditional
+  callouts that the generator selects from the template.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><!-- SLOT: Solution name --> — Odoo Mock</title>
+  <link rel="icon" href="assets/odoo-icon.svg"/>
+  <link rel="stylesheet" href="assets/odoo.css"/>
+  <link rel="stylesheet" href="assets/annotations.css"/>
+</head>
+<body>
+
+  <!-- SLOT: INLINE the sprite — paste the full contents of catalog/icons.svg
+       here (the <svg style="display:none">…</svg> block). Icons are inlined,
+       NOT linked: external SVG `<use href="file.svg#id">` is blocked over
+       file://, so a linked sprite makes every icon silently vanish when the
+       package is opened as a local file. All `<use>` refs in the page use
+       same-document `#id`. -->
+
+  <!-- ============ COVER SCREEN ========================================== -->
+  <!-- Full discipline: reference/cover_discipline.md. Required elements:
+       1. Favicon link (already in <head> above).
+       2. Brand header — kicker + watermark + title + summary.
+       3. .mock-cover-section wrapping the 5 canonical callouts. Copy the
+          callout markup VERBATIM from reference/templates/cover_callouts.html;
+          omit conditional callouts whose trigger doesn't fire
+          (multi-workflows / variant-axes / field-help).
+       4. Workflow narrative — .mock-step-list-wrap with two column headers
+          + an <ol class="mock-step-list"> whose <li>s are three-cell sub-grid
+          rows (number / description / .mock-step-axes chip).
+       5. Get Started — no standalone button; walkthrough.js relabels the
+          Next button on the cover (see catalog/walkthrough.js
+          nextButtonLabel for the canonical label set). -->
+  <section class="mock-screen" data-screen="cover" data-title="Overview"
+           data-desc="What this mock demonstrates">
+    <div class="mock-cover">
+      <div class="mock-cover-kicker">
+        <img src="assets/odoo-icon.svg" alt=""/> Odoo 19 · Enterprise
+      </div>
+      <img class="mock-cover-logo" src="assets/odoo-logo.png" alt="Odoo"/>
+      <h1><!-- SLOT: Solution name --></h1>
+      <p><!-- SLOT: one-line summary of the proposed solution --></p>
+    </div>
+    <div class="mock-cover-section">
+      <!-- SLOT: callouts — paste 2 to 5 .mock-cover-callout blocks VERBATIM
+           from reference/templates/cover_callouts.html, in canonical order.
+           ALWAYS include: interactive_mock, numbered_markers.
+           Conditional on package structure:
+             - multiple_workflows  (>= 2 .mock-workflow wrappers)
+             - variant_chips       (>= 1 screen has data-mock-variant-axes)
+             - field_help          (>= 1 screen has o_field_help "?")
+      -->
+      <div class="mock-step-list-wrap">
+        <div class="mock-step-list-header-workflow">WORKFLOW</div>
+        <div class="mock-step-list-header-variants">VARIANTS</div>
+        <ol class="mock-step-list">
+          <!-- SLOT: one <li> per workflow step. Three-cell sub-grid row:
+                 <span class="mock-step-num">N</span>
+                 <span>step description</span>
+                 <span class="mock-step-axes" data-mock-page-ref="<screen-id>">
+                   <span class="mock-step-axes-page-num"></span>
+                   <span class="mock-step-axes-page">on <ScreenTitle></span>
+                   <span class="mock-step-axes-axis">Axis
+                     <span class="mock-step-axes-value">= Value</span>
+                   </span>
+                 </span>
+               A row with no axis pivot still emits an empty third
+               <span></span> after the description (keeps the subgrid 3-col). -->
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORKFLOW SCREENS ====================================== -->
+  <!-- SLOT: one <section class="mock-screen" ...> per workflow step. Compose
+       each from navbar + control_panel + (form_view | list_view | kanban | ...)
+       per reference/view_types.md. Each screen MUST have data-screen,
+       data-title, data-desc.
+
+       Multi-workflow packages: wrap each workflow's screens in
+         <div class="mock-workflow" data-workflow="<slug>"
+              data-workflow-title="<short label, <= 12 chars>"> ... </div>
+       walkthrough.js auto-detects >= 2 wrappers and renders the workflow
+       selector chrome (full pattern: reference/catalog_chrome.md
+       § Multi-workflow chrome). Single-workflow packages skip the wrapper.
+
+       Data-driven variants: add data-mock-variant-axes (JSON array) to a
+       screen + data-mock-variant on swappable children. See
+       reference/interactions.md § Screen variants. -->
+
+  <!-- ============ WALKTHROUGH BAR (exactly one, outside the screens) ===== -->
+  <!-- SLOT: paste walkthrough_bar.html here -->
+
+  <script src="assets/walkthrough.js"></script>
+</body>
+</html>

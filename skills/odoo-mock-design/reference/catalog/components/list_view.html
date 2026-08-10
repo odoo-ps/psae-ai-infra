@@ -1,0 +1,92 @@
+<!--
+  list_view.html — Odoo list/tree view (list_renderer.scss .o_list_table).
+  Use ungrouped (below) or add .o_group_header rows for a grouped list. Also
+  used inline inside a form notebook (order lines). Numeric columns: add
+  class o_list_number to th/td and right-align.
+
+  Odoo 19 line cues to keep: relational/editable cells are teal links
+  (.o_list_link), an editable list shows a drag handle (.o_list_handle) as the
+  first cell, inline tags use .o_tag (gray pill — NOT a colored status badge),
+  and the header carries an optional-columns toggle (.o_optional_columns_toggle)
+  on the far right. For sale/purchase/invoice, follow the table with an
+  .o_subtotal_footer (see bottom).
+-->
+<div class="o_list_view">
+  <table class="o_list_table o_list_table_ungrouped">
+    <thead>
+      <tr>
+        <th class="o_list_record_selector"><input type="checkbox"/></th>
+        <!-- SLOT: column headers -->
+        <th>Number</th>
+        <th>Customer</th>
+        <th>Salesperson</th>
+        <th>Status</th>
+        <th class="o_list_number_th">Total</th>
+        <th style="width:28px;"><svg class="o_icon o_optional_columns_toggle"><use href="#o-cog"/></svg></th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- SLOT: data rows. Link-like cells use .o_list_link (teal). -->
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td><span class="o_list_link">SO0042</span></td>
+        <td><span class="o_list_link">Deco Addict</span></td>
+        <td>Mitchell Admin</td>
+        <td><span class="o_tag">Quotation</span></td>
+        <td class="o_list_number">$ 1,250.00</td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td><span class="o_list_link">SO0041</span></td>
+        <td><span class="o_list_link">Gemini Furniture</span></td>
+        <td>Mitchell Admin</td>
+        <td><span class="o_tag">Sales Order</span></td>
+        <td class="o_list_number">$ 3,980.00</td>
+        <td></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td></td><td></td><td></td><td></td>
+        <td class="o_list_number">Total</td>
+        <td class="o_list_number">$ 5,230.00</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Editable order-lines variant (inside a form notebook): first cell is a
+     drag handle, product + numeric cells are teal links, tax is a gray o_tag.
+  <tr class="o_data_row">
+    <td class="o_list_handle"><svg class="o_icon"><use href="#o-bars"/></svg></td>
+    <td><span class="o_list_link">test hannah timesheet</span></td>
+    <td class="o_list_number"><span class="o_list_link">6.00</span></td>
+    <td class="o_list_number">1.00</td>
+    <td><span class="o_tag">15%</span></td>
+    <td class="o_list_number">$ 6.00</td>
+  </tr>
+-->
+
+<!-- Grouped variant: insert grouped header rows like this in <tbody>. The td
+     keeps default table-cell display so colspan spans the full row width;
+     wrap the content in .o_group_header_content when you need the flex row
+     (caret + name + optional buttons + right-aligned pager).
+  <tr class="o_group_header"><td colspan="7">
+    <div class="o_group_header_content">
+      <span class="o_group_caret"><svg class="o_icon"><use href="#o-caret-down"/></svg></span>
+      <span class="o_group_name">Quotation (12)</span>
+    </div>
+  </td></tr>
+-->
+
+<!-- Subtotal footer (sale/purchase/invoice) — place directly after the lines:
+  <div class="o_subtotal_footer">
+    <table>
+      <tr><td class="o_subtotal_label">Untaxed Amount</td><td class="o_subtotal_amount">$ 6.00</td></tr>
+      <tr><td class="o_subtotal_label">Tax 15%</td><td class="o_subtotal_amount">$ 0.90</td></tr>
+      <tr class="o_total"><td>Total</td><td class="o_subtotal_amount">$ 6.90</td></tr>
+    </table>
+  </div>
+-->

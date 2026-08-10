@@ -1,0 +1,195 @@
+<!--
+  website_form.html — Odoo Website public form (s_website_form snippet).
+  Source: website/views/snippets/s_website_form.xml (the snippet template).
+
+  Public-facing intake form (contact, appraisal request, application, …) that
+  creates a backend record (a CRM lead, a mail.mail, a custom model). Render
+  full-bleed inside `.o_website` with the frontend header `.o_header_standard`
+  — NOT the backend navbar / control panel.
+
+  ===== STRUCTURE (real Odoo, 3-level nested Bootstrap grid) =====
+
+  `<section class="s_website_form">`                            ← outer section
+    `<form action="/website/form/" method="post" ...>`          ← real form attributes
+      `<div class="s_website_form_rows row">`                   ← Bootstrap row
+        `<div class="s_website_form_field col-12 mb-3">`        ← each field full-width
+          `<div class="row">`                                   ← nested row: label left, input right
+            `<label class="col-form-label col-sm-auto`
+                     `s_website_form_label" style="width: 200px">`
+              `<span class="s_website_form_label_content">Your Name</span>`
+              `<span class="s_website_form_mark"> *</span>`     ← required
+            `</label>`
+            `<div class="col-sm">`                              ← input wrapper col
+              `<input class="form-control s_website_form_input"`
+                     `type="text" name="..." required="1"/>`
+            `</div>`
+          `</div>`
+        `</div>`
+        `<div class="mb-0 py-2 col-12 s_website_form_submit text-end`
+                  `s_website_form_no_submit_label">`            ← submit row: NO nested .row
+          `<div style="width: 200px;" class="s_website_form_label"/>` ← spacer (invisible)
+          `<span id="s_website_form_result"/>`                  ← success/error message slot
+          `<button class="btn btn-primary s_website_form_send" type="button">Submit</button>`
+        `</div>`
+      `</div>`
+    `</form>`
+  `</section>`
+
+  The 3 levels are LOAD-BEARING for responsive behaviour: the nested `.row`
+  + `.col-sm-auto` label / `.col-sm` input lets Bootstrap reflow to label-
+  above-input below the `sm` breakpoint (576px). A flat flex layout (no
+  Bootstrap classes) won't reflow.
+
+  ===== HARD RULES =====
+  - **Always carry BOTH classes on inputs:** `form-control s_website_form_input`.
+    The catalog's CSS applies the base styling via `.form-control`; the
+    snippet class is the semantic hook.
+  - **Required asterisk:** put `<span class="s_website_form_mark"> *</span>`
+    INSIDE the label, NOT as a sibling.
+  - **Help text** is a SIBLING of `.s_website_form_field` (a `<p class="s_website_form_help">`),
+    not a child. The CSS shifts it under the input column.
+  - **Section divider** (Contact / Device / Photos) is a top-level sibling
+    `<h3 class="s_website_form_section">`, between fields.
+  - **Submit button** uses `<button class="btn btn-primary s_website_form_send">` —
+    NOT bare `.btn.btn-primary`. The submit row is `text-end + s_website_form_no_submit_label`.
+
+  ===== BACKEND LEAKAGE — flagged by mock-fidelity-anchor =====
+
+  Don't use these inside `.o_website`:
+    o_field_row, o_form_label, o_field_widget, o_input, o_group, o_inner_group.
+  Use the `s_website_form_*` vocabulary instead.
+-->
+<div class="o_website">
+  <header class="o_header_standard">
+    <span class="o_website_logo">MyCompany</span>
+    <nav class="o_website_menu">
+      <span class="nav-link">Home</span>
+      <span class="nav-link active">Trade-In</span>
+      <span class="nav-link">Shop</span>
+      <span class="nav-link">Contact us</span>
+    </nav>
+    <div class="o_website_header_right">
+      <span class="o_website_iconbtn" title="Search"><svg class="o_icon"><use href="#o-search"/></svg></span>
+      <span class="o_website_signin">Sign in</span>
+    </div>
+  </header>
+
+  <section class="s_website_form">
+    <div class="s_website_form_heading">
+      <!-- SLOT: page title + lead -->
+      <h2>Trade in your device</h2>
+      <p class="lead">Tell us about your device and we'll send you an estimated trade-in value.</p>
+    </div>
+
+    <form action="/website/form/" method="post" enctype="multipart/form-data" class="o_mark_required">
+      <div class="s_website_form_rows row">
+
+        <!-- ===== Required text field ===== -->
+        <div class="s_website_form_field col-12 mb-3">
+          <div class="row">
+            <label class="col-form-label col-sm-auto s_website_form_label" style="width: 200px">
+              <span class="s_website_form_label_content">Your Name</span>
+              <span class="s_website_form_mark"> *</span>
+            </label>
+            <div class="col-sm">
+              <input class="form-control s_website_form_input" type="text" name="name" value="Liang Chen" required="1"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Required email field ===== -->
+        <div class="s_website_form_field col-12 mb-3">
+          <div class="row">
+            <label class="col-form-label col-sm-auto s_website_form_label" style="width: 200px">
+              <span class="s_website_form_label_content">Email</span>
+              <span class="s_website_form_mark"> *</span>
+            </label>
+            <div class="col-sm">
+              <input class="form-control s_website_form_input" type="email" name="email_from" value="liang.chen@example.com" required="1"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Required select field ===== -->
+        <div class="s_website_form_field col-12 mb-3">
+          <div class="row">
+            <label class="col-form-label col-sm-auto s_website_form_label" style="width: 200px">
+              <span class="s_website_form_label_content">Device model</span>
+              <span class="s_website_form_mark"> *</span>
+            </label>
+            <div class="col-sm">
+              <select class="form-select s_website_form_input" name="device_model" required="1">
+                <option>Galaxy S23</option>
+                <option>iPhone 13</option>
+                <option>Pixel 7</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Optional select ===== -->
+        <div class="s_website_form_field col-12 mb-3">
+          <div class="row">
+            <label class="col-form-label col-sm-auto s_website_form_label" style="width: 200px">
+              <span class="s_website_form_label_content">Condition</span>
+            </label>
+            <div class="col-sm">
+              <select class="form-select s_website_form_input" name="condition">
+                <option>Good — minor wear</option>
+                <option>Fair</option>
+                <option>Like new</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== File upload — keep the form-control wrapper around a styled drop zone ===== -->
+        <div class="s_website_form_field col-12 mb-3">
+          <div class="row">
+            <label class="col-form-label col-sm-auto s_website_form_label" style="width: 200px">
+              <span class="s_website_form_label_content">Photos</span>
+            </label>
+            <div class="col-sm">
+              <div class="form-control s_website_form_input s_website_form_upload">
+                <svg class="o_icon"><use href="#o-download"/></svg>
+                <span>Drag photos here or browse</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Help text — SIBLING of the field, not a child. ===== -->
+        <p class="s_website_form_help">Photos help us tighten the estimate — they're optional.</p>
+
+        <!-- ===== Section divider ===== -->
+        <h3 class="s_website_form_section">Contact</h3>
+
+        <!-- ===== Phone field ===== -->
+        <div class="s_website_form_field col-12 mb-3">
+          <div class="row">
+            <label class="col-form-label col-sm-auto s_website_form_label" style="width: 200px">
+              <span class="s_website_form_label_content">Phone</span>
+            </label>
+            <div class="col-sm">
+              <input class="form-control s_website_form_input" type="tel" name="phone" value="+1 415 555 0142"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Inline informational note ===== -->
+        <div class="s_website_form_note">
+          We respond within one business day. No account required —
+          we'll email you a tracking link.
+        </div>
+
+        <!-- ===== Submit row — no nested .row, text-end, label spacer for alignment ===== -->
+        <div class="mb-0 py-2 col-12 s_website_form_submit text-end s_website_form_no_submit_label">
+          <div style="width: 200px;" class="s_website_form_label"></div>
+          <span id="s_website_form_result"></span>
+          <button class="btn btn-primary s_website_form_send" type="button">Request Estimate</button>
+        </div>
+
+      </div>
+    </form>
+  </section>
+</div>

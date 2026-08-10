@@ -1,0 +1,98 @@
+<!--
+  kanban.html — Odoo kanban view (kanban_controller.scss .o_kanban_renderer).
+  Grouped (columns) below — the common case for a pipeline/stages workflow.
+  For an ungrouped card grid, use .o_kanban_ungrouped on .o_kanban_renderer and
+  drop the .o_kanban_group wrappers.
+-->
+<div class="o_kanban_view">
+  <div class="o_kanban_renderer o_kanban_grouped">
+
+    <!-- SLOT: one .o_kanban_group per column (stage). The header carries a
+         small colored progress-bar above the title in real Odoo CRM — the
+         bar shows the breakdown of records in the column by state (won
+         green / lost red / in-progress amber / new gray). Render a 1-3
+         segment bar via .o_kanban_progressbar; omit for non-staged models. -->
+    <div class="o_kanban_group">
+      <div class="o_kanban_progressbar">
+        <span class="o_kanban_progressbar_seg" style="width:50%; background:var(--o-warning);"></span>
+        <span class="o_kanban_progressbar_seg" style="width:30%; background:var(--o-success);"></span>
+        <span class="o_kanban_progressbar_seg" style="width:20%; background:var(--o-gray-400);"></span>
+      </div>
+      <div class="o_kanban_header">
+        <span class="o_kanban_header_title">New <span class="o_kanban_counter">2</span></span>
+        <span class="o_kanban_header_amount">2.4k</span>
+        <svg class="o_icon"><use href="#o-plus"/></svg>
+      </div>
+
+      <!-- SLOT: cards in this column. A record carries:
+             * priority stars (top-left, click to set 0/1/2/3)
+             * 3-dot context menu (top-right)
+             * title + subtitle (amount + customer / date)
+             * bottom row: tags, status dot, days-old badge, salesperson avatar
+           When the record's lost field is true, decorate the card with the
+           diagonal LOST ribbon (.o_kanban_ribbon_lost). Equivalent for
+           WON state: .o_kanban_ribbon_won (green). -->
+      <div class="o_kanban_record">
+        <div class="o_kanban_record_topbar">
+          <span class="o_priority"><svg class="o_icon o_icon_xs o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg></span>
+          <svg class="o_icon o_icon_xs o_kanban_record_menu"><use href="#o-ellipsis-v"/></svg>
+        </div>
+        <div class="o_kanban_record_title">Deco Addict</div>
+        <div class="o_kanban_record_subtitle">SO0042 · $ 1,250.00</div>
+        <div class="o_kanban_record_bottom">
+          <span class="o_tag">Furniture</span>
+          <span class="o_kanban_record_right">
+            <span class="o_activity_dot o_activity_filter_today" title="Activity due today"></span>
+            <span class="o_kanban_age_badge" title="Days since creation">3d</span>
+            <span class="o_user_avatar" style="background:#714B67;color:#fff;">MA</span>
+          </span>
+        </div>
+      </div>
+      <!-- LOST card example: the ribbon overlays the card top-right. -->
+      <div class="o_kanban_record">
+        <div class="o_kanban_ribbon o_kanban_ribbon_lost">Lost</div>
+        <div class="o_kanban_record_topbar">
+          <span class="o_priority"><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg></span>
+          <svg class="o_icon o_icon_xs o_kanban_record_menu"><use href="#o-ellipsis-v"/></svg>
+        </div>
+        <div class="o_kanban_record_title">Gemini Furniture</div>
+        <div class="o_kanban_record_subtitle">SO0039 · $ 870.00</div>
+        <div class="o_kanban_record_bottom">
+          <span class="o_tag">Services</span>
+          <span class="o_kanban_record_right">
+            <span class="o_kanban_age_badge">12d</span>
+            <span class="o_user_avatar" style="background:#017e84;color:#fff;">JD</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="o_kanban_group">
+      <div class="o_kanban_progressbar">
+        <span class="o_kanban_progressbar_seg" style="width:100%; background:var(--o-info);"></span>
+      </div>
+      <div class="o_kanban_header">
+        <span class="o_kanban_header_title">In Progress <span class="o_kanban_counter">1</span></span>
+        <span class="o_kanban_header_amount">2.4k</span>
+        <svg class="o_icon"><use href="#o-plus"/></svg>
+      </div>
+      <div class="o_kanban_record">
+        <div class="o_kanban_record_topbar">
+          <span class="o_priority"><svg class="o_icon o_icon_xs o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg></span>
+          <svg class="o_icon o_icon_xs o_kanban_record_menu"><use href="#o-ellipsis-v"/></svg>
+        </div>
+        <div class="o_kanban_record_title">Ready Mat</div>
+        <div class="o_kanban_record_subtitle">SO0040 · $ 2,400.00</div>
+        <div class="o_kanban_record_bottom">
+          <span class="o_tag">Furniture</span>
+          <span class="o_kanban_record_right">
+            <span class="o_activity_dot o_activity_filter_planned" title="Activity planned"></span>
+            <span class="o_kanban_age_badge">7d</span>
+            <span class="o_user_avatar" style="background:#714B67;color:#fff;">MA</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
