@@ -1,0 +1,143 @@
+<!--
+  studio.html — Odoo Studio editor (enterprise web_studio).
+  Ported from:
+    enterprise/web_studio/static/src/client_action/navbar/navbar.{xml,scss}
+    enterprise/web_studio/static/src/client_action/view_editor/
+
+  Real Studio key visual cues to keep:
+   - Top NAVBAR is DARK (real Odoo uses `$o-web-studio-bg-dark`, a near-
+     black purple). Replaces the standard white enterprise navbar; that's
+     what makes the user know they're in Studio.
+   - Navbar carries (left to right): apps-launcher, app brand, menu
+     sections (inactive when in form editor), then `Edit Menu` and
+     `Create New Model` text buttons (`.o-studio--menu`), then a
+     prominent dark-orange `Close` button (`.o_studio_buttons`).
+   - View renderer area gets a brand-tinted bg with the form inside.
+     Every label has a tiny pencil hint on hover; fields have dashed
+     outlines (`.o_web_studio_hook` highlights drop zones).
+   - Right sidebar tabs: Add · View · Properties — with a section header
+     band per group (New Fields, Existing Fields, Sub-views, Studio
+     Approvals, …).
+
+  Compose the screen by:
+   1. wrapping in `.o_web_client.o_in_studio` (engages dark-navbar override)
+   2. emitting a `.o_main_navbar.o_studio_navbar` (DARK background)
+   3. then `.o_web_studio_editor` body = view renderer + sidebar
+-->
+<nav class="o_main_navbar o_studio_navbar">
+  <a class="o_menu_toggle" title="Home menu">
+    <svg class="o_menu_toggle_icon" width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+      <g fill="currentColor"><rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/></g>
+      <g fill="currentColor"><rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/></g>
+      <g fill="currentColor"><rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/></g>
+    </svg>
+    <span class="o_menu_brand">Sales</span>
+  </a>
+  <div class="o_menu_sections">
+    <span class="o_nav_entry">Orders</span>
+    <span class="o_nav_entry">Products</span>
+    <span class="o_nav_entry">Reporting</span>
+    <span class="o_nav_entry">Configuration</span>
+  </div>
+  <div class="o-studio--menu">
+    <span class="o_web_edit_menu">Edit Menu</span>
+    <span class="o_web_create_new_model">+ New Model</span>
+  </div>
+  <div class="o_studio_buttons">
+    <a class="btn o_studio_close_btn">Close</a>
+  </div>
+</nav>
+<div class="o_web_studio_editor">
+  <!-- Editor top bar: view-type switcher + breadcrumb of the customised
+       view. Tabs: Views / Reports / Automations / ACL / Filters /
+       Properties / Translations — real Studio exposes them as a row of
+       buttons across the top of the editor area. -->
+  <div class="o_web_studio_top_bar">
+    <div class="o_web_studio_breadcrumb">Studio / sale.order / <strong>Form</strong></div>
+    <div class="o_web_studio_top_tabs">
+      <span class="active">Views</span>
+      <span>Reports</span>
+      <span>Automations</span>
+      <span>ACL</span>
+      <span>Filters</span>
+      <span>Properties</span>
+    </div>
+  </div>
+  <div class="o_web_studio_editor_body">
+    <div class="o_web_studio_view_renderer">
+      <div class="o_form_sheet" style="margin:16px;">
+        <div class="oe_title"><h1 class="o_form_title">S00078</h1></div>
+        <div class="o_group">
+          <div class="o_inner_group">
+            <div class="o_field_row o_web_studio_editable_field">
+              <label class="o_form_label">Customer <span class="o_web_studio_edit_pencil">✎</span></label>
+              <div class="o_field_widget"><a class="o_form_link">Deco Addict</a></div>
+            </div>
+            <div class="o_field_row o_web_studio_hook">
+              <label class="o_form_label">Lot Allocations</label>
+              <div class="o_field_widget o_web_studio_widget_empty">Drop a field here</div>
+            </div>
+            <div class="o_field_row o_web_studio_editable_field">
+              <label class="o_form_label">Expected Closing <span class="o_web_studio_edit_pencil">✎</span></label>
+              <div class="o_field_widget">06/14/2026</div>
+            </div>
+          </div>
+          <div class="o_inner_group">
+            <div class="o_field_row o_web_studio_editable_field">
+              <label class="o_form_label">Salesperson <span class="o_web_studio_edit_pencil">✎</span></label>
+              <div class="o_field_widget"><a class="o_form_link">Mitchell Admin</a></div>
+            </div>
+            <div class="o_field_row o_web_studio_editable_field">
+              <label class="o_form_label">Pricelist <span class="o_web_studio_edit_pencil">✎</span></label>
+              <div class="o_field_widget"><a class="o_form_link">USD — Default</a></div>
+            </div>
+            <div class="o_web_studio_add_element">+ Add a field</div>
+          </div>
+        </div>
+        <!-- Studio shows ghost "+ Add" buttons for sections, notebooks,
+             buttons. Render them after the main form to demonstrate. -->
+        <div class="o_web_studio_add_row">
+          <button class="o_web_studio_add_btn">+ Add a notebook</button>
+          <button class="o_web_studio_add_btn">+ Add a button</button>
+          <button class="o_web_studio_add_btn">+ Add a tab</button>
+        </div>
+      </div>
+    </div>
+    <aside class="o_web_studio_sidebar">
+      <div class="o_web_studio_sidebar_header">
+        <span class="active">Add</span>
+        <span>View</span>
+        <span>Properties</span>
+      </div>
+      <div class="o_web_studio_sidebar_section">New Fields</div>
+      <div class="o_web_studio_field_type_container">
+        <div class="o_web_studio_field_type" title="Char">Text</div>
+        <div class="o_web_studio_field_type" title="Integer">Integer</div>
+        <div class="o_web_studio_field_type" title="Decimal">Decimal</div>
+        <div class="o_web_studio_field_type" title="HTML">Html</div>
+        <div class="o_web_studio_field_type" title="Date">Date</div>
+        <div class="o_web_studio_field_type" title="DateTime">Datetime</div>
+        <div class="o_web_studio_field_type" title="Many2one">Many2one</div>
+        <div class="o_web_studio_field_type" title="One2many">One2many</div>
+        <div class="o_web_studio_field_type" title="Many2many">Many2many</div>
+        <div class="o_web_studio_field_type" title="Checkbox">Checkbox</div>
+        <div class="o_web_studio_field_type" title="Selection">Selection</div>
+        <div class="o_web_studio_field_type" title="Tags">Tags</div>
+      </div>
+      <div class="o_web_studio_sidebar_section">New Structure</div>
+      <div class="o_web_studio_field_type_container">
+        <div class="o_web_studio_field_type">Tabs</div>
+        <div class="o_web_studio_field_type">Columns</div>
+        <div class="o_web_studio_field_type">Separator</div>
+        <div class="o_web_studio_field_type">Smart Button</div>
+      </div>
+      <div class="o_web_studio_sidebar_section">Existing Fields</div>
+      <div class="o_web_studio_field_type_container">
+        <div class="o_web_studio_field_type">Salesperson</div>
+        <div class="o_web_studio_field_type">Warehouse</div>
+        <div class="o_web_studio_field_type">Payment Term</div>
+        <div class="o_web_studio_field_type">Tags</div>
+      </div>
+    </aside>
+  </div>
+</div>

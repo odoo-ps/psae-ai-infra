@@ -1,0 +1,166 @@
+<!--
+  account_report.html — Accounting financial report (enterprise account_reports).
+  Source: enterprise/account_reports/static/src/components/account_report/
+          account_report.{xml,scss}.
+
+  Used for: Balance Sheet, Profit & Loss, General Ledger, Aged Receivable,
+  Cash Flow Forecast, etc.
+
+  Render inside the backend shell (navbar + control panel above it). Wrap
+  the whole report body in `.account_report` so Odoo's CSS variable scope
+  (--row-action-color, --row-muted-color) applies.
+
+  ===== STRUCTURE (real Odoo class vocabulary) =====
+
+  - `<div class="account_report">` — outer scope
+    - `<div class="o_account_report_toolbar">` — filter chips + export
+      (the catalog renders this as its own toolbar BELOW the control panel;
+      real Odoo wires the filters into the control panel via slots, but the
+      visual outcome is the same)
+    - `<table class="table table-borderless table-hover">` — Bootstrap table
+      - `<thead class="sticky">` — sticks to the top while body scrolls
+        - row 1: period name(s) ("2026", "2025", "Variance" …)
+        - row 2 (.o_account_report_subhead): column kind ("Balance" / "Debit" / "Credit")
+      - `<tbody>` — rows, each `<tr>` carries:
+        - `line_level_N` (N = 0…16). Level 0 = top section (Revenue, Costs).
+          Level 2+ = indented sub-lines.
+        - `total` for sum rows (bold)
+        - `unfolded` when the parent is expanded
+        - `empty` for spacer rows between sections (no bottom border)
+        - `<td class="line_name">` for the name (with optional .btn_foldable
+          inside .wrapper for fold/unfold)
+        - `<td class="line_cell numeric">` or `<td class="line_cell o_list_number">`
+          for value cells (right-aligned)
+        - Use `.muted` on a `<td>` to fade non-total values
+
+  ===== HARD RULES =====
+  - **Numbers right-align via `.line_cell.numeric` (or `.line_cell.o_list_number`)**,
+    NOT via inline `style="text-align:right;"`.
+  - **Fold/unfold uses `<button class="btn_foldable">`** with an SVG caret
+    inside, NOT a literal `[+]` / `[−]` text marker (the lint flags those).
+  - **Section + total + grand-total use the real-Odoo combos:**
+      Section header → `<tr class="line_level_0">`
+      Section sum   → `<tr class="line_level_0 total">` (or just `total`)
+      Grand total   → `<tr class="line_level_0 total">` styled by context;
+                       OR use the catalog's alias `.o_account_report_line_grandtotal`
+                       for emphasized rows (thicker top border + larger font).
+  - **Empty rows between sections** use `<tr class="empty"><td></td>…</tr>`
+    (their tds have no border-bottom — pure visual spacers).
+-->
+<div class="account_report">
+  <div class="o_account_reports_page">
+
+    <!-- Report-page toolbar — distinct from the standard control_panel.
+         Title + cog on the LEFT, filter chips on the RIGHT, then Export. -->
+    <div class="o_account_report_toolbar">
+      <span class="o_account_report_title">
+        Profit and Loss
+        <svg class="o_icon o_icon_xs"><use href="#o-cog"/></svg>
+      </span>
+      <span class="o_account_report_filters">
+        <button class="btn o_btn_outline o_report_filter">
+          <svg class="o_icon o_icon_xs"><use href="#o-view-calendar"/></svg>
+          2026
+        </button>
+        <button class="btn o_btn_outline o_report_filter">Comparison</button>
+        <button class="btn o_btn_outline o_report_filter">
+          <svg class="o_icon o_icon_xs"><use href="#o-list"/></svg>
+          All Journals
+        </button>
+        <button class="btn o_btn_outline o_report_filter">Options</button>
+      </span>
+      <span class="ms-auto">
+        <button class="btn btn-primary o_report_pdf">PDF</button>
+        <button class="btn o_btn_outline">XLSX</button>
+      </span>
+    </div>
+
+    <!-- Warning banner shown when the period has unposted entries / mismatch.
+         Drop when irrelevant. -->
+    <div class="o_account_report_banner">
+      There are <a class="o_form_link">unposted Journal Entries</a> prior to or included in this period.
+    </div>
+
+    <!-- The report table. Two-row thead: period name on row 1, column kind on row 2. -->
+    <table class="table table-borderless table-hover">
+      <thead class="sticky">
+        <tr>
+          <th></th>
+          <th><span class="o_account_report_period">2026</span></th>
+        </tr>
+        <tr class="o_account_report_subhead">
+          <th></th>
+          <th>Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Level-0 section: Revenue -->
+        <tr class="line_level_0">
+          <td class="line_name">
+            <div class="wrapper">
+              <button class="btn_foldable" title="Collapse">
+                <svg class="o_icon"><use href="#o-caret-down"/></svg>
+              </button>
+              <div class="content">Revenue</div>
+            </div>
+          </td>
+          <td class="line_cell numeric muted">0.00</td>
+        </tr>
+
+        <!-- Level-2 line under Revenue (unfolded → indented + visible) -->
+        <tr class="line_level_2">
+          <td class="line_name"><div class="wrapper"><div class="content">Sales of goods</div></div></td>
+          <td class="line_cell numeric muted">0.00</td>
+        </tr>
+        <tr class="line_level_2">
+          <td class="line_name"><div class="wrapper"><div class="content">Service revenue</div></div></td>
+          <td class="line_cell numeric muted">0.00</td>
+        </tr>
+
+        <tr class="empty"><td></td><td></td></tr>
+
+        <!-- Level-0 section: Costs of Revenue -->
+        <tr class="line_level_0">
+          <td class="line_name">
+            <div class="wrapper">
+              <button class="btn_foldable" title="Expand">
+                <svg class="o_icon"><use href="#o-caret-right"/></svg>
+              </button>
+              <div class="content">Less Cost of Revenue</div>
+            </div>
+          </td>
+          <td class="line_cell numeric muted">0.00</td>
+        </tr>
+
+        <tr class="empty"><td></td><td></td></tr>
+
+        <!-- Total / grand-total row: line_level_0 + total combine bold + bg + emphasis -->
+        <tr class="line_level_0 total">
+          <td class="line_name"><div class="wrapper"><div class="content">Gross Profit</div></div></td>
+          <td class="line_cell numeric">0.00</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== Common variants =====
+
+  - **Comparison columns:** add columns to thead + every row. Each value cell
+    is its own `<td class="line_cell numeric">`. Add a "Variance %" column
+    for ranged comparisons.
+  - **Unposted-only / Posted-only toggle:** flips the toolbar's "Options"
+    chip text + active state. Mock by duplicating the toolbar with both
+    states.
+  - **No-content state:** when no journal entries match, render the
+    `.o_view_nocontent` helper INSIDE `.account_report` (real Odoo uses
+    `z-index: -1` so the toolbar still shows above it — already in the
+    catalog css).
+  - **Drill-down link:** clickable amount in a body cell. Render as
+    `<a class="o_form_link">$ 1,234.00</a>` — opens the audit view.
+  - **Caret state:** `<use href="#o-caret-down"/>` when row is expanded,
+    `<use href="#o-caret-right"/>` when collapsed. Match the `unfolded`
+    state on the parent `<tr>`.
+-->

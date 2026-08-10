@@ -1,0 +1,74 @@
+<!--
+  website.html — Odoo Website frontend (public-facing, NOT the backend webclient).
+  It has its own light header (.o_header_standard) — no purple backend navbar.
+  Two common surfaces below: an eCommerce shop grid (website_sale,
+  .oe_website_sale / .o_wsale_products_grid) and a product page. Pick one per
+  screen. Render full-bleed (no .o_web_client wrapper).
+-->
+<div class="o_website">
+  <!-- Frontend header -->
+  <header class="o_header_standard">
+    <span class="o_website_logo">MyCompany</span>
+    <nav class="o_website_menu">
+      <span class="nav-link active">Shop</span>
+      <span class="nav-link">Home</span>
+      <span class="nav-link">About us</span>
+      <span class="nav-link">Contact us</span>
+    </nav>
+    <div class="o_website_header_right">
+      <span class="o_website_iconbtn" title="Search"><svg class="o_icon"><use href="#o-search"/></svg></span>
+      <span class="o_website_iconbtn o_wsale_my_cart"><svg class="o_icon"><use href="#o-cart"/></svg> Cart <span class="o_wsale_cart_badge">2</span></span>
+      <span class="o_website_signin">Sign in</span>
+    </div>
+  </header>
+
+  <!-- SHOP grid (oe_website_sale) -->
+  <div class="oe_website_sale">
+    <aside class="o_wsale_products_categories">
+      <div class="o_wsale_cat_title">Categories</div>
+      <span class="o_wsale_cat active">All Products</span>
+      <span class="o_wsale_cat">Office Furniture</span>
+      <span class="o_wsale_cat">Chairs</span>
+      <span class="o_wsale_cat">Desks</span>
+    </aside>
+    <div class="o_wsale_products_main">
+      <div class="o_wsale_products_searchbar">
+        <span class="o_searchview"><svg class="o_icon"><use href="#o-search"/></svg><span class="o_searchview_input text-muted">Search a product...</span></span>
+        <span class="o_wsale_sortby">Sort by: Featured</span>
+      </div>
+      <!-- Each .oe_product carries a .oe_product_wishlist heart (top-right)
+           and a .oe_product_addcart button (above the name/price band).
+           Both are opacity:0 by default and fade in on `.oe_product:hover`
+           — matches Odoo's website_sale hover affordances. -->
+      <div class="o_wsale_products_grid">
+        <div class="oe_product">
+          <span class="oe_product_wishlist" title="Add to wishlist"><svg class="o_icon"><use href="#o-heart"/></svg></span>
+          <button class="oe_product_addcart" type="button">Add to Cart</button>
+          <div class="oe_product_image"></div>
+          <div class="oe_product_name">Drawer Black</div>
+          <div class="oe_product_price">$ 120.00</div>
+        </div>
+        <div class="oe_product">
+          <span class="oe_product_wishlist" title="Add to wishlist"><svg class="o_icon"><use href="#o-heart"/></svg></span>
+          <button class="oe_product_addcart" type="button">Add to Cart</button>
+          <div class="oe_product_image"></div>
+          <div class="oe_product_name">Conference Chair</div>
+          <div class="oe_product_price">$ 33.00</div>
+        </div>
+        <!-- SLOT: additional .oe_product cards follow the same shape. -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT PAGE variant (replace .oe_website_sale body):
+  <div class="o_wsale_product_page">
+    <div class="oe_product_image o_wsale_product_main_image"></div>
+    <div class="o_wsale_product_summary">
+      <h1 class="oe_product_name">Drawer Black</h1>
+      <div class="oe_product_price">$ 120.00</div>
+      <p class="text-muted">A sturdy storage drawer …</p>
+      <button class="btn btn-primary o_wsale_product_btn">Add to Cart</button>
+    </div>
+  </div>
+-->

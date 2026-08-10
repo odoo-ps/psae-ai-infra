@@ -1,0 +1,91 @@
+<!--
+  dashboard_sidebar.html — Dashboards landing layout with the left
+  category-nav sidebar. Use this variant when the mock shows the
+  Dashboards APP's top-level landing (the page that opens at
+  /odoo/dashboards). The earlier catalog `dashboard.html` is the
+  single-section variant (section-switcher tabs across the top, no
+  left nav) — keep that for INSIDE a category.
+
+  Ported from:
+    enterprise/spreadsheet_dashboard/static/src/dashboard_action/
+    (real Odoo 19 lays out Dashboards with a LEFT sidebar listing
+    categories grouped by app: SALES / CRM / FINANCE / LOGISTICS /
+    SERVICES / WEBSITE, each section with its own dashboard items.)
+
+  Composition: control panel above (with search + date range +
+  Share + favorite star) → flex row of left sidebar + right content.
+-->
+<div class="o_dashboard_view o_dashboard_with_sidebar">
+
+  <aside class="o_dashboard_nav">
+    <button class="o_dashboard_nav_collapse"><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+
+    <div class="o_dashboard_nav_section">Sales</div>
+    <span class="o_dashboard_nav_item active">Sales</span>
+    <span class="o_dashboard_nav_item">Product</span>
+    <span class="o_dashboard_nav_item">Point of Sale</span>
+
+    <div class="o_dashboard_nav_section">CRM</div>
+    <span class="o_dashboard_nav_item">Leads</span>
+    <span class="o_dashboard_nav_item">Pipeline</span>
+
+    <div class="o_dashboard_nav_section">Finance</div>
+    <span class="o_dashboard_nav_item">Invoicing</span>
+
+    <div class="o_dashboard_nav_section">Logistics</div>
+    <span class="o_dashboard_nav_item">Warehouse Daily Operations</span>
+    <span class="o_dashboard_nav_item">Operation analysis</span>
+    <span class="o_dashboard_nav_item">Warehouse Metrics</span>
+    <span class="o_dashboard_nav_item">Purchase &amp; Vendor Bills</span>
+
+    <div class="o_dashboard_nav_section">Services</div>
+    <span class="o_dashboard_nav_item">Project</span>
+    <span class="o_dashboard_nav_item">Timesheets</span>
+
+    <div class="o_dashboard_nav_section">Website</div>
+    <span class="o_dashboard_nav_item">eCommerce</span>
+  </aside>
+
+  <div class="o_dashboard_content">
+    <!-- SLOT: KPI tiles, chart tiles, pivot tiles — reuse the same
+         .o_dashboard_kpi / .o_dashboard_tile blocks as dashboard.html. -->
+    <div class="o_dashboard_kpis">
+      <div class="o_dashboard_kpi o_kpi_tinted_blue"><div class="o_kpi_label">Quotations</div><div class="o_kpi_value">2</div><div class="o_kpi_trend o_kpi_up">↗ ∞% since last period</div></div>
+      <div class="o_dashboard_kpi o_kpi_tinted_blue"><div class="o_kpi_label">Orders</div><div class="o_kpi_value">0</div><div class="o_kpi_trend o_kpi_neutral">0.0% since last period</div></div>
+      <div class="o_dashboard_kpi o_kpi_tinted_orange"><div class="o_kpi_label">Revenue</div><div class="o_kpi_value">$0</div><div class="o_kpi_trend o_kpi_neutral">0.0% since last period</div></div>
+      <div class="o_dashboard_kpi o_kpi_tinted_orange"><div class="o_kpi_label">Average Order</div><div class="o_kpi_value">0</div><div class="o_kpi_trend o_kpi_neutral">0.0% since last period</div></div>
+    </div>
+
+    <div class="o_dashboard_section_title">Monthly Sales</div>
+    <div class="o_dashboard_tile">
+      <div class="o_graph_view"><div class="o_graph_bars o_graph_bars_lg">
+        <div class="o_graph_bar" style="height:20%"><span>Mar</span></div>
+        <div class="o_graph_bar" style="height:40%"><span>Apr</span></div>
+        <div class="o_graph_bar" style="height:60%"><span>May</span></div>
+        <div class="o_graph_bar" style="height:90%"><span>Jun</span></div>
+      </div></div>
+    </div>
+
+    <div class="o_dashboard_row">
+      <div class="o_dashboard_tile">
+        <div class="o_dashboard_section_title">Top Quotations</div>
+        <table class="o_pivot_table o_pivot_table_lg">
+          <thead><tr><th>Customer</th><th>Salesperson</th><th class="o_list_number_th">Revenue</th></tr></thead>
+          <tbody>
+            <tr><td>Customer</td><td>Administrator</td><td class="o_list_number">$7.00</td></tr>
+            <tr><td>Customer</td><td>Administrator</td><td class="o_list_number">$7.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="o_dashboard_tile">
+        <div class="o_dashboard_section_title">Top Sales Orders</div>
+        <table class="o_pivot_table o_pivot_table_lg">
+          <thead><tr><th>Customer</th><th>Salesperson</th><th class="o_list_number_th">Revenue</th></tr></thead>
+          <tbody>
+            <tr><td colspan="3" class="text-muted text-center" style="padding:32px 0;">No data yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

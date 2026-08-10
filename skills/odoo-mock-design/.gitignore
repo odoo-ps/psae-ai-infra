@@ -1,0 +1,21 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python bytecode + caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS-level
+Thumbs.db
+desktop.ini

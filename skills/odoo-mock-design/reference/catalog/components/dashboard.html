@@ -1,0 +1,43 @@
+<!--
+  dashboard.html — Spreadsheet Dashboard (spreadsheet_dashboard): a read-only
+  board of KPI tiles + chart/pivot tiles, reached from a dashboard section
+  switcher. Render inside the backend shell. Charts reuse the chart_views
+  placeholders (graph/pivot) — never a charting library.
+-->
+<div class="o_dashboard_view">
+  <div class="o_dashboard_sections">
+    <span class="o_dashboard_section active">Sales</span>
+    <span class="o_dashboard_section">Inventory</span>
+    <span class="o_dashboard_section">Finance</span>
+  </div>
+
+  <div class="o_dashboard_kpis">
+    <div class="o_dashboard_kpi"><div class="o_kpi_label">Revenue (MTD)</div><div class="o_kpi_value">$ 48,200</div><div class="o_kpi_trend o_kpi_up">▲ 17%</div></div>
+    <div class="o_dashboard_kpi"><div class="o_kpi_label">Orders</div><div class="o_kpi_value">312</div><div class="o_kpi_trend o_kpi_up">▲ 8%</div></div>
+    <div class="o_dashboard_kpi"><div class="o_kpi_label">Avg Order Value</div><div class="o_kpi_value">$ 154</div><div class="o_kpi_trend o_kpi_down">▼ 3%</div></div>
+    <div class="o_dashboard_kpi"><div class="o_kpi_label">Margin</div><div class="o_kpi_value">34.4%</div><div class="o_kpi_trend o_kpi_up">▲ 1.2%</div></div>
+  </div>
+
+  <div class="o_dashboard_tiles">
+    <div class="o_dashboard_tile">
+      <div class="o_dashboard_tile_title">Monthly Revenue</div>
+      <div class="o_graph_bars o_graph_bars_sm">
+        <div class="o_graph_bar" style="height:48%"><span>Mar</span></div>
+        <div class="o_graph_bar" style="height:70%"><span>Apr</span></div>
+        <div class="o_graph_bar" style="height:62%"><span>May</span></div>
+        <div class="o_graph_bar" style="height:92%"><span>Jun</span></div>
+      </div>
+    </div>
+    <div class="o_dashboard_tile">
+      <div class="o_dashboard_tile_title">Top Customers</div>
+      <table class="o_pivot_table">
+        <thead><tr><th>Customer</th><th class="o_list_number_th">Revenue</th></tr></thead>
+        <tbody>
+          <tr><td class="o_pivot_header">Deco Addict</td><td class="o_list_number">$ 18,400</td></tr>
+          <tr><td class="o_pivot_header">Gemini Furniture</td><td class="o_list_number">$ 12,050</td></tr>
+          <tr><td class="o_pivot_header">Azure Interior</td><td class="o_list_number">$ 9,300</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,420 @@
+<!--
+  _gallery.html — visual-regression reference for the catalog. NOT a mock and not
+  shipped in a package. Render it with reference/scripts/_render_catalog.py, which
+  stages the assets/ layout and screenshots it, so you can eyeball every component
+  (and diff against a saved baseline) after editing odoo.css / a fragment / a
+  version bump. Interactive states are force-shown via classes so no JS is needed.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Catalog gallery — Odoo mock components</title>
+  <link rel="stylesheet" href="assets/odoo.css"/>
+  <link rel="stylesheet" href="assets/annotations.css"/>
+  <style>
+    body { padding: 0; }
+    .g-sec { padding: 16px 24px 8px; }
+    .g-sec > h2 { font: 600 13px var(--o-font-family); color:#714B67; text-transform:uppercase; letter-spacing:.05em; margin:18px 0 8px; }
+    .mock-screen { display:block !important; min-height:0 !important; } /* show all, stacked */
+  </style>
+</head>
+<body>
+  <!-- Inline sprite (same-document #id refs). -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  
+  <symbol id="o-save" viewBox="0 0 448 512"><path d="M433.1 129.1l-83.9-83.9C342.3 38.3 327.1 32 316.1 32H64C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V164.9c0-11-6.3-26.2-14.9-35.8zM224 416c-35.3 0-64-28.7-64-64s28.7-64 64-64 64 28.7 64 64-28.7 64-64 64zm96-304.5V212c0 6.6-5.4 12-12 12H76c-6.6 0-12-5.4-12-12V108c0-6.6 5.4-12 12-12h228.5c3.2 0 6.2 1.3 8.5 3.5l3.5 3.5c2.3 2.3 3.5 5.3 3.5 8.5z"/></symbol>
+  <symbol id="o-times" viewBox="0 0 352 512"><path d="M242.7 256l100.1-100.1c12.3-12.3 12.3-32.2 0-44.5l-22.2-22.2c-12.3-12.3-32.2-12.3-44.5 0L176 189.3 75.9 89.2c-12.3-12.3-32.2-12.3-44.5 0L9.2 111.5c-12.3 12.3-12.3 32.2 0 44.5L109.3 256 9.2 356.1c-12.3 12.3-12.3 32.2 0 44.5l22.2 22.2c12.3 12.3 32.2 12.3 44.5 0L176 322.7l100.1 100.1c12.3 12.3 32.2 12.3 44.5 0l22.2-22.2c12.3-12.3 12.3-32.2 0-44.5L242.7 256z"/></symbol>
+  <symbol id="o-cog" viewBox="0 0 512 512"><path d="M487.4 315.7l-42.6-24.6c4.3-23.2 4.3-47 0-70.2l42.6-24.6c4.9-2.8 7.1-8.6 5.5-14-11.1-35.6-30-67.8-54.7-94.6-3.8-4.1-10-5.1-14.8-2.3L380.8 110c-17.9-15.4-38.5-27.3-60.8-35.1V25.8c0-5.6-3.9-10.5-9.4-11.7-36.7-8.2-74.3-7.8-109.2 0-5.5 1.2-9.4 6.1-9.4 11.7V75c-22.2 7.9-42.8 19.8-60.8 35.1L88.7 85.5c-4.9-2.8-11-1.9-14.8 2.3-24.7 26.7-43.6 58.9-54.7 94.6-1.7 5.4.6 11.2 5.5 14L67.3 221c-4.3 23.2-4.3 47 0 70.2l-42.6 24.6c-4.9 2.8-7.1 8.6-5.5 14 11.1 35.6 30 67.8 54.7 94.6 3.8 4.1 10 5.1 14.8 2.3l42.6-24.6c17.9 15.4 38.5 27.3 60.8 35.1v49.2c0 5.6 3.9 10.5 9.4 11.7 36.7 8.2 74.3 7.8 109.2 0 5.5-1.2 9.4-6.1 9.4-11.7V437c22.2-7.9 42.8-19.8 60.8-35.1l42.6 24.6c4.9 2.8 11 1.9 14.8-2.3 24.7-26.7 43.6-58.9 54.7-94.6 1.6-5.4-.6-11.2-5.5-14zM256 336c-44.1 0-80-35.9-80-80s35.9-80 80-80 80 35.9 80 80-35.9 80-80 80z"/></symbol>
+  <symbol id="o-chevron-left" viewBox="0 0 320 512"><path d="M34.5 239L228.9 44.6c9.4-9.4 24.6-9.4 33.9 0l22.7 22.7c9.4 9.4 9.4 24.5 0 33.9L131.5 256l154 154.8c9.3 9.4 9.3 24.5 0 33.9l-22.7 22.7c-9.4 9.4-24.6 9.4-33.9 0L34.5 273c-9.3-9.4-9.3-24.6 0-34z"/></symbol>
+  <symbol id="o-chevron-right" viewBox="0 0 320 512"><path d="M285.5 273L91.1 467.4c-9.4 9.4-24.6 9.4-33.9 0l-22.7-22.7c-9.4-9.4-9.4-24.5 0-33.9L188.5 256 34.5 101.2c-9.3-9.4-9.3-24.5 0-33.9l22.7-22.7c9.4-9.4 24.6-9.4 33.9 0L285.5 239c9.3 9.4 9.3 24.6 0 34z"/></symbol>
+  <symbol id="o-bars" viewBox="0 0 448 512"><path d="M16 132h416c8.8 0 16-7.2 16-16V76c0-8.8-7.2-16-16-16H16C7.2 60 0 67.2 0 76v40c0 8.8 7.2 16 16 16zm0 160h416c8.8 0 16-7.2 16-16v-40c0-8.8-7.2-16-16-16H16c-8.8 0-16 7.2-16 16v40c0 8.8 7.2 16 16 16zm0 160h416c8.8 0 16-7.2 16-16v-40c0-8.8-7.2-16-16-16H16c-8.8 0-16 7.2-16 16v40c0 8.8 7.2 16 16 16z"/></symbol>
+  <symbol id="o-search" viewBox="0 0 512 512"><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></symbol>
+  <symbol id="o-plus" viewBox="0 0 448 512"><path d="M416 208H272V64c0-17.7-14.3-32-32-32h-32c-17.7 0-32 14.3-32 32v144H32c-17.7 0-32 14.3-32 32v32c0 17.7 14.3 32 32 32h144v144c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32V304h144c17.7 0 32-14.3 32-32v-32c0-17.7-14.3-32-32-32z"/></symbol>
+  <symbol id="o-star" viewBox="0 0 576 512"><path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z"/></symbol>
+  <symbol id="o-list" viewBox="0 0 512 512"><path d="M80 368H16a16 16 0 0 0-16 16v64a16 16 0 0 0 16 16h64a16 16 0 0 0 16-16v-64a16 16 0 0 0-16-16zm0-320H16A16 16 0 0 0 0 64v64a16 16 0 0 0 16 16h64a16 16 0 0 0 16-16V64a16 16 0 0 0-16-16zm0 160H16a16 16 0 0 0-16 16v64a16 16 0 0 0 16 16h64a16 16 0 0 0 16-16v-64a16 16 0 0 0-16-16zm416 176H176a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h320a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16zm0-320H176a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h320a16 16 0 0 0 16-16V80a16 16 0 0 0-16-16zm0 160H176a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h320a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16z"/></symbol>
+  <symbol id="o-th-large" viewBox="0 0 512 512"><path d="M296 32h192c13.255 0 24 10.745 24 24v160c0 13.255-10.745 24-24 24H296c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24zm-80 0H24C10.745 32 0 42.745 0 56v160c0 13.255 10.745 24 24 24h192c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24zM0 296v160c0 13.255 10.745 24 24 24h192c13.255 0 24-10.745 24-24V296c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm296 184h192c13.255 0 24-10.745 24-24V296c0-13.255-10.745-24-24-24H296c-13.255 0-24 10.745-24 24v160c0 13.255 10.745 24 24 24z"/></symbol>
+  <symbol id="o-user" viewBox="0 0 448 512"><path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z"/></symbol>
+  <symbol id="o-clock" viewBox="0 0 512 512"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm57.1 350.1L224.9 294c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h48c6.6 0 12 5.4 12 12v137.7l63.5 46.2c5.4 3.9 6.5 11.4 2.6 16.8l-28.2 38.8c-3.9 5.3-11.4 6.5-16.8 2.6z"/></symbol>
+  <symbol id="o-paperclip" viewBox="0 0 448 512"><path d="M43.246 466.142c-58.43-60.289-57.341-157.511 1.386-217.581l176.775-176.775c44.667-44.667 117.667-44.667 162.333 0s44.667 117.667 0 162.333L208.39 396.95c-26.667 26.667-70.333 26.667-97 0s-26.667-70.333 0-97l145.55-145.55c8.667-8.667 22.667-8.667 31.333 0s8.667 22.667 0 31.333L142.723 331.283c-8.667 8.667-8.667 22.667 0 31.333s22.667 8.667 31.333 0l175.333-175.333c26.667-26.667 26.667-70.333 0-97s-70.333-26.667-97 0L76.99 266.95c-44.667 44.667-44.667 117.667 0 162.333s117.667 44.667 162.333 0l158.55-158.55c8.667-8.667 22.667-8.667 31.333 0s8.667 22.667 0 31.333L270.656 460.616c-58.43 58.43-153.293 58.857-211.723-.474z"/></symbol>
+  <symbol id="o-comment" viewBox="0 0 512 512"><path d="M256 32C114.6 32 0 125.1 0 240c0 49.6 21.4 95 57 130.7C44.5 421.1 2.7 466 2.2 466.5c-2.2 2.3-2.8 5.7-1.5 8.7S4.8 480 8 480c66.3 0 116-31.8 140.6-51.4 32.7 12.3 69 19.4 107.4 19.4 141.4 0 256-93.1 256-208S397.4 32 256 32z"/></symbol>
+  <symbol id="o-ellipsis-v" viewBox="0 0 128 512"><path d="M64 144c26.5 0 48-21.5 48-48S90.5 48 64 48 16 69.5 16 96s21.5 48 48 48zm0 64c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 160c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48z"/></symbol>
+  <symbol id="o-check" viewBox="0 0 512 512"><path d="M173.9 439.4l-166.4-166.4c-9.4-9.4-9.4-24.6 0-33.9l33.9-33.9c9.4-9.4 24.6-9.4 33.9 0L192 312.7 432.7 72c9.4-9.4 24.6-9.4 33.9 0l33.9 33.9c9.4 9.4 9.4 24.6 0 33.9l-291 291c-9.3 9.4-24.5 9.4-33.9 0z"/></symbol>
+  <symbol id="o-caret-down" viewBox="0 0 320 512"><path d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"/></symbol>
+</svg>
+
+
+  <div class="g-sec"><h2>Navbar</h2></div>
+  <nav class="o_main_navbar">
+    <a class="o_menu_toggle"><svg class="o_icon o_icon_lg"><use href="#o-th-large"/></svg></a>
+    <span class="o_menu_brand">Sales</span>
+    <div class="o_menu_sections"><span class="o_nav_entry">Orders</span><span class="o_nav_entry">Products</span><span class="o_nav_entry">Reporting</span></div>
+    <div class="o_menu_systray"><span class="o_systray_item"><svg class="o_icon"><use href="#o-clock"/></svg></span><span class="o_user_avatar">MA</span></div>
+  </nav>
+
+  <div class="g-sec"><h2>Control panel (breadcrumb · favorite · cog · pager · switcher)</h2></div>
+  <div class="o_control_panel">
+    <div class="o_control_panel_breadcrumbs">
+      <ol class="o_breadcrumb"><li class="breadcrumb_item">Quotations</li><li class="breadcrumb_sep">/</li><li class="o_last_breadcrumb_item">S00078</li></ol>
+      <span class="o_cp_action_menus"><svg class="o_icon o_favorite"><use href="#o-star"/></svg><svg class="o_icon o_cp_cog"><use href="#o-cog"/></svg></span>
+    </div>
+    <div class="o_control_panel_main">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-primary">New</button></div>
+      <div class="o_control_panel_navigation">
+        <div class="o_searchview"><svg class="o_icon"><use href="#o-search"/></svg><span class="o_searchview_input text-muted">Search...</span></div>
+        <div class="o_cp_pager"><span class="o_pager_counter">1-80 / 80</span></div>
+        <div class="o_cp_switch_buttons"><span class="o_switch_view active"><svg class="o_icon"><use href="#o-view-list"/></svg></span><span class="o_switch_view"><svg class="o_icon"><use href="#o-view-kanban"/></svg></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g-sec"><h2>Form — control-panel stat buttons · statusbar · ribbon · fields (link / required / empty) · tabs</h2></div>
+  <div class="o_control_panel">
+    <div class="o_control_panel_breadcrumbs">
+      <ol class="o_breadcrumb"><li class="breadcrumb_item">Quotations</li><li class="breadcrumb_sep">/</li><li class="o_last_breadcrumb_item">S00078</li></ol>
+      <div class="o_control_panel_actions"><div class="o-form-buttonbox oe_button_box"><button class="oe_stat_button"><svg class="o_stat_icon o_icon"><use href="#o-list"/></svg><span class="o_stat_info"><span class="o_stat_text">Delivery</span><span class="o_stat_value">1</span></span></button></div></div>
+      <span class="o_cp_action_menus"><svg class="o_icon o_favorite"><use href="#o-star"/></svg><svg class="o_icon o_cp_cog"><use href="#o-cog"/></svg></span>
+    </div>
+  </div>
+  <div class="o_form_view">
+    <div class="o_form_statusbar">
+      <div class="o_statusbar_buttons"><button class="btn btn-primary">Confirm</button><button class="btn o_btn_outline">Send by Email</button></div>
+      <div class="o_statusbar_status"><span class="o_arrow_button">Quotation</span><span class="o_arrow_button o_arrow_button_current">Quotation Sent</span><span class="o_arrow_button">Sales Order</span></div>
+    </div>
+    <div class="o_form_sheet_bg"><div class="o_form_sheet">
+      <div class="o_widget_web_ribbon">Locked</div>
+      <div class="oe_title"><h1 class="o_form_title">S00078</h1></div>
+      <div class="o_group">
+        <div class="o_inner_group">
+          <div class="o_field_row"><label class="o_form_label">Customer</label><div class="o_field_widget"><a class="o_form_link">Deco Addict</a></div></div>
+          <div class="o_field_row"><label class="o_form_label">Reference <span class="o_field_help" data-help="Custom solution field." data-label="Reference" data-field="x_ref" data-model="sale.order" data-type="char">?</span></label><div class="o_field_widget o_required_modifier">REF-001</div></div>
+        </div>
+        <div class="o_inner_group">
+          <div class="o_field_row"><label class="o_form_label">Payment Terms</label><div class="o_field_widget o_field_empty">—</div></div>
+        </div>
+      </div>
+      <div class="o_notebook">
+        <div class="o_notebook_headers"><span class="nav-link active">Order Lines</span><span class="nav-link">Other Info</span></div>
+        <div class="o_notebook_content">
+          <div class="o_horizontal_separator">Shipping</div>
+          <div class="o_inner_group"><div class="o_field_row"><label class="o_form_label">Warehouse</label><div class="o_field_widget"><a class="o_form_link">San Francisco</a></div></div></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="g-sec"><h2>List — handle · links · tag · subtotal footer</h2></div>
+  <div class="o_list_view"><table class="o_list_table o_list_table_ungrouped">
+    <thead><tr><th style="width:18px;"></th><th>Product</th><th class="o_list_number_th">Qty</th><th class="o_list_number_th">Taxes</th><th class="o_list_number_th">Subtotal</th></tr></thead>
+    <tbody><tr class="o_data_row"><td class="o_list_handle"><svg class="o_icon"><use href="#o-bars"/></svg></td><td><span class="o_list_link">Drawer Black</span></td><td class="o_list_number">5.00</td><td><span class="o_tag">15%</span></td><td class="o_list_number">$ 600.00</td></tr></tbody>
+  </table></div>
+  <div class="o_subtotal_footer"><table>
+    <tr><td class="o_subtotal_label">Untaxed Amount</td><td class="o_subtotal_amount">$ 600.00</td></tr>
+    <tr><td class="o_subtotal_label">Tax 15%</td><td class="o_subtotal_amount">$ 90.00</td></tr>
+    <tr class="o_total"><td>Total</td><td class="o_subtotal_amount">$ 690.00</td></tr>
+  </table></div>
+
+  <div class="g-sec"><h2>Kanban</h2></div>
+  <div class="o_kanban_view"><div class="o_kanban_renderer">
+    <div class="o_kanban_group"><div class="o_kanban_header"><span class="o_kanban_header_title">New</span><span class="o_kanban_counter">2</span></div>
+      <div class="o_kanban_record"><div class="o_kanban_record_title">Deco Addict</div><div class="o_kanban_record_subtitle">$ 1,250.00</div><div class="o_kanban_record_bottom"><span class="o_tag">Hot</span></div></div>
+    </div>
+    <div class="o_kanban_group"><div class="o_kanban_header"><span class="o_kanban_header_title">Qualified</span><span class="o_kanban_counter">1</span></div>
+      <div class="o_kanban_record"><div class="o_kanban_record_title">Gemini Furniture</div><div class="o_kanban_record_subtitle">$ 3,980.00</div></div>
+    </div>
+  </div></div>
+
+  <div class="g-sec"><h2>Chatter (followers · composer · activity · messages)</h2></div>
+  <div style="max-width:380px;"><aside class="o-mail-Chatter" style="border:1px solid var(--o-gray-300);">
+    <div class="o-mail-Chatter-top">
+      <div class="o-mail-Chatter-topbar">
+        <button class="btn btn-primary o-mail-Chatter-sendMessage">Send message</button>
+        <button class="btn btn-secondary o-mail-Chatter-logNote">Log note</button>
+        <button class="btn btn-secondary o-mail-Chatter-activity">Activities</button>
+        <span class="o-mail-Chatter-topbarGrow"></span>
+        <button class="o-mail-Chatter-search"><svg class="o_icon o_icon_sm"><use href="#o-search"/></svg></button>
+        <div class="o-mail-Followers"><button class="o-mail-Followers-button"><svg class="o_icon o_icon_sm"><use href="#o-user"/></svg><sup class="o-mail-Followers-counter">2</sup></button></div>
+      </div>
+      <div class="o-mail-Composer"><span class="o-mail-Composer-input o_input_placeholder">Log an internal note…</span><div class="o-mail-Composer-actions"><span class="o-mail-Composer-toolbar"><svg class="o_icon o_icon_sm"><use href="#o-paperclip"/></svg></span><button class="btn btn-primary">Log</button></div></div>
+    </div>
+    <div class="o-mail-Chatter-content">
+      <div class="o-mail-Activity"><div class="o-mail-Activity-sidebar"><svg class="o_icon o-mail-Activity-icon"><use href="#o-clock"/></svg></div><div class="o-mail-Activity-core"><div class="o-mail-Activity-info"><span class="o-mail-Activity-type">To Do</span><span class="o-mail-Activity-date">Today</span></div><div class="o-mail-Activity-body">Call the customer.</div></div></div>
+      <div class="o-mail-Message">
+        <div class="o-mail-Message-sidebar"><div class="o-mail-Message-avatarContainer"><span class="o-mail-Message-avatar o_avatar_c0">MA</span></div></div>
+        <div class="o-mail-Message-core"><div class="o-mail-Message-header"><span class="o-mail-Message-author">Mitchell Admin</span> <span class="o-mail-Message-date">2h ago</span></div><div class="o-mail-Message-contentContainer"><div class="o-mail-Message-body">Quotation sent.</div></div></div>
+      </div>
+    </div>
+  </aside></div>
+
+  <div class="g-sec"><h2>Form + Chatter (page fit — chatter shrinks &amp; scrolls)</h2></div>
+  <div style="height:360px; overflow:hidden; border-top:1px solid #ddd;">
+    <div class="o_form_view" style="height:100%;">
+      <div class="o_content_with_chatter" style="height:100%;">
+        <div class="o_form_sheet_bg"><div class="o_form_sheet">
+          <div class="oe_title"><h1 class="o_form_title">S00078</h1></div>
+          <div class="o_group">
+            <div class="o_inner_group"><div class="o_field_row"><label class="o_form_label">Customer</label><div class="o_field_widget"><a class="o_form_link">Deco Addict</a></div></div></div>
+            <div class="o_inner_group"><div class="o_field_row"><label class="o_form_label">Order Date</label><div class="o_field_widget">06/12/2026</div></div></div>
+          </div>
+        </div></div>
+        <aside class="o-mail-Chatter">
+          <div class="o-mail-Chatter-top">
+            <div class="o-mail-Chatter-topbar">
+              <button class="btn btn-primary o-mail-Chatter-sendMessage">Send message</button>
+              <button class="btn btn-secondary o-mail-Chatter-logNote">Log note</button>
+              <button class="btn btn-secondary o-mail-Chatter-activity">Activities</button>
+              <span class="o-mail-Chatter-topbarGrow"></span>
+              <div class="o-mail-Followers"><button class="o-mail-Followers-button"><svg class="o_icon o_icon_sm"><use href="#o-user"/></svg><sup class="o-mail-Followers-counter">2</sup></button></div>
+            </div>
+          </div>
+          <div class="o-mail-Chatter-content">
+            <div class="o-mail-Activity"><div class="o-mail-Activity-sidebar"><svg class="o_icon o-mail-Activity-icon"><use href="#o-clock"/></svg></div><div class="o-mail-Activity-core"><div class="o-mail-Activity-info"><span class="o-mail-Activity-type">To Do</span><span class="o-mail-Activity-date">Today</span></div><div class="o-mail-Activity-body">Call the customer.</div></div></div>
+            <div class="o-mail-Message">
+              <div class="o-mail-Message-sidebar"><div class="o-mail-Message-avatarContainer"><span class="o-mail-Message-avatar o_avatar_c0">MA</span></div></div>
+              <div class="o-mail-Message-core"><div class="o-mail-Message-header"><span class="o-mail-Message-author">Mitchell Admin</span> <span class="o-mail-Message-date">2h ago</span></div><div class="o-mail-Message-contentContainer"><div class="o-mail-Message-body">Quotation sent.</div></div></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div class="g-sec"><h2>Graph · Pivot · Calendar placeholders</h2></div>
+  <div class="o_graph_view"><div class="o_graph_bars">
+    <div class="o_graph_bar" style="height:40%"><span>Jan</span></div><div class="o_graph_bar" style="height:65%"><span>Feb</span></div>
+    <div class="o_graph_bar" style="height:88%"><span>Mar</span></div><div class="o_graph_bar" style="height:73%"><span>Apr</span></div>
+  </div></div>
+  <div class="o_pivot"><table class="o_pivot_table">
+    <thead><tr><th>Total</th><th class="o_list_number_th">Q1</th><th class="o_list_number_th">Q2</th></tr></thead>
+    <tbody><tr><td class="o_pivot_header">Deco Addict</td><td class="o_list_number">$ 1,250</td><td class="o_list_number">$ 980</td></tr></tbody>
+  </table></div>
+  <div class="o_calendar_view"><div class="o_calendar_grid">
+    <div class="o_cal_dow">Mon</div><div class="o_cal_dow">Tue</div><div class="o_cal_dow">Wed</div><div class="o_cal_dow">Thu</div><div class="o_cal_dow">Fri</div><div class="o_cal_dow">Sat</div><div class="o_cal_dow">Sun</div>
+    <div class="o_cal_day">1</div><div class="o_cal_day">2<span class="o_cal_event">SO0042</span></div><div class="o_cal_day">3</div><div class="o_cal_day">4<span class="o_cal_event">Delivery</span></div><div class="o_cal_day">5</div><div class="o_cal_day">6</div><div class="o_cal_day">7</div>
+  </div></div>
+
+  <div class="g-sec"><h2>Dropdown (open) · Buttons · Badges · Tags</h2></div>
+  <div style="padding:0 24px 8px; position:relative; height:120px;">
+    <div class="o-autocomplete"><span class="o-autocomplete-input">LOT-0011 <svg class="o_icon" style="margin-left:auto;"><use href="#o-caret-down"/></svg></span>
+      <div class="o-autocomplete-dropdown is-open"><div class="o-autocomplete-item"><span>LOT-0011</span><span class="o-muted">6.000 available</span></div><div class="o-autocomplete-item"><span>LOT-0015</span><span class="o-muted">1.000 available</span></div></div>
+    </div>
+  </div>
+  <div style="padding:0 24px 16px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <button class="btn btn-primary">Primary</button><button class="btn o_btn_outline">Outline</button><button class="btn btn-secondary">Secondary</button><button class="btn btn-link">Link</button>
+    <span class="badge text-bg-success">Success</span><span class="badge text-bg-warning">Warning</span><span class="badge text-bg-danger">Danger</span><span class="badge text-bg-info">Info</span>
+    <span class="o_tag">tag</span>
+  </div>
+
+  <div class="g-sec"><h2>Custom on-form field widgets (status pill · icon+value · meter)</h2></div>
+  <div style="padding:0 24px 16px; display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+    <div class="o_field_widget"><span class="badge text-bg-info">Quoted</span></div>
+    <div class="o_field_widget"><span class="o_cw_pill text-bg-success"><svg class="o_cw_icon" aria-hidden="true"><use href="#o-exchange"/></svg> 1.1567</span></div>
+    <div class="o_field_widget"><span class="o_cw_meter"><span style="width:62%"></span></span> <span class="o_cw_value">62%</span></div>
+    <div class="o_field_widget"><span class="o_cw_meter is-danger"><span style="width:18%"></span></span> <span class="o_cw_value">18%</span></div>
+  </div>
+
+  <div class="g-sec"><h2>Toast</h2></div>
+  <div style="padding:0 24px 24px;"><div class="o_notification o_notification_success is-shown" style="position:static; transform:none;">Quotation confirmed.</div></div>
+
+  <div class="g-sec"><h2>App surface — Point of Sale</h2></div>
+  <div style="height:460px; overflow:hidden; border-top:1px solid #ddd;">
+    <div class="pos" style="min-height:100%;">
+      <div class="pos-topbar"><span class="pos-topbar-title">Point of Sale</span><span class="pos-topbar-order">Order 0042</span><span class="pos-topbar-user">Mitchell Admin</span></div>
+      <div class="pos-content">
+        <div class="leftpane">
+          <div class="order-container"><ul class="orderlines">
+            <li class="orderline selected"><span class="product-name">Drawer Black</span><span class="orderline-info">2 x $ 120.00</span><span class="orderline-price">$ 240.00</span></li>
+            <li class="orderline"><span class="product-name">Conference Chair</span><span class="orderline-info">1 x $ 33.00</span><span class="orderline-price">$ 33.00</span></li>
+          </ul></div>
+          <div class="order-summary"><span>Total</span><span class="order-total">$ 273.00</span></div>
+          <div class="pos-pads"><div class="numpad">
+            <button class="numpad-btn">1</button><button class="numpad-btn">2</button><button class="numpad-btn">3</button><button class="numpad-btn mode">Qty</button>
+            <button class="numpad-btn">4</button><button class="numpad-btn">5</button><button class="numpad-btn">6</button><button class="numpad-btn mode">Disc</button>
+            <button class="numpad-btn">7</button><button class="numpad-btn">8</button><button class="numpad-btn">9</button><button class="numpad-btn mode">Price</button>
+            <button class="numpad-btn">+/-</button><button class="numpad-btn">0</button><button class="numpad-btn">.</button><button class="numpad-btn">⌫</button>
+          </div><button class="pay-order-button">Payment</button></div>
+        </div>
+        <div class="rightpane">
+          <div class="pos-categories"><span class="category-button active">Office Furniture</span><span class="category-button">Chairs</span><span class="category-button">Desks</span></div>
+          <div class="product-list">
+            <div class="product"><div class="product-image"></div><div class="product-name">Drawer Black</div><div class="product-price">$ 120.00</div></div>
+            <div class="product"><div class="product-image"></div><div class="product-name">Conference Chair</div><div class="product-price">$ 33.00</div></div>
+            <div class="product"><div class="product-image"></div><div class="product-name">Cabinet</div><div class="product-price">$ 320.00</div></div>
+            <div class="product"><div class="product-image"></div><div class="product-name">Whiteboard</div><div class="product-price">$ 89.00</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g-sec"><h2>App surface — Website / eCommerce shop</h2></div>
+  <div style="height:360px; overflow:hidden; border-top:1px solid #ddd;">
+    <div class="o_website" style="min-height:100%;">
+      <header class="o_header_standard"><span class="o_website_logo">MyCompany</span><nav class="o_website_menu"><span class="nav-link active">Shop</span><span class="nav-link">Home</span><span class="nav-link">Contact us</span></nav><div class="o_website_header_right"><span class="o_wsale_my_cart">Cart <span class="o_wsale_cart_badge">2</span></span><span class="o_website_signin">Sign in</span></div></header>
+      <div class="oe_website_sale">
+        <aside class="o_wsale_products_categories"><div class="o_wsale_cat_title">Categories</div><span class="o_wsale_cat active">All Products</span><span class="o_wsale_cat">Office Furniture</span><span class="o_wsale_cat">Chairs</span></aside>
+        <div class="o_wsale_products_main">
+          <div class="o_wsale_products_searchbar"><span class="o_searchview"><svg class="o_icon"><use href="#o-search"/></svg><span class="o_searchview_input text-muted">Search a product...</span></span><span class="o_wsale_sortby">Sort by: Featured</span></div>
+          <div class="o_wsale_products_grid">
+            <div class="oe_product"><div class="oe_product_image"></div><div class="oe_product_name">Drawer Black</div><div class="oe_product_price">$ 120.00</div></div>
+            <div class="oe_product"><div class="oe_product_image"></div><div class="oe_product_name">Conference Chair</div><div class="oe_product_price">$ 33.00</div></div>
+            <div class="oe_product"><div class="oe_product_image"></div><div class="oe_product_name">Cabinet with Doors</div><div class="oe_product_price">$ 320.00</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g-sec"><h2>App surface — Accounting report (P&amp;L)</h2></div>
+  <div class="o_account_reports_page">
+    <div class="o_account_report_filters"><span class="o_report_filter">As of: 06/30/2026</span><span class="o_report_filter">Comparison: Previous Period</span><span class="o_report_filter">Journals: All</span><span class="o_report_buttons"><button class="btn o_btn_outline">PDF</button><button class="btn o_btn_outline">XLSX</button></span></div>
+    <table class="o_account_report_table">
+      <thead><tr><th>Profit and Loss</th><th class="o_list_number_th">Jun 2026</th><th class="o_list_number_th">May 2026</th></tr></thead>
+      <tbody>
+        <tr class="o_account_report_line"><td class="line_name"><span class="o_account_report_caret">▾</span> Income</td><td class="o_list_number">$ 48,200.00</td><td class="o_list_number">$ 41,050.00</td></tr>
+        <tr class="o_account_report_line o_account_report_line_indent"><td class="line_name">Product Sales</td><td class="o_list_number">$ 45,000.00</td><td class="o_list_number">$ 39,000.00</td></tr>
+        <tr class="o_account_report_line o_account_report_line_total"><td class="line_name">Total Income</td><td class="o_list_number">$ 48,200.00</td><td class="o_list_number">$ 41,050.00</td></tr>
+        <tr class="o_account_report_line"><td class="line_name"><span class="o_account_report_caret">▾</span> Expenses</td><td class="o_list_number">$ 31,640.00</td><td class="o_list_number">$ 28,900.00</td></tr>
+        <tr class="o_account_report_line o_account_report_line_total"><td class="line_name">Total Expenses</td><td class="o_list_number">$ 31,640.00</td><td class="o_list_number">$ 28,900.00</td></tr>
+      </tbody>
+      <tfoot><tr class="o_account_report_line_grandtotal"><td class="line_name">Net Profit</td><td class="o_list_number">$ 16,560.00</td><td class="o_list_number">$ 12,150.00</td></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="g-sec"><h2>App surface — Spreadsheet</h2></div>
+  <div style="height:300px; overflow:hidden; border-top:1px solid #ddd;"><div class="o-spreadsheet" style="height:100%;">
+    <div class="o-topbar-toolbar"><span class="o-tool">↶</span><span class="o-tool">↷</span><span class="o-tool-sep"></span><span class="o-tool">$</span><span class="o-tool">%</span><span class="o-tool-sep"></span><span class="o-tool"><strong>B</strong></span><span class="o-tool"><em>I</em></span><span class="o-tool">Σ</span><span class="o-tool">📊 Insert chart</span></div>
+    <div class="o-formula-bar"><span class="o-cell-ref">B4</span><span class="o-composer">=SUM(B2:B3)</span></div>
+    <div class="o-grid"><table class="o-grid-table">
+      <thead><tr><th class="o-corner"></th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+      <tbody>
+        <tr><th class="o-row-number">1</th><td class="o-cell o-cell-head">Region</td><td class="o-cell o-cell-head">Q1</td><td class="o-cell o-cell-head">Q2</td><td class="o-cell o-cell-head">Total</td></tr>
+        <tr><th class="o-row-number">2</th><td class="o-cell">North</td><td class="o-cell o-num">12,500</td><td class="o-cell o-num">14,200</td><td class="o-cell o-num">26,700</td></tr>
+        <tr><th class="o-row-number">3</th><td class="o-cell">South</td><td class="o-cell o-num">9,800</td><td class="o-cell o-num">11,050</td><td class="o-cell o-num">20,850</td></tr>
+        <tr><th class="o-row-number">4</th><td class="o-cell o-cell-total">Total</td><td class="o-cell o-num o-cell-total o-cell-selected">22,300</td><td class="o-cell o-num o-cell-total">25,250</td><td class="o-cell o-num o-cell-total">47,550</td></tr>
+      </tbody>
+    </table></div>
+    <div class="o-bottom-bar"><span class="o-sheet-item active">Dashboard</span><span class="o-sheet-item">Data</span><span class="o-sheet-item o-add-sheet">+</span></div>
+  </div></div>
+
+  <div class="g-sec"><h2>App surface — Gantt</h2></div>
+  <div class="o_gantt_view">
+    <div class="o_gantt_buttons_container"><button class="btn o_btn_outline o_gantt_button_today">Today</button><span class="o_gantt_scale active">Week</span><span class="o_gantt_scale">Month</span></div>
+    <div class="o_gantt_grid">
+      <div class="o_gantt_header_row"><div class="o_gantt_row_title">Resource</div><div class="o_gantt_header_cells"><div class="o_gantt_header_cell">Mon</div><div class="o_gantt_header_cell">Tue</div><div class="o_gantt_header_cell">Wed</div><div class="o_gantt_header_cell">Thu</div><div class="o_gantt_header_cell">Fri</div><div class="o_gantt_header_cell">Sat</div><div class="o_gantt_header_cell">Sun</div></div></div>
+      <div class="o_gantt_row"><div class="o_gantt_row_title">Mitchell Admin</div><div class="o_gantt_cells"><div class="o_gantt_pill" style="left:0%; width:42%;">Install Drawer</div><div class="o_gantt_pill o_gantt_pill_2" style="left:57%; width:28%;">QA</div></div></div>
+      <div class="o_gantt_row"><div class="o_gantt_row_title">Marc Demo</div><div class="o_gantt_cells"><div class="o_gantt_pill o_gantt_pill_3" style="left:28%; width:43%;">Delivery Run</div></div></div>
+    </div>
+  </div>
+
+  <div class="g-sec"><h2>App surface — Activity matrix</h2></div>
+  <div class="o_activity_view">
+    <table class="o_activity_table">
+      <thead><tr><th></th><th class="o_activity_type_cell">Email</th><th class="o_activity_type_cell">Call</th><th class="o_activity_type_cell">To Do</th></tr></thead>
+      <tbody>
+        <tr><td class="o_activity_record">SO0042 — Deco Addict</td><td class="o_activity_cell"><span class="o_activity_count o_activity_filter_overdue">2</span></td><td class="o_activity_cell"><span class="o_activity_count o_activity_filter_today">1</span></td><td class="o_activity_cell o_activity_empty_cell"></td></tr>
+        <tr><td class="o_activity_record">SO0041 — Gemini Furniture</td><td class="o_activity_cell o_activity_empty_cell"></td><td class="o_activity_cell"><span class="o_activity_count o_activity_filter_planned">1</span></td><td class="o_activity_cell"><span class="o_activity_count o_activity_filter_today">3</span></td></tr>
+      </tbody>
+    </table>
+    <div class="o_activity_legend"><span><span class="o_activity_dot o_activity_filter_planned"></span> Planned</span><span><span class="o_activity_dot o_activity_filter_today"></span> Today</span><span><span class="o_activity_dot o_activity_filter_overdue"></span> Overdue</span></div>
+  </div>
+
+  <div class="g-sec"><h2>App surface — Spreadsheet Dashboard</h2></div>
+  <div class="o_dashboard_view">
+    <div class="o_dashboard_sections"><span class="o_dashboard_section active">Sales</span><span class="o_dashboard_section">Inventory</span><span class="o_dashboard_section">Finance</span></div>
+    <div class="o_dashboard_kpis">
+      <div class="o_dashboard_kpi"><div class="o_kpi_label">Revenue (MTD)</div><div class="o_kpi_value">$ 48,200</div><div class="o_kpi_trend o_kpi_up">▲ 17%</div></div>
+      <div class="o_dashboard_kpi"><div class="o_kpi_label">Orders</div><div class="o_kpi_value">312</div><div class="o_kpi_trend o_kpi_up">▲ 8%</div></div>
+      <div class="o_dashboard_kpi"><div class="o_kpi_label">Avg Order Value</div><div class="o_kpi_value">$ 154</div><div class="o_kpi_trend o_kpi_down">▼ 3%</div></div>
+    </div>
+    <div class="o_dashboard_tiles">
+      <div class="o_dashboard_tile"><div class="o_dashboard_tile_title">Monthly Revenue</div><div class="o_graph_bars o_graph_bars_sm"><div class="o_graph_bar" style="height:48%"><span>Mar</span></div><div class="o_graph_bar" style="height:70%"><span>Apr</span></div><div class="o_graph_bar" style="height:62%"><span>May</span></div><div class="o_graph_bar" style="height:92%"><span>Jun</span></div></div></div>
+      <div class="o_dashboard_tile"><div class="o_dashboard_tile_title">Top Customers</div><table class="o_pivot_table"><thead><tr><th>Customer</th><th class="o_list_number_th">Revenue</th></tr></thead><tbody><tr><td class="o_pivot_header">Deco Addict</td><td class="o_list_number">$ 18,400</td></tr><tr><td class="o_pivot_header">Gemini Furniture</td><td class="o_list_number">$ 12,050</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="g-sec"><h2>View type — Cohort</h2></div>
+  <div class="o_cohort_view"><table class="o_cohort_renderer">
+    <thead><tr><th>Started</th><th class="o_list_number_th">Customers</th><th>+0</th><th>+1</th><th>+2</th></tr></thead>
+    <tbody>
+      <tr><td>Mar 2026</td><td class="o_list_number">120</td><td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb,var(--o-brand-primary) 80%,#fff);color:#fff">100%</td><td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb,var(--o-brand-primary) 55%,#fff);color:#fff">88%</td><td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb,var(--o-brand-primary) 30%,#fff)">79%</td></tr>
+      <tr><td>Apr 2026</td><td class="o_list_number">138</td><td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb,var(--o-brand-primary) 80%,#fff);color:#fff">100%</td><td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb,var(--o-brand-primary) 45%,#fff)">84%</td><td class="o_cohort_value o_cohort_no_data">—</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="g-sec"><h2>View type — Map (static placeholder)</h2></div>
+  <div style="height:240px;overflow:hidden;border-top:1px solid #ddd;"><div class="o-map-renderer" style="height:100%">
+    <div class="o-map-renderer--container"><span class="o-map-watermark">Map</span><span class="o-map-pin" style="left:28%;top:48%">1</span><span class="o-map-pin" style="left:58%;top:64%">2</span></div>
+    <aside class="o-map-renderer--pin-list-container"><div class="o-map-renderer--pin-list-header">Deliveries (2)</div>
+      <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">1</span><div><div class="o-map-pin-title">Deco Addict</div><div class="text-muted">Pleasant Hill</div></div></div>
+      <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">2</span><div><div class="o-map-pin-title">Gemini Furniture</div><div class="text-muted">Mountain View</div></div></div>
+    </aside></div></div>
+
+  <div class="g-sec"><h2>View type — Grid (timesheet)</h2></div>
+  <div class="o_grid_view"><table class="o_grid_renderer">
+    <thead><tr><th>Project / Task</th><th class="o_list_number_th">Mon</th><th class="o_list_number_th">Tue</th><th class="o_list_number_th">Wed</th><th class="o_list_number_th o_grid_total_col">Total</th></tr></thead>
+    <tbody>
+      <tr><td>Home Construction <span class="text-muted">/ Install drawers</span></td><td class="o_grid_cell">2:00</td><td class="o_grid_cell">3:00</td><td class="o_grid_cell">1:30</td><td class="o_grid_row_total">6:30</td></tr>
+      <tr><td>Office Fit-out <span class="text-muted">/ QA</span></td><td class="o_grid_cell">1:00</td><td class="o_grid_cell">2:00</td><td class="o_grid_cell">4:00</td><td class="o_grid_row_total">7:00</td></tr>
+    </tbody>
+    <tfoot><tr class="o_grid_total_row"><td>Total</td><td class="o_list_number">3:00</td><td class="o_list_number">5:00</td><td class="o_list_number">5:30</td><td class="o_list_number o_grid_total_col">13:30</td></tr></tfoot>
+  </table></div>
+
+  <div class="g-sec"><h2>View type — Hierarchy / org chart</h2></div>
+  <div class="o_hierarchy_view"><div class="o_hierarchy_container">
+    <div class="o_hierarchy_node o_hierarchy_node_root"><div class="o_hierarchy_node_avatar"></div><div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Mitchell Admin</div><div class="o_hierarchy_node_title">CEO</div></div></div>
+    <div class="o_hierarchy_line_vertical"></div>
+    <div class="o_hierarchy_children">
+      <div class="o_hierarchy_node"><div class="o_hierarchy_node_avatar"></div><div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Marc Demo</div><div class="o_hierarchy_node_title">Sales Manager</div></div><span class="o_hierarchy_node_button">2</span></div>
+      <div class="o_hierarchy_node"><div class="o_hierarchy_node_avatar"></div><div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Joel Willis</div><div class="o_hierarchy_node_title">Warehouse Lead</div></div></div>
+    </div>
+  </div></div>
+
+  <div class="g-sec"><h2>Surface — Settings</h2></div>
+  <div style="height:300px;overflow:hidden;border-top:1px solid #ddd;"><div class="o_base_settings" style="height:100%">
+    <div class="o_setting_search_panel"><div class="o_searchview"><svg class="o_icon"><use href="#o-search"/></svg><span class="o_searchview_input text-muted">Search...</span></div><span class="settings_tab active">Sales</span><span class="settings_tab">Inventory</span><span class="settings_tab">Accounting</span></div>
+    <div class="o_settings_container"><div class="app_settings_block"><h2 class="o_settings_title">Sales</h2><div class="o_horizontal_separator">Product Catalog</div>
+      <div class="o_setting_box"><div class="o_setting_left_pane"><label class="o_switch checked"></label></div><div class="o_setting_right_pane"><span class="o_form_label">Lots &amp; Serial Numbers</span><div class="text-muted">Allocate specific lots/serials on sales lines.</div></div></div>
+      <div class="o_setting_box"><div class="o_setting_left_pane"><label class="o_switch"></label></div><div class="o_setting_right_pane"><span class="o_form_label">Variants</span><div class="text-muted">Sell products with multiple attributes.</div></div></div>
+    </div></div>
+  </div></div>
+
+  <div class="g-sec"><h2>Surface — Printed report (PDF)</h2></div>
+  <div class="o_report_bg"><div class="o_report_paper">
+    <div class="o_report_header"><div class="o_report_company"><div class="o_report_logo">MyCompany</div><div class="text-muted">San Francisco</div></div><div class="o_report_doc_title">Quotation <strong># S00078</strong></div></div>
+    <div class="o_report_informations"><div><span class="text-muted">Customer</span><div>Deco Addict</div></div><div><span class="text-muted">Order Date</span><div>06/12/2026</div></div></div>
+    <table class="o_report_table"><thead><tr><th>Description</th><th class="o_list_number_th">Qty</th><th class="o_list_number_th">Unit Price</th><th class="o_list_number_th">Amount</th></tr></thead>
+      <tbody><tr><td>Drawer Black [E-COM12]<div class="text-muted">LOT-0007 (3.00), LOT-0011 (2.00)</div></td><td class="o_list_number">5.00</td><td class="o_list_number">$ 120.00</td><td class="o_list_number">$ 600.00</td></tr></tbody></table>
+    <div class="o_report_totals"><table><tr><td>Untaxed</td><td class="o_list_number">$ 600.00</td></tr><tr class="o_report_total_row"><td>Total</td><td class="o_list_number">$ 690.00</td></tr></table></div>
+    <div class="o_report_footer">MyCompany — Quotation S00078 — Page 1 / 1</div>
+  </div></div>
+
+  <div class="g-sec"><h2>Surface — Customer portal</h2></div>
+  <div style="height:360px;overflow:hidden;border-top:1px solid #ddd;"><div class="o_portal" style="min-height:100%">
+    <header class="o_header_standard o_portal_navbar"><span class="o_website_logo">MyCompany</span><nav class="o_website_menu"><span class="nav-link active">Quotations</span><span class="nav-link">Invoices</span></nav><div class="o_website_header_right"><span>Joel Willis</span></div></header>
+    <div class="o_portal_wrap"><div class="o_portal_doc">
+      <div class="o_portal_doc_main"><h2>Quotation <strong>S00078</strong></h2><table class="o_list_table o_list_table_ungrouped"><thead><tr><th>Description</th><th class="o_list_number_th">Qty</th><th class="o_list_number_th">Amount</th></tr></thead><tbody><tr class="o_data_row"><td>Drawer Black [E-COM12]</td><td class="o_list_number">5.00</td><td class="o_list_number">$ 600.00</td></tr></tbody></table></div>
+      <aside class="o_portal_sidebar"><div class="o_portal_sidebar_amount"><div class="text-muted">Total</div><div class="o_portal_amount">$ 690.00</div></div><button class="btn btn-primary">Accept &amp; Sign</button><button class="btn o_btn_outline">Download</button><div class="o_portal_status"><span class="badge text-bg-info">Waiting for signature</span></div></aside>
+    </div></div>
+  </div></div>
+
+  <div class="g-sec"><h2>Surface — Studio editor</h2></div>
+  <div style="height:340px;overflow:hidden;border-top:1px solid #ddd;"><div class="o_web_studio_editor" style="height:100%">
+    <div class="o_web_studio_top_bar"><span class="o_web_studio_breadcrumb">Studio / Sales Order / Form</span><span class="o_web_studio_top_actions"><button class="btn o_btn_outline">Views</button><button class="btn btn-primary">Close</button></span></div>
+    <div class="o_web_studio_editor_body">
+      <div class="o_web_studio_view_renderer"><div class="o_form_sheet" style="margin:16px"><div class="oe_title"><h1 class="o_form_title">S00078</h1></div><div class="o_group"><div class="o_inner_group"><div class="o_field_row"><label class="o_form_label">Customer</label><div class="o_field_widget"><a class="o_form_link">Deco Addict</a></div></div><div class="o_field_row o_web_studio_hook"><label class="o_form_label">Lot Allocations</label><div class="o_field_widget o_web_studio_widget_empty">Drop a field here</div></div></div><div class="o_inner_group"><div class="o_web_studio_add_element">+ Add a field</div></div></div></div></div>
+      <aside class="o_web_studio_sidebar"><div class="o_web_studio_sidebar_header"><span class="active">Add</span><span>Properties</span><span>View</span></div><div class="o_web_studio_sidebar_section">New Fields</div><div class="o_web_studio_field_type_container"><div class="o_web_studio_field_type">Text</div><div class="o_web_studio_field_type">Integer</div><div class="o_web_studio_field_type">Many2one</div><div class="o_web_studio_field_type">One2many</div></div></aside>
+    </div>
+  </div></div>
+
+  <div class="g-sec"><h2>App — Discuss</h2></div>
+  <div style="height:300px;overflow:hidden;border-top:1px solid #ddd;"><div class="o-mail-Discuss" style="height:100%">
+    <aside class="o-mail-DiscussSidebar"><div class="o-mail-DiscussSidebar-category">Channels</div><span class="o-mail-DiscussSidebarChannel active"># general</span><span class="o-mail-DiscussSidebarChannel"># sales</span><div class="o-mail-DiscussSidebar-category">Direct Messages</div><span class="o-mail-DiscussSidebarChannel"><span class="o-mail-dm-dot"></span> Marc Demo</span></aside>
+    <div class="o-mail-DiscussContent"><div class="o-mail-Discuss-header"># general</div><div class="o-mail-Thread">
+      <div class="o-mail-Message"><div class="o-mail-Message-avatar"></div><div><div><span class="o-mail-Message-author">Marc Demo</span> <span class="o-mail-Message-date">9:24 AM</span></div><div>Did S00078 ship?</div></div></div>
+      <div class="o-mail-Message"><div class="o-mail-Message-avatar"></div><div><div><span class="o-mail-Message-author">Joel Willis</span> <span class="o-mail-Message-date">9:31 AM</span></div><div>Yes — LOT-0007 &amp; LOT-0011 reserved, Ready.</div></div></div>
+    </div><div class="o-mail-Composer"><span class="o-mail-Composer-input o_input_placeholder">Message #general…</span></div></div>
+  </div></div>
+
+</body>
+</html>

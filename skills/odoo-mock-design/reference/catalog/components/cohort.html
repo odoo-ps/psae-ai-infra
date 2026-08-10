@@ -1,0 +1,48 @@
+<!--
+  cohort.html — Cohort view (enterprise web_cohort; real classes o_cohort_view /
+  o_cohort_renderer / o_cohort_value / o_cohort_highlight). Retention grid: each
+  row is a cohort (e.g. start month), columns are elapsed periods, cells are a
+  heat-mapped retained %. Render inside the backend shell. Cell tints use the
+  brand color via color-mix (no off-palette colors).
+
+  TEXT CONTRAST RULE (FINDINGS#8): white inline text only when the
+  brand-tint percentage is >= 60%. Below 60% the brand-primary is too
+  washed out for white text to clear WCAG AA — drop the `color`
+  declaration so the cell uses the default dark gray.
+    >= 60% tint → style="… color:#fff;"
+    <  60% tint → no `color:` declaration (default dark)
+-->
+<div class="o_cohort_view">
+  <table class="o_cohort_renderer">
+    <thead>
+      <tr>
+        <th>Started</th><th class="o_list_number_th">Customers</th>
+        <th class="o_cohort_period">+0</th><th class="o_cohort_period">+1</th>
+        <th class="o_cohort_period">+2</th><th class="o_cohort_period">+3</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="o_cohort_row_clickable">
+        <td>Mar 2026</td><td class="o_list_number">120</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 80%, #fff); color:#fff;">100%</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 60%, #fff); color:#fff;">88%</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 42%, #fff);">79%</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 28%, #fff);">71%</td>
+      </tr>
+      <tr class="o_cohort_row_clickable">
+        <td>Apr 2026</td><td class="o_list_number">138</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 80%, #fff); color:#fff;">100%</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 52%, #fff);">84%</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 34%, #fff);">75%</td>
+        <td class="o_cohort_value o_cohort_no_data">—</td>
+      </tr>
+      <tr class="o_cohort_row_clickable">
+        <td>May 2026</td><td class="o_list_number">151</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 80%, #fff); color:#fff;">100%</td>
+        <td class="o_cohort_value o_cohort_highlight" style="background:color-mix(in srgb, var(--o-brand-primary) 45%, #fff);">81%</td>
+        <td class="o_cohort_value o_cohort_no_data">—</td>
+        <td class="o_cohort_value o_cohort_no_data">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

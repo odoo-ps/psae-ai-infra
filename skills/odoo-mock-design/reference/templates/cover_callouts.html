@@ -1,0 +1,67 @@
+<!--
+  cover_callouts.html — CANONICAL TEXT for the cover screen's "How to interact
+  with this mock" callout block. SINGLE SOURCE OF TRUTH.
+
+  This file is the canonical wording for the five cover callouts. SKILL.md
+  and reference_pattern.md cross-reference this file instead of inlining the
+  HTML; _scaffold_mock.py reads + parses this file at runtime to emit the
+  appropriate callouts for a generated mock.
+
+  STRUCTURE: each callout is delimited by a "CALLOUT" marker comment carrying
+  the callout's id + its inclusion rule:
+
+      <!-- CALLOUT: <id> | ALWAYS -->                  always emitted
+      <!-- CALLOUT: <id> | IF multi_workflows -->      emitted only when the
+                                                       package has >= 2
+                                                       .mock-workflow wrappers
+      <!-- CALLOUT: <id> | IF variant_axes -->         emitted only when >= 1
+                                                       .mock-screen carries
+                                                       data-mock-variant-axes
+      <!-- CALLOUT: <id> | IF field_help -->           emitted only when >= 1
+                                                       custom-field label
+                                                       carries an o_field_help
+
+  ORDER MATTERS. Read outside-in: whole mock -> workflows -> screen-state
+  pivots -> element notes -> field-label help. Don't reorder; don't paraphrase
+  the wording. Wording changes here propagate to every consumer in one edit.
+-->
+
+<!-- CALLOUT: interactive_mock | ALWAYS -->
+<div class="mock-cover-callout">
+  <strong>Interactive mock.</strong> Step through the screens with
+  <strong>Next</strong> / <strong>Previous</strong> in the bar at the bottom
+  (or the arrow keys). The screens themselves respond too — buttons open
+  modals, tabs switch panels, status pivots advance the form.
+</div>
+
+<!-- CALLOUT: multiple_workflows | IF multi_workflows -->
+<div class="mock-cover-callout">
+  <strong>Multiple workflows.</strong> Switch between them with the
+  <strong>Workflow</strong> chip at the left of the bar. Each workflow opens
+  with a short overview, and <strong>Next</strong> flows from the last screen
+  of one workflow into the next.
+</div>
+
+<!-- CALLOUT: variant_chips | IF variant_axes -->
+<div class="mock-cover-callout">
+  <strong>Variant chips.</strong> Some screens carry small pills like
+  <span class="mock-cover-chip-example"><span class="mock-cover-chip-example-label">Axis:</span>Value</span>
+  in the bar. Click one to pivot the same screen across different states
+  without leaving it.
+</div>
+
+<!-- CALLOUT: numbered_markers | ALWAYS -->
+<div class="mock-cover-callout">
+  <strong>Numbered markers.</strong> Click any numbered
+  <span class="mock-marker mock-marker-example" data-note="A marker like this one highlights something on a screen and explains what it does. Click any marker to read its note.">i</span>
+  to read what the highlighted element does. Use the <strong>Annotations</strong>
+  chip at the right of the bar to hide them for a clean view.
+</div>
+
+<!-- CALLOUT: field_help | IF field_help -->
+<div class="mock-cover-callout">
+  <strong>Field help.</strong> Hover the
+  <span class="o_field_help" data-help="A question mark next to a field label opens its help — what the field stores and how it behaves.">?</span>
+  next to a field label to see what the field stores and how it behaves —
+  the same help text shipped with the module.
+</div>

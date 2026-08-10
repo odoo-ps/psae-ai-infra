@@ -1,0 +1,9 @@
+version: 1
+display_name: Spreadsheet Report
+short_description: Ask planning questions then generate and validate an Odoo Spreadsheet (.osheet.json) report.
+default_prompt: >
+  Use the Spreadsheet Report skill: ask the fixed questions first (instance, version,
+  business need, brief, models, filters, validation DB), then the minimum role-based
+  questions needed, then generate the .osheet.json under
+  <instance>/spreadsheet_reports/, validate it by importing into the chosen DB via
+  odoo-bin shell, fix any errors, and finish with a short user manual.

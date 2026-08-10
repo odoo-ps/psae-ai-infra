@@ -1,0 +1,130 @@
+<!--
+  portal.html — Customer Portal (portal; real classes o_portal / o_portal_wrap /
+  o_portal_my_doc). The logged-in customer's frontend (My Account → a document
+  like a quotation/invoice), distinct from the public website storefront. Its own
+  light header — render full-bleed (no backend navbar). Includes the right-hand
+  action sidebar (status, amount, Accept/Pay) typical of a portal SO/invoice.
+
+  ===== HARD RULE — PORTAL-NATIVE VOCABULARY FOR CUSTOM ELEMENTS =====
+
+  When a portal page introduces something beyond the default document body
+  (a label/value list of meta-fields, a submission form, a tinted disclosure
+  note), reach for the portal-native class — NEVER backend form chrome,
+  NEVER inline `style="background:...; border:...; padding:...;"` boxes.
+  The mock-fidelity-anchor flags both as `fidelity:surface-backend-leak` /
+  `fidelity:inline-callout`.
+
+    | Need                                       | Use (portal-native)                                       | Do NOT use                                              |
+    |--------------------------------------------|-----------------------------------------------------------|---------------------------------------------------------|
+    | Read-only label / value pair               | `.o_portal_kv` + `.o_portal_kv_label` + `_value`          | `.o_field_row` + `.o_form_label` + `.o_field_widget`    |
+    | Submission form (customer inputs)          | nested `<section class="s_website_form">` (see below)     | `.o_group` / `.o_inner_group` / `.o_field_row`          |
+    | Inline tinted disclosure in the body       | `.o_portal_note` + `_info|_success|_warning|_danger`      | inline `style="background:color-mix(...);..."`          |
+    | Action row (Accept / Pay / Download)       | `.o_portal_actions`                                       | inline `style="margin-top:18px;"` wrapper               |
+    | Small print under sidebar amount           | `.o_portal_sidebar_note`                                  | inline `style="font-size:12px;"`                        |
+
+  See the variants at the bottom of this file for the worked markup.
+-->
+<div class="o_portal">
+  <header class="o_header_standard o_portal_navbar">
+    <span class="o_website_logo">MyCompany</span>
+    <nav class="o_website_menu"><span class="nav-link">Home</span><span class="nav-link active">Quotations</span><span class="nav-link">Invoices</span></nav>
+    <div class="o_website_header_right"><span>Joel Willis</span></div>
+  </header>
+  <div class="o_portal_wrap">
+    <div class="o_portal_breadcrumb"><span class="o_list_link">Quotations</span> / <strong>S00078</strong></div>
+    <div class="o_portal_doc">
+      <div class="o_portal_doc_main">
+        <h2>Quotation <strong>S00078</strong></h2>
+        <table class="o_list_table o_list_table_ungrouped">
+          <thead><tr><th>Description</th><th class="o_list_number_th">Qty</th><th class="o_list_number_th">Unit Price</th><th class="o_list_number_th">Amount</th></tr></thead>
+          <tbody><tr class="o_data_row"><td>Drawer Black [E-COM12]<div class="text-muted">LOT-0007 (3.00), LOT-0011 (2.00)</div></td><td class="o_list_number">5.00</td><td class="o_list_number">$ 120.00</td><td class="o_list_number">$ 600.00</td></tr></tbody>
+        </table>
+        <div class="o_subtotal_footer"><table>
+          <tr><td class="o_subtotal_label">Untaxed Amount</td><td class="o_subtotal_amount">$ 600.00</td></tr>
+          <tr><td class="o_subtotal_label">Tax 15%</td><td class="o_subtotal_amount">$ 90.00</td></tr>
+          <tr class="o_total"><td>Total</td><td class="o_subtotal_amount">$ 690.00</td></tr>
+        </table></div>
+      </div>
+      <aside class="o_portal_sidebar">
+        <div class="o_portal_sidebar_amount"><div class="text-muted">Total</div><div class="o_portal_amount">$ 690.00</div></div>
+        <button class="btn btn-primary">Accept &amp; Sign</button>
+        <button class="btn o_btn_outline">Download</button>
+        <div class="o_portal_status"><span class="badge text-bg-info">Waiting for signature</span></div>
+        <!-- Small print under the amount; use `.o_portal_sidebar_note`,
+             NOT inline `style="font-size:12px;"`. -->
+        <div class="o_portal_sidebar_note">Quote lapses if not signed within 14 days.</div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- ===== VARIANT 1 — read-only metadata block (label / value pairs) =====
+     For portal documents that need to show a few meta-fields ABOVE the
+     line items (Reference, Issued On, Salesperson, FX rate used, …).
+     Use `.o_portal_kv` rows with `.o_portal_kv_label` + `.o_portal_kv_value`
+     so the columns align. NEVER `.o_field_row` + `.o_form_label`.
+
+  <div class="o_portal_doc_columns">
+    <div class="o_portal_kv">
+      <span class="o_portal_kv_label">Reference</span>
+      <span class="o_portal_kv_value">QR-2026-0142</span>
+    </div>
+    <div class="o_portal_kv">
+      <span class="o_portal_kv_label">Issued</span>
+      <span class="o_portal_kv_value">06/15/2026 14:12</span>
+    </div>
+    <div class="o_portal_kv">
+      <span class="o_portal_kv_label">Validity</span>
+      <span class="o_portal_kv_value">until 06/29/2026</span>
+    </div>
+  </div>
+-->
+
+<!-- ===== VARIANT 2 — inline tinted disclosure note in the body =====
+     For FX-rate disclosures, "we received your request" confirmations,
+     validity reminders, et al. The variant modifier sets the tone
+     (info / success / warning / danger). Tokens drive the colour — never
+     inline `background:color-mix(...);` or hex literals.
+
+  <div class="o_portal_note o_portal_note_info">
+    Rate used: <code>1.08097 EUR → USD</code> on 06/15/2026 ·
+    Valid until <strong>06/29/2026</strong>.
+  </div>
+-->
+
+<!-- ===== VARIANT 3 — submission form inside the portal body =====
+     When the portal page is a FORM (customer submits a trade-in,
+     adjusts a delivery address, schedules an appointment), reuse the
+     `s_website_form_*` vocabulary inside `.o_portal_doc_main`. ONE form
+     vocabulary for every public-facing surface — no portal-only inputs.
+     NEVER `.o_field_row` + `.o_form_label` inside the portal.
+
+  <section class="s_website_form" style="max-width:none; margin:0; padding:0;">
+    <div class="s_website_form_heading">
+      <h2>Trade in your device</h2>
+      <p class="lead">Tell us about it and we'll get back to you within one business day.</p>
+    </div>
+    <form class="s_website_form_rows" onsubmit="return false">
+      <div class="s_website_form_field">
+        <label class="s_website_form_label">Model<span class="s_website_form_mark"> *</span></label>
+        <select class="form-control s_website_form_input"><option>iPhone 15 Pro · 256 GB</option></select>
+      </div>
+      <div class="s_website_form_field s_website_form_submit">
+        <label class="s_website_form_label"></label>
+        <button class="btn btn-primary s_website_form_send" type="button">Submit</button>
+      </div>
+    </form>
+  </section>
+-->
+
+<!-- ===== VARIANT 4 — action row (Accept / Decline / Download) =====
+     Real Odoo aligns these to the right above the document footer. Use
+     `.o_portal_actions`, NEVER an inline `style="margin-top:18px;"`
+     wrapper. Drop the cell if the only action is in the sidebar.
+
+  <div class="o_portal_actions">
+    <button class="btn btn-primary">Accept &amp; Sign</button>
+    <button class="btn o_btn_outline">Download PDF</button>
+  </div>
+-->
+

@@ -1,0 +1,1513 @@
+/*
+ * annotations.css — the click-through + annotation overlay layer for mock
+ * packages. Loaded alongside odoo.css. Master copy; copied into each package's
+ * ./assets/. Pairs with walkthrough.js (same data-* API).
+ *
+ * Catalog version: Odoo 19 (last refresh: 2026-06-15).
+ * See ../REFRESH.md for the change history.
+ */
+
+/* Catalog tokens shared across this stylesheet. `--mock-wt-bar-height` is the
+   single source of truth for the walkthrough bar's height — the bar itself,
+   the body's bottom padding (so a fixed bar never overlays screen content),
+   and the per-screen content padding all derive from it. Change here and the
+   three downstream uses follow. */
+:root {
+  --mock-wt-bar-height: 80px;
+  --mock-wt-clearance: 24px;   /* breathing room below screen content */
+}
+
+/* ---- Screen container: one screen visible at a time --------------------- */
+.mock-screen { display: none; }
+.mock-screen.is-active {
+  display: flex; flex-direction: column; min-height: 100vh;
+  animation: mock-screen-in .18s ease both;
+}
+@keyframes mock-screen-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mock-screen.is-active { animation: none; }
+}
+
+/* The Odoo chrome inside a screen fills the viewport above the walkthrough bar */
+.mock-screen.is-active > .o_web_client {
+  flex: 1 1 auto;
+  padding-bottom: var(--mock-wt-bar-height);
+}
+
+/* ---- Annotation markers (numbered pins on elements) --------------------- */
+.mock-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #714B67;            /* Odoo enterprise purple */
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(0, 0, 0, 0.4);
+  vertical-align: middle;
+  margin: 0 4px;
+  z-index: 5;
+  flex: 0 0 auto;
+}
+/* Pin variant: absolutely positioned relative to a positioned ancestor */
+.mock-marker.mock-pin { position: absolute; transform: translate(-50%, -50%); }
+
+.mock-marker:hover,
+.mock-marker.is-open { background: #017e84; }   /* enterprise action teal */
+
+/* Floating annotation / field-help tooltip.
+   Rendered on <body> by walkthrough.js with position:fixed so NO ancestor
+   overflow (form sheet, list, notebook) can clip it — it is always on the top
+   layer (above the walkthrough bar at 1100 and dialogs at 1000) and fully
+   visible; walkthrough.js clamps it to the viewport and flips it above the
+   anchor when there's no room below. */
+.mock-float {
+  position: fixed;
+  z-index: 1300;
+  max-width: 320px;
+  background: #2b2b3a;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 10px 12px;
+  border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  display: none;
+  text-align: left;
+  font-weight: 400;
+  white-space: normal;
+}
+.mock-float.is-shown { display: block; }
+/* Odoo-style field help: highlighted help text + technical attribute list. */
+.mock-float-help { background: #bcdcff; color: #1a1a1a; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; }
+.mock-float-attrs { list-style: none; margin: 0; padding: 0; }
+.mock-float-attrs li { padding: 1px 0; }
+.mock-float-attrs code { font-family: "JetBrains Mono", ui-monospace, monospace; color: #d6d6e0; }
+
+/* Hide annotations when toggled off — WITHOUT mutating the base layout.
+   `display: none` would yank the marker out of flow, causing surrounding
+   inline content to reflow (and, inside auto-layout tables, columns to
+   redistribute so unrelated cells start to wrap). The annotation layer
+   must be a pure OVERLAY: visible/invisible has no effect on geometry.
+   `visibility: hidden` keeps the marker's box in flow at its full width
+   and height while rendering nothing visible; `pointer-events: none`
+   stops the invisible box from intercepting clicks. */
+body.mock-annotations-off .mock-marker {
+  visibility: hidden;
+  pointer-events: none;
+}
+/* Cover-page example marker (in the "How to interact" instructions) is
+   reference content, not an annotation on a screen — it must stay
+   visible regardless of the Annotations toggle so the instruction
+   stays readable. */
+body.mock-annotations-off .mock-marker.mock-marker-example {
+  visibility: visible;
+  pointer-events: auto;
+}
+/* .mock-float is position:fixed (rendered on <body>), so it never affects
+   in-flow layout — we can safely remove it from the render tree. */
+body.mock-annotations-off .mock-float { display: none !important; }
+/* …except when the float was opened by the cover-page example marker
+   (walkthrough.js's showFloat tags it with .is-from-example). Both
+   .is-from-example AND .is-shown are required — .is-shown is the gate
+   that toggles the visible state, so without it the float must collapse
+   back to display:none even when .is-from-example is still present. */
+body.mock-annotations-off .mock-float.is-from-example.is-shown { display: block !important; }
+
+/* Optional highlight ring around an annotated element */
+.mock-highlight { outline: 2px dashed #017e84; outline-offset: 2px; border-radius: 4px; }
+body.mock-annotations-off .mock-highlight { outline: none; }
+
+/* ---- Walkthrough bar (fixed bottom) ------------------------------------- */
+.mock-walkthrough {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  /* Must sit ABOVE .o_dialog_backdrop (z-index:1000, position:fixed inset:0),
+     or a wizard/dialog screen covers the bar and swallows its Prev/Next clicks.
+     The walkthrough nav is the mock's top-level chrome — always above modals. */
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  /* Pinned VISIBLE height. box-sizing:border-box so --mock-wt-bar-height
+     includes padding — the variable name represents the bar's total
+     visible height, not just the content area. overflow:hidden + ellipsis
+     on the title + 1-line clamp on the desc together guarantee the bar
+     never grows past --mock-wt-bar-height across any screen. */
+  box-sizing: border-box;
+  height: var(--mock-wt-bar-height);
+  overflow: hidden;
+  background: #ffffff;
+  border-top: 1px solid #dee2e6;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+}
+.mock-walkthrough .mock-wt-step {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mock-walkthrough .mock-wt-title {
+  /* Single-line + ellipsis. Long titles ("RFQ / Purchase Order P00027",
+     "Vendor Bills & Payments — BILL/2026/06/0042") used to wrap and push
+     the cell taller than the bar; clipping with ellipsis keeps the bar
+     height stable. Authors should keep titles short anyway — record
+     references belong in the screen body's o_form_title, not data-title. */
+  font-weight: 700;
+  color: #212529;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.mock-walkthrough .mock-wt-desc {
+  /* Two-line clamp + ellipsis. The desc can elaborate the title across
+     up to two lines; anything longer truncates. Combined with the bar's
+     fixed 80px visible height (box-sizing:border-box on .mock-walkthrough),
+     the bar can't grow past 80px regardless of desc content — long desc
+     hits the clamp + ellipsis, short desc just leaves whitespace below. */
+  color: #6c757d;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+  max-height: 2.7em;
+  min-width: 0;
+}
+.mock-walkthrough .mock-wt-counter {
+  color: #6c757d;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.mock-walkthrough .mock-wt-controls {
+  /* Bottom half of the cluster — buttons joined as a single button group.
+     Flex row (not grid) so each visible button's `flex: 1 1 0` (see
+     .mock-wt-btn below) reliably absorbs the row: 2 visible buttons
+     split 50/50, 1 visible button (the other has `[hidden]`) stretches
+     to fill 100%.
+     `flex: 0 0 36px` locks this row at 36px regardless of cluster
+     height — buttons need a consistent clickable height. The top half
+     (.mock-wt-workflow) takes the remaining cluster content (62 − 36 =
+     26px in the standard 80px bar). When the chip is hidden and this
+     row is alone, the cluster's `align-self: center` collapses the
+     cluster to this 36px height, matching the control cluster's alone
+     state (annotations chip cluster, same 36px).
+     Border-radius is on the BUTTONS themselves (see rules below),
+     position-aware via :has(). */
+  display: flex;
+  align-items: stretch;
+  flex: 0 0 36px;
+  box-sizing: border-box;
+}
+/* When the workflow chip is hidden, the cluster ITSELF shrinks to the
+   visible row's natural height + centers vertically in the bar
+   (`align-self: center` overrides the bar's `align-items: stretch`).
+   Drop the controls row's flex-fill so it doesn't try to stretch within
+   the now-shrunken cluster, and round all four corners. */
+.mock-wt-nav-cluster:has(.mock-wt-workflow[hidden]) {
+  align-self: center;
+  /* No flex override on .mock-wt-controls — its base `flex: 0 0 36px`
+     is the desired single-element height, same as the control cluster's
+     toggle row. The cluster collapses to 36px via align-self: center
+     (cross-axis sized to content). */
+}
+.mock-wt-btn {
+  /* No individual border/radius — the cluster's outer border + radius
+     wrap the whole control group. Adjacent buttons share a vertical
+     divider via the `+` selector below.
+     `flex: 1 1 0` makes the button grow to fill the controls flex-row:
+     2 visible buttons → 50/50, 1 visible button → 100% (no phantom gap
+     because flex doesn't create empty tracks the way grid auto-fit did).
+     `justify-content: space-between` anchors the button's text to the
+     button's left edge and the chevron to the right edge — same
+     "label on left, indicator on right" pattern the chips above use.
+     Horizontal padding 10px matches the chips' 10px so the button text
+     starts at the same x-offset from the cluster as the chip labels
+     (11px from cluster outer edge in both rows). */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 6px;
+  border: none;
+  border-radius: 0;
+  background: #fff;
+  color: #495057;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mock-wt-btn:not([hidden]) + .mock-wt-btn:not([hidden]) {
+  /* Divider between joined buttons — only when BOTH are visible. The
+     `+` sibling combinator matches DOM order regardless of display, so
+     without `:not([hidden])` Next would inherit a 1px light-gray
+     border-left even when Previous is hidden (cover screen) — that
+     single-pixel stripe on a primary-purple button reads as a visible
+     white "gap" at the button's left edge. */
+  border-left: 1px solid #e9ecef;
+}
+/* [hidden] attribute on a button must override .mock-wt-btn's display:flex */
+.mock-wt-btn[hidden] { display: none; }
+
+/* Button border-radius (position-aware) — matches the cluster's 5px
+   inner curve (6px outer - 1px border = 5px inner) so the button's
+   purple bg fills into the cluster's rounded corners. The cluster's
+   `overflow: hidden` is the defence-in-depth in case any curve
+   subpixel-misaligns. */
+.mock-wt-controls > [data-mock-prev] { border-radius: 0 0 0 5px; }
+.mock-wt-controls > [data-mock-next] { border-radius: 0 0 5px 0; }
+/* Sibling button is [hidden] → this button takes BOTH bottom corners. */
+.mock-wt-controls:has(> [data-mock-next][hidden]) > [data-mock-prev],
+.mock-wt-controls:has(> [data-mock-prev][hidden]) > [data-mock-next] {
+  border-radius: 0 0 5px 5px;
+}
+/* Workflow chip hidden → cluster collapsed, button takes full-height corners. */
+.mock-wt-nav-cluster:has(> .mock-wt-workflow[hidden]) .mock-wt-controls > [data-mock-prev] {
+  border-radius: 5px 0 0 5px;
+}
+.mock-wt-nav-cluster:has(> .mock-wt-workflow[hidden]) .mock-wt-controls > [data-mock-next] {
+  border-radius: 0 5px 5px 0;
+}
+/* Both chip-hidden AND alone-in-row → all 4 corners rounded. */
+.mock-wt-nav-cluster:has(> .mock-wt-workflow[hidden]) .mock-wt-controls:has(> [data-mock-next][hidden]) > [data-mock-prev],
+.mock-wt-nav-cluster:has(> .mock-wt-workflow[hidden]) .mock-wt-controls:has(> [data-mock-prev][hidden]) > [data-mock-next] {
+  border-radius: 5px;
+}
+.mock-wt-btn .o_icon {
+  /* Chevron arrow icon — never shrink. The button's content is
+     [icon + text] (Prev) or [text + icon] (Next); when buttons get
+     tight (grid auto-fit narrow tracks), the text can ellipsis-clip
+     but the arrow must stay visible so every Next/Prev reads as a
+     navigation button at a glance, not just a text label. */
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+}
+.mock-wt-btn:hover { background: #f1f1f4; }
+.mock-wt-btn[disabled] { opacity: 0.4; cursor: default; }
+.mock-wt-btn.primary {
+  background: #714B67;
+  color: #fff;
+}
+.mock-wt-btn.primary:hover { background: #5b3c53; }
+
+/* Annotations toggle */
+.mock-wt-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #495057;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  padding-left: 12px;
+  margin-left: 4px;
+  border-left: 1px solid #e9ecef;
+}
+.mock-wt-toggle input { accent-color: #714B67; }
+
+/* Step dots — small inactive, active slightly larger with a soft glow */
+.mock-wt-dots { display: flex; gap: 5px; align-items: center; }
+.mock-wt-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #ced4da;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+  position: relative;
+}
+.mock-wt-dot:hover { background: #adb5bd; }
+.mock-wt-dot.is-active {
+  background: #714B67;
+  transform: scale(1.3);
+  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.15);
+}
+/* Styled, immediate-show tooltip — replaces the native `title` attribute
+   (which has a ~1500ms delay + unstyled OS chrome). Applies to ANY
+   element with `data-mock-tooltip` — used by the per-screen dots, the
+   chip values (workflow / variant / annotations), and the page
+   description in the bar's step cluster. Not used on the page title
+   (deliberate — long titles are written short by the author). */
+[data-mock-tooltip] {
+  position: relative;
+}
+[data-mock-tooltip]::after {
+  content: attr(data-mock-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2b2b3a;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 1200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+[data-mock-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #2b2b3a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 1200;
+}
+[data-mock-tooltip]:hover::after,
+[data-mock-tooltip]:hover::before { opacity: 1; }
+
+/* Body must clear the fixed walkthrough bar at the bottom — otherwise
+   the last items of a screen scroll under it and get clipped. Derived
+   from --mock-wt-bar-height so changing the bar's height in one place
+   updates the body's clearance automatically. */
+body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)); }
+
+/* Title banner at the top of the package (cover). Sticky so the brand
+   header stays visible while the cover body scrolls beneath it. */
+.mock-cover {
+  background: linear-gradient(135deg, #714B67, #017e84);
+  color: #fff;
+  padding: 32px 220px 28px 40px;   /* right padding leaves room for the wordmark */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  min-height: 160px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.mock-cover h1 { font-family: "SF Pro Display", -apple-system, sans-serif; margin: 0 0 8px; }
+.mock-cover p { margin: 0; opacity: 0.9; max-width: 720px; }
+
+/* Kicker = small icon + version label at the top-left of the cover.
+   Uses the icon-style Odoo "O" logo (assets/odoo-icon.svg), inverted
+   to white via CSS filter so it sits well on the dark gradient. */
+.mock-cover-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  opacity: 0.92;
+  margin-bottom: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.mock-cover-kicker img {
+  width: 22px; height: 22px;
+  filter: brightness(0) invert(1);
+}
+
+/* Real Odoo logo image — referenced as an asset (assets/odoo-logo.png),
+   rendered white via CSS filter (brightness 0 + invert) on the dark
+   gradient cover. The source image is the official Odoo wordmark
+   (web/static/img/odoo_logo.svg at 621x196, exported as PNG). */
+.mock-cover-logo {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 180px;
+  height: auto;
+  filter: brightness(0) invert(1);  /* original logo is purple+gray; force to white on dark gradient */
+  opacity: 0.95;
+}
+
+/* Cover supporting blocks — workflow narrative, variant overview, per-step
+   axis index. Live INSIDE the .mock-screen[data-screen="cover"] body. */
+.mock-cover-section {
+  padding: 24px 40px;
+  /* 1140px so the prose callouts ("How to interact") line up at the
+     same right edge as the Tour Path table below them. The earlier
+     840px cap left a visible step where the table section extended
+     past the prose section; matching the two avoids that mismatch.
+     The `mock-cover-callout` paragraphs inside still wrap at a
+     comfortable prose width because they're flow text inside the
+     section, not block-stretched. */
+  max-width: 1140px;
+}
+/* Legacy alias — the table previously opted in via this modifier when
+   the default cap was 840px. Default now matches; keep the class as a
+   no-op so older mocks (or hand-tagged sections in custom packages)
+   don't break. */
+.mock-cover-section.mock-cover-section-table { max-width: 1140px; }
+.mock-cover-section h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #714B67;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 12px;
+}
+/* DEPRECATED COVER PATTERN — pre-two-column-table layout.
+   --------------------------------------------------------------------
+   Older mocks placed the workflow narrative as a flat `<ol class="mock-
+   step-list">` directly inside `.mock-cover-section` (NO `.mock-step-
+   list-wrap` parent, NO VARIANTS column, the section title rendered
+   via `<h2>Workflow</h2>` above the list). With the current catalog
+   that flat pattern renders broken: `.mock-step-list` is now
+   `display: contents` and each `<li>` is `grid-template-columns:
+   subgrid`, which requires `.mock-step-list-wrap` as the grid parent.
+   Without the wrap, subgrid resolves to a single-column grid and the
+   step list collapses to inline content.
+   ACTION when refreshing an older mock package: wrap the existing
+   `<ol class="mock-step-list">` in `<div class="mock-step-list-wrap">`,
+   replace `<h2>Workflow</h2>` with `<div class="mock-step-list-header-
+   workflow">Workflow</div>`, add a sibling `<div class="mock-step-
+   list-header-variants">Variants</div>`, and ensure every `<li>` ends
+   with EITHER a `.mock-step-axes` chip OR an empty `<span></span>` so
+   the row keeps three subgrid cells. See ../cover_discipline.md § 4. */
+/* Two-column cover layout: WORKFLOW (left) + VARIANTS (right). A 3-column
+   grid binds both sections so the headers and per-row chips share column
+   tracks. The third column uses `minmax(260px, max-content)` so it auto-
+   fits the widest chip — earlier we hardcoded 320px, which broke any time
+   a chip carried a longer screen name or axis value than TEST001's
+   "STATE = UNALLOCATED". Now the column expands to whatever the chip
+   needs, with 260px as a floor so the column never collapses below the
+   VARIANTS header. The column divider is drawn as a `border-left` on each
+   column-3 element (header + every row's third cell) rather than as a
+   pixel-positioned wrap-level pseudo — that way the line follows the
+   actual column boundary even when the column auto-fits, and survives
+   any change to the column-gap. */
+.mock-cover-section .mock-step-list-wrap {
+  position: relative;
+  display: grid;
+  /* Three top-level columns:
+       col 1 — step number       (32px)
+       col 2 — step description  (1fr, takes remaining width)
+       col 3 — EXERCISED chip    (440px), split internally into 3 sub-columns
+     The 440px chip column is itself a grid of `max-content auto 1fr`:
+       sub-col A — PAGE N         (max-content of widest "PAGE NN")
+       sub-col B — ON Screen      (max-content of widest "ON SPREADSHEET")
+       sub-col C — description    (1fr, ellipsis-truncated when long)
+     With CSS subgrid on each chip, the sub-column tracks are SHARED
+     across every chip — divider positions land at identical x-offsets
+     by construction, with no manual width pinning needed. */
+  grid-template-columns:
+    32px
+    minmax(0, 1fr)
+    [exercised-start] max-content max-content minmax(180px, 220px) [exercised-end];
+  column-gap: 0;
+  row-gap: 0;
+  margin-top: 4px;
+}
+/* Section headers — single 2px underline drawn via .mock-step-list-wrap::before
+   spans BOTH columns as one continuous line; per-header border-bottom would
+   break at the column boundary. */
+.mock-cover-section .mock-step-list-header-workflow,
+.mock-cover-section .mock-step-list-header-variants {
+  font-size: 12px;
+  font-weight: 700;
+  color: #714B67;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 0 12px;
+  margin-bottom: 10px;
+}
+.mock-cover-section .mock-step-list-header-workflow {
+  grid-column: 1 / 3;               /* step-num + step-description columns */
+  padding-right: 32px;
+}
+.mock-cover-section .mock-step-list-header-variants {
+  grid-column: exercised-start / exercised-end;   /* spans all three chip sub-columns */
+  border-left: 1px solid #e0d8dc;   /* column divider segment */
+  padding-left: 32px;
+}
+/* Continuous header underline — one line, full table width. */
+.mock-cover-section .mock-step-list-wrap::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  top: 32px;               /* aligned to the headers' baseline gap */
+  height: 2px;
+  background: #714B67;
+  z-index: 0;
+}
+/* The list itself becomes a "display: contents" container so its <li> children
+   participate directly in the parent 3-column grid (one row per <li>'s 3 cells). */
+.mock-cover-section .mock-step-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: contents;
+}
+/* Each <li> is itself a sub-grid spanning the 3 columns. */
+.mock-cover-section .mock-step-list li {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: stretch;       /* so the column-3 cell fills row height for
+                                 a continuous vertical divider line */
+  padding: 0;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 13px;
+  column-gap: 0;
+}
+.mock-cover-section .mock-step-list li:last-child { border-bottom: 0; }
+/* The numbered chip and body text need their own row padding now that the
+   <li> itself has padding:0 (so the divider cell can stretch full-row). */
+.mock-cover-section .mock-step-list li > :nth-child(1),
+.mock-cover-section .mock-step-list li > :nth-child(2) {
+  align-self: center;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.mock-cover-section .mock-step-list li > :nth-child(2) {
+  padding-right: 32px;        /* gutter before the column divider */
+}
+/* Third cell of every row carries the column divider (border-left) so the
+   divider follows the actual column boundary at all viewport widths.
+   Stretches to full row height for an unbroken vertical line. Applies
+   uniformly to `.mock-step-axes` (when the row has a chip) AND to the
+   empty `<span></span>` (when the row has no chip — the empty span IS
+   REQUIRED to keep the third grid cell present, otherwise the row's
+   subgrid collapses to two cells and the divider gaps out for that row). */
+.mock-cover-section .mock-step-list li > :nth-child(3) {
+  border-left: 1px solid #e0d8dc;
+  padding: 12px 0 12px 32px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.mock-cover-section .mock-step-list .mock-step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #714B67;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+}
+/* Page-anchored variant chip. Three cells separated by `border-right`:
+     [ Page N ] │ [ on Screen ] │ [ Axis [= Value] ]
+   Cell widths are `max-content` (driven by their text) rather than fixed
+   pixels. Earlier we tuned widths to TEST001's specific labels (56/80px);
+   a longer screen name ("ON STOCK PICKING") or longer axis value
+   ("STATE = AWAITING APPROVAL") would have overflowed those cells and
+   crossed the border-right separators. `max-content` makes each cell
+   fit its own text exactly. Cross-row internal alignment is sacrificed
+   (each chip is self-contained, cells differ per row), but content
+   always renders cleanly. */
+.mock-cover-section .mock-step-list .mock-step-axes {
+  /* Single-row chip using CSS subgrid — the chip inherits the parent's
+     three sub-columns (PAGE N · ON Screen · description) from the
+     `[exercised-start] max-content max-content 1fr [exercised-end]`
+     track on `.mock-step-list-wrap`. Because the tracks are SHARED
+     across all chips, the PAGE end / ON start / ON end / description
+     start edges land at identical x-offsets on every row by
+     construction. No manual width pinning required.
+     The first two sub-columns size to `max-content` of the WIDEST cell
+     in any row, so "ON SPREADSHEET" defines the ON-Screen track width
+     and every row's ON cell ends at the same divider. */
+  grid-column: exercised-start / exercised-end;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: stretch;
+  background: #f4f0f2;
+  color: #714B67;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  min-height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+/* PAGE-number cell — set by walkthrough.js from `data-mock-page-ref`.
+   Subgrid track auto-sizes to the widest "PAGE NN" content. */
+.mock-cover-section .mock-step-list .mock-step-axes-page-num {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8a6f81;
+  font-weight: 700;
+  border-right: 1px solid #d6c4cd;
+}
+/* ON-Screen cell — subgrid track auto-sizes to the widest stop label
+   ("ON SPREADSHEET" sets the width; "ON POS" and other shorter labels
+   align to the same start-x and end-x). */
+.mock-cover-section .mock-step-list .mock-step-axes-page {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8a6f81;
+  font-weight: 700;
+  border-right: 1px solid #d6c4cd;
+  white-space: nowrap;
+}
+/* Axis cell — holds the chip's main label ("<Axis>" / "<Axis> = <Value>" /
+   the catalog-fragment list). Sits on the chip's second row spanning both
+   columns so long labels wrap inside the chip instead of overflowing the
+   Variants column. */
+/* Description cell — sits in the chip's third sub-column (1fr), starts
+   at the same x-offset on every row (right edge of the ON track + 14px
+   padding). The chip is just a pointer to the page; long descriptions
+   are truncated with an ellipsis so the cell never wraps to a second
+   line and breaks the single-row baseline. */
+.mock-cover-section .mock-step-list .mock-step-axes-axis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  color: #4a2f3f;
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.mock-cover-section .mock-step-list .mock-step-axes-value {
+  color: #714B67;
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* CTA variant of the cover chip — used on the main cover of multi-workflow
+   packages to make each workflow row a clickable jump-in. Wired by adding
+   class="mock-step-axes-cta" + data-mock-goto="<workflow-overview-id>" to
+   the <a> chip. Subgrid layout is inherited; the CTA modifier adds the
+   clickable-affordance polish (cursor + hover + arrow emphasis). */
+.mock-cover-section .mock-step-list .mock-step-axes.mock-step-axes-cta {
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+.mock-cover-section .mock-step-list .mock-step-axes.mock-step-axes-cta:hover {
+  background: #e9dde4;
+}
+.mock-cover-section .mock-step-list .mock-step-axes.mock-step-axes-cta:hover .mock-step-axes-axis {
+  color: var(--o-brand-primary, #714B67);
+}
+
+/* Inline chip example used in the "Variant chips" callout — mirrors
+   the look of a real chip in the walkthrough bar (small label-pill
+   with a caret), so the reader sees the visual they're being told
+   to use. Pure inline, no JS hook. */
+.mock-cover-chip-example {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e3;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #714B67;
+  vertical-align: 1px;
+}
+.mock-cover-chip-example::after {
+  content: "▾";
+  font-size: 9px;
+  color: #714B67;
+  opacity: 0.8;
+}
+.mock-cover-chip-example-label {
+  color: #6c757d;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  margin-right: 2px;
+}
+.mock-cover-callout {
+  background: #fff;
+  border-left: 3px solid #017e84;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: #495057;
+  border-radius: 0 4px 4px 0;
+}
+
+/* No standalone Get Started button on the cover — the walkthrough
+   bar's primary "Next" button is re-labeled to "Get Started" when the
+   active screen is the cover (walkthrough.js handles the swap). One
+   button, two labels: less chrome, clearer signal that the bottom
+   bar is the navigation surface. */
+
+/* Make any element a positioning context for pins */
+.mock-anchor { position: relative; }
+
+/* ============================================================
+   Navigation cluster: workflow scope chip (top) + Prev/Next (bottom).
+
+   The cluster sits LEFTMOST in the walkthrough bar and stacks vertically
+   so it occupies one narrow column. This frees horizontal space in the
+   bar for the step title + 2-line desc cell. align-items:stretch makes
+   the chip and controls rows the same width, so when one button is
+   hidden (cover hides Prev; terminal screen hides Next) the visible
+   button flexes to fill the chip's full width.
+
+   walkthrough.js reveals .mock-wt-workflow when >= 2 .mock-workflow
+   wrappers exist; in single-workflow mode the chip stays hidden and
+   the cluster collapses to just the controls row.
+   ============================================================ */
+.mock-wt-nav-cluster {
+  /* Unified bordered block — chip (top half) + controls (bottom half).
+     When BOTH halves are visible, each `flex: 1 1 50%` makes them fill
+     exactly 50% of cluster height. When ONE half is hidden, the visible
+     half drops to `flex: 0 0 auto` (natural button-row height) and
+     `justify-content: center` on the cluster centers it vertically — so
+     a lone Prev/Next button row is button-shaped, not 80px tall.
+
+     NO `overflow: hidden` here — the workflow chip is now a CUSTOM
+     chip (same buildChip() machinery as the variant + annotations
+     chips) and its dropdown menu opens UPWARD via `position: absolute;
+     bottom: 100%+6`. `overflow: hidden` would clip that menu inside
+     the cluster. Button corner rounding is handled by per-button
+     `border-radius` rules (position-aware via :has()), not by clipping.
+     width:240px is fixed so the cluster's width is identical across
+     every screen regardless of which workflow. */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 240px;
+  border: 1px solid #d2c4cd;
+  border-radius: 6px;
+  background: #fff;
+  margin-right: 16px;
+}
+
+.mock-wt-workflow {
+  /* Top half of the cluster — takes ALL remaining height the bottom
+     row doesn't claim (`flex: 1 1 auto`). The bottom row
+     (.mock-wt-controls) is fixed at 36px; with the bar's 80px height
+     − 16px vertical padding − 2px cluster border = 62px of cluster
+     content, this row gets 62 − 36 = 26px when both halves are
+     visible. The asymmetric split (taller content row, shorter chip
+     row) is intentional — the chip is a single-line label+value, the
+     buttons need clickable height.
+     Content (label + select) centers vertically via align-items:center;
+     `[hidden]` removes it from flex entirely (cluster's `align-self:
+     center` then collapses the cluster to just the controls row). */
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+  background: var(--o-pale-plum, #f1ecef);
+  border-bottom: 1px solid #d2c4cd;
+  border-radius: 5px 5px 0 0;
+}
+.mock-wt-workflow[hidden] { display: none; }
+.mock-wt-workflow-label {
+  font-size: 11px;
+  color: var(--o-gray-600, #6c757d);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.mock-wt-workflow-select {
+  /* Borderless / transparent — sits flush inside the chip's pale-plum
+     fill; the cluster's outer border is the only border in this whole
+     control. min-width:0 lets it size to content; min-height:0 lets the
+     chip row enforce the 50% height (without it, browser default
+     min-height on <select> pushes the row taller than its sibling). */
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 2px 4px 2px 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--o-brand-primary, #714b67);
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  cursor: pointer;
+}
+.mock-wt-workflow-select:hover { color: #5b3c53; }
+.mock-wt-workflow-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.18);
+  border-radius: 3px;
+}
+
+/* ---- Workflow chip (custom dropdown, mirrors variant + annotations chips)
+   Same buildChip() output as the control cluster's chips, styled here to
+   match the variant chip skin: uppercase label, brand-purple value, gray
+   caret SVG. Closed-state and open-menu visuals are identical across all
+   three bar dropdowns. */
+.mock-wt-workflow .mock-wt-chip {
+  /* Horizontal padding lives on the chip (not the wrap) — same pattern
+     as the variant + annotations chips, so the chip's right edge =
+     cluster's inner right and the menu (anchored `right: 0`) lines up
+     identically across all three bar dropdowns. */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.mock-wt-workflow .mock-wt-chip-label {
+  font-size: 11px;
+  color: var(--o-gray-600, #6c757d);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.mock-wt-workflow .mock-wt-chip-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--o-brand-primary, #714b67);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 0;
+  line-height: 1.2;
+}
+.mock-wt-workflow .mock-wt-chip-button:hover { color: #5b3c53; }
+.mock-wt-workflow .mock-wt-chip-value {
+  /* `text-align: right` parks the value text at the right edge of its
+     flex space, just before the caret. Combined with the same rule on
+     the variant + annotations chip values, every value in the bar ends
+     at the same x (chip-right − caret − gap), regardless of label width. */
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+.mock-wt-workflow .mock-wt-chip-button .o_icon_xs {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  color: var(--o-gray-600, #6c757d);
+}
+/* Menu styling — match the control cluster's chip menus (z-index above
+   the bar, max-height + scroll for long workflow lists). */
+.mock-wt-workflow .mock-wt-chip-menu {
+  min-width: 180px;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #c9c9d0;
+  border-radius: 5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  padding: 6px 0;
+  z-index: 1200;
+}
+.mock-wt-workflow .mock-wt-chip-item {
+  padding: 7px 14px;
+}
+
+/* ============================================================
+   Variant filter-chip row (multi-axis, Odoo search-view style)
+   walkthrough.js reveals .mock-wt-chips when the active screen
+   declares data-mock-variant-axes (JSON). Each axis renders as
+   one chip = label + current value + dropdown.
+   ============================================================ */
+.mock-wt-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 12px;
+  margin-left: 8px;
+  border-left: 1px solid #e9ecef;
+  /* DO NOT wrap. Wrapping pushes chips to a second row and grows the bar
+     height — breaks the visual rhythm across screens. Stay on one line; if
+     a screen genuinely has too many chips to fit, that's the brief asking
+     for too many axes — fix the brief, not the layout.
+     CRITICAL: NO `overflow:auto/hidden` here. A chip's value dropdown is
+     `position: absolute` and pops UP out of the chip. An overflow container
+     on the chip-row clips that popup so it never appears — the chip looks
+     dead when clicked. Keep overflow visible. */
+  flex-wrap: nowrap;
+  max-width: 540px;
+}
+.mock-wt-chips[hidden] { display: none; }
+
+.mock-wt-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e3;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.mock-wt-chip-label {
+  color: #6c757d;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: .03em;
+}
+.mock-wt-chip-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 2px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #714B67;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.2;
+}
+.mock-wt-chip-button:hover { color: #5b3c53; }
+.mock-wt-chip-button .o_icon_xs {
+  width: 8px; height: 8px;
+}
+
+.mock-wt-chip-menu {
+  /* Anchored to the chip's RIGHT edge (right:0), so the menu opens
+     toward the LEFT — the visible caret on the chip sits in the chip's
+     top-right area, and the menu drops upward/leftward from under it.
+     Aligning left would let the menu push past the chip's right side
+     (and past the cluster's right edge on narrow chips). */
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #d6d6dc;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 4px 0;
+  display: none;
+  z-index: 1000;
+}
+.mock-wt-chip.is-open .mock-wt-chip-menu { display: block; }
+
+.mock-wt-chip-item {
+  /* Items right-align their text to match the chip's value (which is
+     right-aligned too). The active-item bullet (`::before`) and the
+     option text right-align together — bullet sits just to the left of
+     the text, both end at the right edge of the item. */
+  display: block;
+  width: 100%;
+  text-align: right;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #212529;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.mock-wt-chip-item:hover { background: #f1f1f4; }
+.mock-wt-chip-item.is-active {
+  color: #714B67;
+  font-weight: 600;
+}
+.mock-wt-chip-item.is-active::before {
+  content: "•";
+  margin-right: 6px;
+}
+
+/* Variant content swap: hide every variant-tagged child UNLESS
+   walkthrough.js has added .is-variant-active (matches the AND of
+   every <axis>=<value> pair on data-mock-variant). Elements WITHOUT
+   data-mock-variant stay visible across all combinations.
+
+   Using :not() + !important so the hide rule wins over component-
+   level display rules (e.g. .mock-guard-banner is display:flex; we
+   must hide it when it doesn't match the active variant). Active
+   elements have NO !important display rule from this layer, so
+   their component's own display value (flex, block, table-row,
+   table-cell, ...) takes effect normally. */
+[data-mock-variant]:not(.is-variant-active) { display: none !important; }
+
+/* Persistent inline guard banner — pairs with a State-axis value that
+   represents a refused/blocked action. Renders the guard's rule in
+   place near the gated affordance, so the rule is legible without
+   clicking. Pairs with the toast (toast = interactive confirmation;
+   banner = persistent state). See style_guide.md § Persistent guard
+   rendering. */
+.mock-guard-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 12px 0;
+}
+.mock-guard-banner.is-warning {
+  background: #fff8e1;
+  border-left: 3px solid #ffac00;
+  color: #6b4f00;
+}
+.mock-guard-banner.is-danger {
+  background: #fdecea;
+  border-left: 3px solid #dc3545;
+  color: #7d1d23;
+}
+.mock-guard-banner.is-info {
+  background: #e7f4f5;
+  border-left: 3px solid #017e84;
+  color: #054c4f;
+}
+.mock-guard-banner .o_icon {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.mock-guard-banner .mock-guard-banner-rule {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* =====================================================================
+   SAMPLE — Stacked-bar design (3 columns × 2 stacked rows per column)
+   Overrides the catalog's existing single-row bar via end-of-file cascade.
+   ===================================================================== */
+
+/* Bar children stretch to fill the bar's 80px content area so each
+   cluster's flex-column distribute-content layout has full height to
+   work with. overflow:hidden on .mock-walkthrough is removed so chip
+   dropdowns can escape the bar's box upward — without this the menus
+   get clipped at the bar's top edge. Vertical containment is enforced
+   by the bar's explicit height + each cluster's content discipline
+   (title/desc ellipsis, dots cap, chips max-width). */
+.mock-walkthrough {
+  align-items: stretch;
+  overflow: visible;
+}
+
+/* Desc collapses to 1 line + ellipsis (was 2-line clamp). The step
+   cluster's top row (title + desc) must fit alongside the paging row
+   on the bottom; constraining desc keeps the cluster under 64px tall.
+   The ellipsis mechanics live on the INNER `.mock-wt-desc-text` span
+   so the desc itself stays `overflow: visible` — that way its
+   `[data-mock-tooltip]` `::after` bubble can render upward without
+   being clipped by its own ellipsis container.
+   `overflow: visible` must be set explicitly here to override the
+   earlier `.mock-walkthrough .mock-wt-desc` rule (from the original
+   single-row bar design) which set `overflow: hidden` for the 2-line
+   clamp — without this reset the older rule's hidden cascades through. */
+.mock-walkthrough .mock-wt-desc {
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+  overflow: visible;
+  max-height: none;
+  line-height: 1.4;
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+.mock-walkthrough .mock-wt-desc-text {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* ---- Step cluster ------------------------------------------------------
+   Title + 1-line desc on top; counter + dots on bottom. Flex-grow so it
+   takes whatever space the nav cluster and control cluster don't claim. */
+.mock-wt-step-cluster {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 2px 0;
+}
+.mock-wt-step-cluster .mock-wt-step {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.mock-wt-paging {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--o-gray-600, #6c757d);
+}
+.mock-wt-paging .mock-wt-counter {
+  /* Override the catalog's standalone counter styling — it's nested in
+     paging now, just a small label next to the dots. */
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-size: 11.5px;
+  color: var(--o-gray-700, #495057);
+}
+.mock-wt-paging .mock-wt-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mock-wt-paging .mock-wt-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ced4da;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+}
+.mock-wt-paging .mock-wt-dot.is-active {
+  background: var(--o-brand-primary, #714b67);
+  transform: scale(1.3);
+}
+.mock-wt-paging .mock-wt-dot:hover { background: #adb5bd; }
+.mock-wt-paging .mock-wt-dot.is-active:hover { background: var(--o-brand-primary, #714b67); }
+
+/* ---- Control cluster ---------------------------------------------------
+   Mirror of the nav cluster: same bordered-block treatment, same flex-fill
+   pattern. Chips on top, annotations toggle on bottom. Both halves use
+   `flex: 1 1 0` so they each take 50% of cluster height when visible —
+   and when chips row is hidden (screen has no variant axes), the toggle
+   grows to fill 100%. Fixed 290px wide so the bar's right edge is in the
+   same x-position on every screen. */
+.mock-wt-control-cluster {
+  /* Same cluster-half discipline as nav cluster: both halves visible →
+     `flex: 1 1 0` splits 50/50; one half visible → that half drops to
+     `flex: 0 0 auto` (via :has below) and `justify-content: center`
+     centers it in the 80px cluster. Fixed 290px wide so the bar's right
+     edge is in the same x-position on every screen. */
+  flex: 0 0 290px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid #d2c4cd;
+  border-radius: 6px;
+  background: #fff;
+  margin-left: 16px;                 /* mirror of nav cluster's margin-right */
+}
+
+.mock-wt-control-cluster .mock-wt-chips {
+  /* Top half — mirrors the workflow chip's visual treatment: pale-plum
+     fill, top corners rounded, 1px border-bottom for the inner divider.
+     Grid auto-fit: visible chips share the row width equally — 2 chips →
+     50/50, 1 chip → 100%. Each chip is left-aligned WITHIN its cell
+     (label starts flush at the left of its share); a `border-left` on
+     the 2nd+ chip draws the vertical divider when both are present.
+     gap:0 because the divider IS the separator (a gap would push the
+     divider off-center within its cell).
+     Explicit margin/border resets: the catalog's default .mock-wt-chips
+     rule carries `margin-left:8px; border-left:1px solid #e9ecef;
+     max-width:540px` for the old single-row bar layout. Clear those so
+     the cluster's bordered-block treatment is the only visual frame. */
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1 1 auto;                    /* takes whatever the 36px toggle row below doesn't claim */
+  min-height: 0;
+  margin: 0;
+  padding: 4px 0;                    /* chips supply their own horizontal padding */
+  background: var(--o-pale-plum, #f1ecef);
+  border: 0;
+  border-bottom: 1px solid #d2c4cd;
+  border-radius: 5px 5px 0 0;
+  max-width: none;
+  box-sizing: border-box;
+}
+.mock-wt-control-cluster .mock-wt-chips[hidden] {
+  /* No axes on this screen → drop the chips row entirely; the toggle
+     below grows via its own `flex: 1 1 0` to fill the cluster. */
+  display: none;
+}
+
+.mock-wt-control-cluster .mock-wt-toggle {
+  /* Bottom half — white background. Hosts the annotations CHIP rendered
+     by walkthrough.js (label "ANNOTATIONS" + value "Show"/"Hide" + caret),
+     same chip pattern as the variant chips above. Left-aligned so its
+     label lines up with the variant chips in the top half.
+     `flex: 0 0 36px` matches the nav cluster's controls-row fixed height
+     — the chips row above takes whatever the cluster doesn't allocate
+     to this row. When the chips row is hidden and this is alone, the
+     cluster's `align-self: center` collapses the cluster to this 36px.
+     Explicit border/gap resets: the catalog's default .mock-wt-toggle
+     rule carries `border-left:1px solid #e9ecef; gap:6px; padding-left:12px`
+     for the old single-row bar layout. Clear those so the cluster's
+     bordered-block treatment is the only visual frame. */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 0 36px;
+  margin: 0;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0 0 5px 5px;
+  gap: 0;
+  box-sizing: border-box;
+}
+/* Reset the catalog's default toggle styling (was a checkbox + text label) */
+.mock-wt-control-cluster .mock-wt-toggle input { display: none; }
+/* Annotations chip — same internal pattern as the variant chips above. */
+.mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip-label {
+  font-size: 11px;
+  color: var(--o-gray-600, #6c757d);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--o-brand-primary, #714b67);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 0;
+  line-height: 1.2;
+}
+.mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip-button:hover { color: #5b3c53; }
+.mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip-value {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;                 /* see comment on .mock-wt-workflow .mock-wt-chip-value */
+}
+.mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip-button .o_icon_xs {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  color: var(--o-gray-600, #6c757d);
+}
+/* When the chips row is hidden, the cluster ITSELF shrinks to the
+   visible toggle row's natural height + centers vertically in the bar
+   (`align-self: center` overrides the bar's `align-items: stretch`).
+   Drop the toggle's flex-fill so it doesn't try to stretch within the
+   now-shrunken cluster, and round all four corners. */
+.mock-wt-control-cluster:has(.mock-wt-chips[hidden]) {
+  align-self: center;
+  /* No flex override on .mock-wt-toggle — its base `flex: 0 0 36px` is
+     the desired single-element height. Cluster collapses to 36px via
+     align-self: center. */
+}
+.mock-wt-control-cluster:has(.mock-wt-chips[hidden]) .mock-wt-toggle {
+  border-radius: 5px;
+}
+
+/* ---- Chips integrated into the pale-plum row ----------------------------
+   Variant chips match the workflow-chip pattern: no separate pill bg/border,
+   just label + value + caret inline within the row. The chip stretches to
+   fill its grid cell (auto-fit, 1fr above) and left-aligns its content via
+   `justify-content: flex-start`. A vertical divider on the 2nd+ chip
+   separates them when both are present. */
+.mock-wt-control-cluster .mock-wt-chips .mock-wt-chip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0 10px;
+  /* Override the catalog's default chip-pill bg/border — chips here are
+     row-integrated, not stand-alone pills. */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  min-width: 0;
+  width: 100%;                       /* fill grid cell explicitly (mirrors annotations chip) */
+  box-sizing: border-box;
+  overflow: visible;                 /* don't clip the chip's value menu (opens upward) */
+}
+.mock-wt-control-cluster .mock-wt-chips .mock-wt-chip + .mock-wt-chip {
+  border-left: 1px solid #d2c4cd;   /* vertical divider between adjacent chips */
+}
+.mock-wt-control-cluster .mock-wt-chips .mock-wt-chip-label {
+  /* Match the workflow-chip label: uppercase, gray, small, never shrinks. */
+  font-size: 11px;
+  color: var(--o-gray-600, #6c757d);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+/* (Removed: fixed label-width approach. Replaced by right-aligning the
+   value text in every chip — see `.mock-wt-chip-value { text-align: right }`
+   in the shared chip rules below. Right-alignment keeps every value's
+   right edge at the same x (just before the caret) regardless of the
+   label's natural width, and works uniformly for single-variant,
+   2-variant, annotations, and the workflow chip.) */
+.mock-wt-control-cluster .mock-wt-chips .mock-wt-chip-button {
+  /* Match the workflow-chip select: borderless, transparent, brand-purple. */
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--o-brand-primary, #714b67);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 0;
+  line-height: 1.2;
+}
+.mock-wt-control-cluster .mock-wt-chips .mock-wt-chip-button:hover { color: #5b3c53; }
+.mock-wt-control-cluster .mock-wt-chips .mock-wt-chip-value {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;                 /* see comment on .mock-wt-workflow .mock-wt-chip-value */
+}
+.mock-wt-control-cluster .mock-wt-chips .mock-wt-chip-button .o_icon_xs {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  color: var(--o-gray-600, #6c757d);
+}
+
+/* ---- Chip dropdown menu ------------------------------------------------
+   Opens UPWARD via bottom: 100%+6 (set on .mock-wt-chip-menu earlier in
+   this file). The cluster has no overflow:hidden so the menu can extend
+   above the bar's top edge. z-index:1200 floats it above the bar
+   (z-index:1100). max-height + scroll handle long option lists. */
+.mock-wt-control-cluster .mock-wt-chip-menu {
+  min-width: 180px;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #c9c9d0;
+  border-radius: 5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  padding: 6px 0;
+  z-index: 1200;
+}
+.mock-wt-control-cluster .mock-wt-chip-item {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
+/* (Removed legacy `body.preview-no-workflow` rule — sample previews now
+   toggle the workflow chip's `hidden` attribute directly, which is the
+   same mechanism walkthrough.js uses in real mocks. That way the catalog
+   only needs to react to `[hidden]` and the cluster-half collapse
+   `:has()` rules fire uniformly across real and demo states.) */
+
+/* Demo cover styling — minimal, just for the sample */
+.sample-demo-cover {
+  padding: 60px 40px;
+  max-width: 900px;
+  margin: 0 auto;
+  color: #495057;
+  font-family: var(--o-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.sample-demo-cover h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #212529;
+  margin: 0 0 12px;
+}
+.sample-demo-cover h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #212529;
+  margin: 28px 0 8px;
+}
+.sample-demo-cover p { margin: 0 0 12px; }
+.sample-demo-cover ul { margin: 0 0 12px 20px; padding: 0; }
+.sample-demo-cover li { margin: 4px 0; }
+.sample-demo-cover .demo-toggle {
+  display: inline-block;
+  margin: 12px 4px;
+  padding: 8px 16px;
+  background: var(--o-brand-primary, #714b67);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.sample-demo-cover .demo-toggle:hover { background: #5b3c53; }
+.sample-demo-cover .demo-note {
+  padding: 14px 18px;
+  background: #f8f9fa;
+  border-left: 3px solid var(--o-brand-primary, #714b67);
+  font-size: 13px;
+  color: #495057;
+  margin: 12px 0;
+}
+.sample-demo-cover .demo-state-label {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f1ecef;
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #714b67;
+  font-weight: 600;
+}

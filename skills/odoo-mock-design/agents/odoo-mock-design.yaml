@@ -1,0 +1,76 @@
+version: 1
+display_name: Odoo Mock Design
+short_description: Generate a self-contained, click-through HTML mock of proposed Odoo screens from an existing solution artifact (an odoo-write-specifications spec folder, or a written brief). Maps each workflow step to an Odoo view type and composes screens from a baked "recognizably-Odoo" component catalog (real Odoo 19 tokens, layouts, class names). Output is a portable folder — index.html + assets/ — with workflow navigation and numbered annotation markers, and ZERO external/network dependencies (lint-enforced). Runs embedded at the finish line of odoo-write-specifications, or standalone against a brief/spec. Never re-derives styling from Odoo source at generation time; the catalog is built once and composed from.
+default_prompt: >
+  Use the Odoo Mock Design skill. This prompt is a thin orchestration shell
+  — read skills/odoo-mock-design/SKILL.md FIRST; the SKILL is canonical for
+  procedure, this prompt only frames the run.
+
+  **Do NOT enter plan mode** — this skill is exempt from P11 (writes only
+  inside its own output folder, no DB, no install, produces a mock not
+  deployable code) and from P13 architecture detection. Do NOT re-derive
+  styling from Odoo source at generation time — reference/catalog/ already
+  encodes Odoo 19; compose from the catalog.
+
+  Detect the invocation mode:
+   - SPEC-FOLDER PATH passed in (e.g. by odoo-write-specifications's
+     finish-line handoff) → Workflow 1 (embedded). No interview. Output to
+     <spec-folder>/mocks/.
+   - User starting cold → Workflow 2 (standalone). REQUIRES an existing
+     brief/spec — ask the user (AskUserQuestion) for the path to a spec
+     folder OR a written brief (.md/.txt). Do NOT run a solution interview.
+     Output destination follows § Entry rules in SKILL.md (next to the spec
+     when one exists; <repo_root>/mocks/<3-word-kebab>/ as the orphan
+     fallback).
+
+  Pipeline (per SKILL.md § Generation Pipeline):
+
+   1. **Comprehension** — ingest spec/brief; run field_placement.md Step 0
+      (source-availability check; surface the canonical warning from
+      reference/templates/source_unavailable_warning.md if Odoo source is
+      absent); enumerate the EIGHT-DIMENSION coverage inventory (actors,
+      apps, new models + views, menus, reports, notifications, lifecycle
+      states, guard rules) + integration touchpoints; refuse if the
+      artefact is too thin to support a screen list and recommend running
+      odoo-write-specifications first.
+
+   2. **Coverage-level gate** — surface a single AskUserQuestion with
+      Core / Standard / Comprehensive, each option populated from the
+      step-1 inventory (screen count + actual surfaces as a delta over the
+      lower tier). Tier semantics live in
+      reference/templates/coverage_levels.md. Default is Standard. Skip
+      the ask only when a level was supplied by the user/caller.
+
+   3. **Curate** — prune to the smallest faithful screen set at the chosen
+      tier, never below the coverage floor. Honour density anchors in
+      view_types.md; pre-plan markers (4–7 per package); pre-plan field
+      placement from live odoo/ source.
+
+   4. **Assemble** — create the output folder + assets/. Optional shortcut:
+      run reference/scripts/_scaffold_mock.py to emit a canonical
+      skeleton (cover with five-callout block sourced from
+      reference/templates/cover_callouts.html, per-workflow shells,
+      walkthrough bar). COPY (never link) odoo.css / annotations.css /
+      walkthrough.js / odoo-icon.svg / odoo-logo.png into
+      <output>/assets/. INLINE icons.svg into index.html (external SVG
+      <use> dies on file://). Compose screens by copying catalog
+      components/*.html fragments verbatim and filling their SLOTs. Honour
+      cover_discipline.md + catalog_chrome.md § Multi-workflow chrome.
+
+   5. **Verify** — run reference/scripts/_lint_mock.py <output> --steps
+      "<screen titles>" ONCE; fix findings. Then fire mock-coverage-anchor
+      AND mock-fidelity-anchor in ONE foreground message in parallel, each
+      with the absolute package path and the chosen coverage tier;
+      reconcile blockers; re-fire the affected anchor after each fix until
+      both return clean.
+
+   6. **Finish** — print "Done — open <path>" and stop. Visual review
+      (reference/scripts/_render_mock_screens.py) is OPT-IN per SKILL.md
+      § Optional visual review — only invoke it if the user asks, or the
+      catalog has been edited recently and you want to confirm existing
+      mocks still render.
+
+  Steps 1–5 run in-conversation. Agent is reserved for the Verify-step
+  anchors — never for index.html composition.
+
+  No ExitPlanMode, no plan file. The pre-finish anchor pass replaces both.

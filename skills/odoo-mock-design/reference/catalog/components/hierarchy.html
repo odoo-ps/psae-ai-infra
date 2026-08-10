@@ -1,0 +1,40 @@
+<!--
+  hierarchy.html — Hierarchy / org-chart view (web_hierarchy; real classes
+  o_hierarchy_renderer / o_hierarchy_container / o_hierarchy_row /
+  o_hierarchy_separator). The separator paints a vertical trunk descending
+  from the parent + a horizontal bus across the children row; each non-root
+  child carries an upward drop to the bus. Render inside the backend shell.
+-->
+<div class="o_hierarchy_renderer">
+  <div class="o_hierarchy_container">
+    <!-- Row 1: root -->
+    <div class="o_hierarchy_row o_hierarchy_row_root">
+      <div class="o_hierarchy_node o_hierarchy_node_root">
+        <div class="o_hierarchy_node_avatar"></div>
+        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Mitchell Admin</div><div class="o_hierarchy_node_title">Chief Executive Officer</div></div>
+      </div>
+    </div>
+    <!-- Bus separator. Connector lines are drawn by CSS:
+           ::before = trunk (from parent down to bus)
+           ::after  = bus (horizontal line)
+         and each child below carries its own drop UP to the bus. -->
+    <div class="o_hierarchy_separator"></div>
+    <!-- Row 2: direct reports -->
+    <div class="o_hierarchy_row">
+      <div class="o_hierarchy_node">
+        <div class="o_hierarchy_node_avatar"></div>
+        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Marc Demo</div><div class="o_hierarchy_node_title">Sales Manager</div></div>
+        <span class="o_hierarchy_node_button">2</span>
+      </div>
+      <div class="o_hierarchy_node">
+        <div class="o_hierarchy_node_avatar"></div>
+        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Joel Willis</div><div class="o_hierarchy_node_title">Warehouse Lead</div></div>
+        <span class="o_hierarchy_node_button">4</span>
+      </div>
+      <div class="o_hierarchy_node">
+        <div class="o_hierarchy_node_avatar"></div>
+        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Audrey Peterson</div><div class="o_hierarchy_node_title">Accountant</div></div>
+      </div>
+    </div>
+  </div>
+</div>

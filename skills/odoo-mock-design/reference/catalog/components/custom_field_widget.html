@@ -1,0 +1,65 @@
+<!--
+  custom_field_widget.html — a SOLUTION-ADDED custom OWL field widget on a form.
+  Models a small bespoke widget registered the standard way:
+    registry.category('fields').add('my_widget', { component, supportedTypes })
+  with standardFieldProps, bundled in web.assets_backend. At runtime it renders
+  inside the SAME `.o_field_widget` cell a stock field would occupy (see
+  form_view.html § field groups) — so a custom widget is NOT a new screen, it's a
+  per-field fidelity detail on an existing form.
+
+  The catalog can't know a project's bespoke widget, so this fragment gives the
+  GENERIC shapes a small DISPLAY widget usually takes — pick the closest and
+  relabel:
+    • status pill  — a coloured badge driven by a state/selection (reuse .badge)
+    • icon+value   — .o_cw_pill with an inline <use> glyph (e.g. a live FX rate)
+    • meter/gauge  — .o_cw_meter for a 0–100% style value (utilisation, score)
+
+  Mock discipline: the widget DISPLAYS, it never computes. Drive any state with
+  the State axis on the screen (data-mock-set-variant), not with live logic.
+  Flag the field as custom with the o_field_help "?" on its label, exactly like a
+  custom standard field (see reference/interactions.md § Custom-field help).
+  Icons use same-document <use href="#o-…"> — the sprite is inlined in index.html.
+-->
+<div class="o_group">
+  <div class="o_inner_group">
+
+    <!-- (1) Status-pill widget — current lifecycle node as a coloured badge -->
+    <div class="o_field_row">
+      <label class="o_form_label">FX Status
+        <span class="o_field_help" data-help="Live conversion state, coloured by stage."
+              data-field="fx_state" data-model="quote.request" data-type="custom widget">?</span>
+      </label>
+      <div class="o_field_widget">
+        <span class="badge text-bg-info">Quoted</span>
+      </div>
+    </div>
+
+    <!-- (2) Icon+value widget — e.g. a live exchange rate with a trend glyph -->
+    <div class="o_field_row">
+      <label class="o_form_label">Live Rate
+        <span class="o_field_help" data-help="Latest rate fetched from the FX provider."
+              data-field="fx_rate" data-model="quote.request" data-type="custom widget">?</span>
+      </label>
+      <div class="o_field_widget">
+        <span class="o_cw_pill text-bg-success">
+          <svg class="o_cw_icon" aria-hidden="true"><use href="#o-exchange"/></svg>
+          1.1567
+        </span>
+      </div>
+    </div>
+
+    <!-- (3) Meter/gauge widget — a 0–100% style value (add is-warning / is-danger
+         to tint the fill when the value crosses a band) -->
+    <div class="o_field_row">
+      <label class="o_form_label">Margin
+        <span class="o_field_help" data-help="Quote margin against target."
+              data-field="margin_pct" data-model="quote.request" data-type="custom widget">?</span>
+      </label>
+      <div class="o_field_widget">
+        <span class="o_cw_meter"><span style="width: 62%"></span></span>
+        <span class="o_cw_value"> 62%</span>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,41 @@
+<!--
+  map.html — Map view (enterprise web_map; real classes o-map-renderer / pin-list).
+  The real view uses Leaflet tiles (external) — a mock MUST NOT load tiles, so the
+  map area is a static on-brand placeholder with numbered pins, alongside the
+  pin-list sidebar Odoo shows. Render inside the backend shell.
+-->
+<!-- Map renderer = sidebar (pin list) + map area. The MapBox-token warning
+     banner that real Odoo shows when no token is set is a TENANT-CONFIG
+     notice — it's not a property of the view itself, so the catalog does
+     NOT include it. A mock depicting a properly-configured tenant should
+     look like this fragment. -->
+<div class="o-map-renderer">
+  <aside class="o-map-renderer--pin-list-container">
+    <button class="btn btn-primary o-map-google-btn">View in Google Maps</button>
+    <div class="o-map-renderer--pin-list-section">
+      <div class="o-map-renderer--pin-list-header"><svg class="o_icon o_icon_xs"><use href="#o-list"/></svg> PIPELINE</div>
+      <div class="o-map-renderer--pin-list-group">
+        <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">1</span>
+          <div><div class="o-map-pin-title">Deco Addict</div><div class="text-muted">77 Santa Barbara Rd, Pleasant Hill</div></div></div>
+        <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">2</span>
+          <div><div class="o-map-pin-title">Gemini Furniture</div><div class="text-muted">317 Fairchild Dr, Mountain View</div></div></div>
+        <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">3</span>
+          <div><div class="o-map-pin-title">Azure Interior</div><div class="text-muted">4557 De Silva St, Fremont</div></div></div>
+      </div>
+    </div>
+  </aside>
+  <div class="o-map-renderer--container">
+    <!-- Zoom controls (top-left, matches Leaflet's default placement) -->
+    <div class="o-map-zoom"><button>+</button><button>−</button></div>
+    <span class="o-map-watermark">Map</span>
+    <!-- Pin numerals must sit inside an inline wrapper (e.g. <span>) — not
+         as a bare text node — so .o-map-pin > * can counter-rotate them
+         upright. A bare text node won't match `> *` (CSS cannot target
+         text nodes) and ends up tilted with the teardrop. -->
+    <span class="o-map-pin" style="left:28%; top:38%;"><span>1</span></span>
+    <span class="o-map-pin" style="left:54%; top:62%;"><span>2</span></span>
+    <span class="o-map-pin" style="left:71%; top:33%;"><span>3</span></span>
+    <!-- Real Leaflet shows the attribution string at the bottom-right. -->
+    <span class="o-map-attribution">Leaflet | © Mapbox © OpenStreetMap <a class="o_form_link">Improve this map</a></span>
+  </div>
+</div>
