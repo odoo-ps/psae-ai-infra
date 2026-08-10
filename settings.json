@@ -1,0 +1,96 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(**/controllers/**)",
+      "Write(**/controllers/**)",
+      "MultiEdit(**/controllers/**)",
+      "Edit(**/security/**)",
+      "Write(**/security/**)",
+      "MultiEdit(**/security/**)",
+      "Edit(**/static/src/**)",
+      "Write(**/static/src/**)",
+      "MultiEdit(**/static/src/**)",
+      "Edit(**/__manifest__.py)",
+      "Write(**/__manifest__.py)",
+      "MultiEdit(**/__manifest__.py)",
+      "Edit(/home/odoo/src/odoo/**)",
+      "Write(/home/odoo/src/odoo/**)",
+      "MultiEdit(/home/odoo/src/odoo/**)",
+      "Edit(/home/odoo/src/enterprise/**)",
+      "Write(/home/odoo/src/enterprise/**)",
+      "MultiEdit(/home/odoo/src/enterprise/**)",
+      "Edit(/home/odoo/src/themes/**)",
+      "Write(/home/odoo/src/themes/**)",
+      "MultiEdit(/home/odoo/src/themes/**)",
+      "Bash(git push:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git checkout staging:*)",
+      "Bash(git checkout production:*)",
+      "Bash(git switch staging:*)",
+      "Bash(git switch production:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(npm install:*)",
+      "Bash(odoo-bin scaffold:*)",
+      "Bash(createdb:*)",
+      "Bash(dropdb:*)"
+    ],
+    "ask": [
+      "Edit(**/*.py)",
+      "Write(**/*.py)",
+      "MultiEdit(**/*.py)",
+      "Edit(**/views/**)",
+      "Write(**/views/**)",
+      "MultiEdit(**/views/**)",
+      "Edit(**/report/**)",
+      "Write(**/report/**)",
+      "MultiEdit(**/report/**)",
+      "Edit(**/data/**)",
+      "Write(**/data/**)",
+      "MultiEdit(**/data/**)",
+      "Bash(odoosh-push:*)",
+      "Bash(odoo-bin -i:*)",
+      "Bash(odoo-bin shell:*)"
+    ],
+    "allow": [
+      "Edit(**/i18n/**)",
+      "Write(**/i18n/**)",
+      "MultiEdit(**/i18n/**)",
+      "Read(**)",
+      "Bash(odoo-bin -u:*)",
+      "Bash(odoo-bin --test-tags:*)",
+      "Bash(psql:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git config user.email:*)",
+      "Bash(git config user.name:*)",
+      "Bash(echo:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_change.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_bash.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

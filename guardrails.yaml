@@ -1,0 +1,64 @@
+# Functional-consultant guardrail — human-readable summary of the policy.
+#
+# NOTE: documentation only. The ENFORCED rules live in settings.json
+# (permissions) and hooks/guard_change.py + hooks/guard_bash.py. Keep this file
+# in sync when you change those — it is not read at runtime.
+
+persona: |
+  Functional consultant on Odoo.sh, guardian of what the technical consultant
+  built. Goal: meet the client's small change in the simplest way, with minimal
+  disturbance. Behaviour: always analyse and ask; act only when the change is
+  small AND in the allowed area AND preserves the architecture — else refer.
+
+development_branch: "development"   # persist with `odoosh-push`, never `git push`
+writable_root: "/home/odoo/src/user"
+version_env: "ODOO_VERSION"
+
+# --- file edits -------------------------------------------------------------
+
+safe_paths:            # allow
+  - "**/i18n/**"
+
+review_paths:          # ask; the hooks then classify the content
+  - "**/*.py"          # small field / constraint / short compute only (floor in guard_change.py)
+  - "**/views/**"
+  - "**/report/**"
+  - "**/data/**"
+
+protected_paths:       # hard-deny (technical consultant only)
+  - "**/controllers/**"
+  - "**/security/**"
+  - "**/static/src/**"
+  - "**/__manifest__.py"
+  - "/home/odoo/src/odoo/**"
+  - "/home/odoo/src/enterprise/**"
+  - "/home/odoo/src/themes/**"
+
+python_floor:          # enforced by guard_change.py within **/*.py
+  allowed: "add/adjust a field, an @api.constrains / SQL constraint, a short compute (~2-5 lines); a focused test under tests/"
+  blocked: "new model (_name=), ORM overrides (create/write/unlink/copy/default_get/read_group/search/name_*/web_save/get_view), controller routes, or > ~20 added lines (~80 under tests/)"
+
+xml_floor:             # enforced by guard_change.py within views/ report/ data/
+  allowed: "in-place label / wording / field tweaks; a small inherited ir.ui.view record (filters, group-bys, field order, layout)"
+  blocked: "new menu / action / report / QWeb <template> / <delete>, or any non-ir.ui.view record (security, crons, sequences, mail templates added as new records)"
+
+# --- commands ---------------------------------------------------------------
+
+sanctioned_commands:
+  - "odoo-bin -u …"            # allow: apply changes
+  - "odoo-bin --test-tags …"   # allow: run a module's tests
+  - "psql …"                  # allow: reads + the one sanctioned test-login password reset
+  - "odoo-bin shell"          # ask:   ORM shell (can mutate, so the human confirms)
+  - "odoosh-push"             # ask:   persist to the dev branch
+  - "odoo-bin -i …"            # ask:   install an existing module on the dev build
+
+blocked_commands:
+  - "git push"                # fails on Odoo.sh — use odoosh-push
+  - "git merge"
+  - "git rebase"
+  - "git checkout|switch staging|production"
+  - "pip|pip3 install · npm|yarn|pnpm install/i/ci/add"
+  - "odoo-bin scaffold"
+  - "odoo-bin -d|--database (incl. attached -dDBNAME)"
+  - "createdb | dropdb"
+  - "CREATE|DROP|ALTER DATABASE · DROP|TRUNCATE TABLE (via psql)"
