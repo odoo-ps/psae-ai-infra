@@ -1,6 +1,6 @@
 ---
 name: solution-architect-anchor
-description: Audit a odoo-plan-development plan file against _shared/role_checklists/solution_architect.md. Flags drift in model/view design discipline, the module dependencies block, and the required configuration block. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
+description: Audit a plan file or specification draft against _shared/role_checklists/solution_architect.md. Flags drift in model/view design discipline, the module dependencies block, and the required configuration block. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -37,7 +37,7 @@ Single prompt argument: absolute path to the plan file.
    drift list, run `python3 skills/_shared/scripts/_check_odoo_source.py
    --plan <plan_file>` ONCE. Its JSON output is the canonical
    `{model → {exists, module, edition, path}}` map cited by the
-   depend-gap and `_inherit` checks below. Skip this if the plan-dev
+   depend-gap and `_inherit` checks below. Skip this if the
    skill already ran the pre-anchor sweep — the result is identical
    and the gate already fired; re-running is redundant.
 

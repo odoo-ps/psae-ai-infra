@@ -8,7 +8,7 @@ default_prompt: >
 
   **Do NOT enter plan mode** — this skill is exempt from P11 (writes only
   inside its own output folder, no DB, no install, produces a mock not
-  deployable code) and from P13 architecture detection. Do NOT re-derive
+  deployable code). Do NOT re-derive
   styling from Odoo source at generation time — reference/catalog/ already
   encodes Odoo 19; compose from the catalog.
 

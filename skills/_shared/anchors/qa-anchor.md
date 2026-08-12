@@ -1,6 +1,6 @@
 ---
 name: qa-anchor
-description: Audit a odoo-plan-development plan file against _shared/role_checklists/qa.md. Flags drift in Stage 3 smoke coverage, test-trigger discipline, and failure-case coverage. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
+description: Audit a plan file or specification draft against _shared/role_checklists/qa.md. Flags drift in Stage 3 smoke coverage, test-trigger discipline, and failure-case coverage. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
 tools: Read, Grep, Glob
 ---
 

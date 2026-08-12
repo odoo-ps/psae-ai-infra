@@ -18,7 +18,7 @@ Each acceptance criterion has at least one test that fails when the addon breaks
 - **Integration tests** inheriting from `TransactionCase` or `HttpCase` for the workflow path. Use `with_user(user)` to test ACL behaviour.
 - **Tour tests** via `HttpCase.start_tour(...)` — only when the workflow has a non-trivial UI element (a wizard, a kanban drag, a button visible only via state). Tours are slow and brittle; use sparingly.
 - **`@odoo.tests.tagged('post_install', '-at_install')`** — runs after all addons load; required for tests that depend on demo data or other modules.
-- **Run tests**: `odoo-bin -c <conf> -d <db> --no-http --stop-after-init --test-enable --test-tags=/<addon>` (slash prefix means "this module's tests only").
+- **Run tests**: `odoo-bin -u <addon> --no-http --stop-after-init --test-enable --test-tags=/<addon>` (slash prefix means "this module's tests only"). No `-c` / `-d` — Odoo.sh injects the config and DB, and `-d` is denied.
 - **Test base classes — pick the right one**:
   - `TransactionCase` — default. Each test method runs in its own transaction; rollback at end-of-method. Fixtures in `setUp` re-run per test (safe, slow).
   - `SavepointCase` — class-scoped savepoint; `setUpClass` runs once; per-test data shared across methods in the class. Faster when tests share an expensive fixture (e.g. a built-out sales order). Watch out: mutations in one test method ARE visible to others in the same class.
@@ -63,7 +63,7 @@ Each acceptance criterion has at least one test that fails when the addon breaks
 - [ ] At least one test per primary acceptance criterion.
 - [ ] At least one ACL test using `with_user(...)`.
 - [ ] `--test-tags=/<addon>` passes from a clean install.
-- [ ] Smoke checklist (6 items above) passes manually OR via `_smoke_module.py`.
+- [ ] Smoke checklist (6 items above) passes manually or via an `odoo-bin shell` script.
 - [ ] Tests have explicit teardown — no leaked records, no mutated demo data.
 - [ ] Tests that depend on demo data carry `@tagged('post_install', '-at_install')`.
 - [ ] If the addon reserves / locks / commits: a reverse-path test per forward path (cancel frees, unreserve → restore, expire releases) — or `N/A` (no such resource).
@@ -78,5 +78,5 @@ Each acceptance criterion has at least one test that fails when the addon breaks
 3. **ACL-test inventory** — at least one test per restricted action using `with_user(env.ref('base.user_demo'))` — both happy-path (allowed user) and deny-case (forbidden user). Empty list is valid only if the addon adds no ACL boundaries.
 4. **Smoke-checklist mapping** — every new artifact in the Implementation block (model, menu, button, compute, server action, ACL row, record rule) must appear in the Stage 3 smoke section. The plan's Smoke section explicitly names which artifact each smoke step exercises. **For every model in the security checklist's Write-path inventory (security.md Required-artifact #6) whose write path runs in user context (not `.sudo()`), the smoke step that triggers that write MUST execute it via `with_user(env.ref('base.user_demo'))` (or another non-admin internal user the plan declares).** A trigger run as admin / superuser masks user-context ACL failures and is not coverage. SQL-view models (`_auto = False`) and FK-cascade-populated models are exempt from the non-admin trigger (state which).
 5. **Failure-case inventory** — for each happy-path smoke check, name the matching deny-case check (constraint violation, ACL deny, missing dependency, locked record). Without this, the smoke catches only the install path, missing the "installed but unusable" bugs.
-6. **Test-command snippet** — the exact `odoo-bin -c <conf> -d <db> --no-http --stop-after-init --test-enable --test-tags=/<addon>` line (with concrete conf path + DB name from this run) lives in the testing manual so the operator can re-run.
+6. **Test-command snippet** — the exact `odoo-bin -u <addon> --no-http --stop-after-init --test-enable --test-tags=/<addon>` line lives in the testing manual so the operator can re-run. Never bake in a conf path or DB name: the platform supplies both, and naming a DB is denied.
 7. **Lifecycle / reverse-path inventory** — when the addon commits / locks / reserves, list the inverse tests (release, restore, terminal-state cleanup) and any contention test. `N/A` only when the addon introduces no such resource. (principle #15)

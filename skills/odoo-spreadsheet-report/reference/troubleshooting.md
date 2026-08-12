@@ -2,7 +2,7 @@
 
 Lookup index of known failure modes — symptom-first, four lines each. Read before generating; consult when a new error appears (grep the literal error string here first). See [`troubleshooting-archive.md`](troubleshooting-archive.md) for fixed/obsolete entries.
 
-**Migration note (2026-06-13):** This file was reformatted from a 121-line mixed-content log to a sectioned 4-line lookup that matches plan-dev's discipline. Two pieces of reference content were extracted into siblings: the design-system rules went to [`design_system.md`](design_system.md), and the conditional-format operator registry went to [`cf_operators.md`](cf_operators.md). Two process rules were promoted into SKILL.md (Stage 3 per-sheet walk and sync-source-first). Old IDs 1–15 do NOT map to new IDs — old plans citing "troubleshooting #N" by number need rewiring against this file's renumbered IDs.
+**Migration note (2026-06-13):** This file was reformatted from a 121-line mixed-content log to a sectioned 4-line lookup that matches the shared discipline. Two pieces of reference content were extracted into siblings: the design-system rules went to [`design_system.md`](design_system.md), and the conditional-format operator registry went to [`cf_operators.md`](cf_operators.md). Two process rules were promoted into SKILL.md (Stage 3 per-sheet walk and sync-source-first). Old IDs 1–15 do NOT map to new IDs — old plans citing "troubleshooting #N" by number need rewiring against this file's renumbered IDs.
 
 **Write gate (per principle #6):** A new entry only lands if the skills tree is git-cloned AND the user has push access, OR if the skills tree is not git-cloned at all. Otherwise surface the proposed entry to the user without writing. The full check + rationale lives in [`../../_shared/principles.md` § 6](../../_shared/principles.md).
 
@@ -63,7 +63,7 @@ Fix: Wrap the formula `=IFERROR(IF(<source_count>=0,"–",<sum_formula>),"–")`
 ### 9. Shell: `KeyError: 'documents.document'`
 Applies: all versions. Status: active. Last confirmed: 2026-06-13.
 Cause: `documents_spreadsheet` (and its dependency `documents`) is not installed in the target DB.
-Fix: Install — `odoo-bin -c <conf> -d <db> --no-http --stop-after-init -i documents,documents_spreadsheet`. Confirm with the user before running per principle #4.
+Fix: Install — `odoo-bin -i documents,documents_spreadsheet --no-http --stop-after-init`. Confirm with the user before running per principle #4.
 
 ### 10. Shell: Data source model not found at runtime
 Applies: all versions. Status: active. Last confirmed: 2026-06-13.

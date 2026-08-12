@@ -73,7 +73,7 @@ finding saying so and continue with what you can check structurally.
    product "can be lot-tracked or serial-tracked," the mock owes BOTH
    renderings on the same screen via the tracking-axis chip — picking
    one and silently dropping the other is a coverage failure that
-   downstream consumers (e.g. plan-dev) will inherit.
+   downstream implementation will inherit.
 
 4. **Click-path — reachability.** Confirm screens connect: each screen (except
    the last) advances via Next or a `data-mock-goto`, and any `data-mock-goto`

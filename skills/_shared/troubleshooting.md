@@ -1,16 +1,16 @@
-# Plan Development — Troubleshooting
+# Odoo addon implementation — Troubleshooting
 
 Lookup index of known failure modes — symptom-first, four lines each. Read before generating; consult when a new error appears (grep the literal error string here first). See [`troubleshooting-archive.md`](troubleshooting-archive.md) for fixed/obsolete entries.
 
 **Migration note (2026-05-20):** This file was reformatted from a 528-line append-only log to a sectioned lookup. ID numbers do NOT match the legacy numbering — old plans referencing "troubleshooting #N" by number need rewiring against this file's IDs or against the archive.
 
-**Write gate (per principle #6):** A new entry only lands if the skills tree is git-cloned AND the user has push access, OR if the skills tree is not git-cloned at all. Otherwise surface the proposed entry to the user without writing. The full check + rationale lives in [`../../_shared/principles.md` § 6](../../_shared/principles.md).
+**Write gate (per principle #6):** A new entry only lands if the skills tree is git-cloned AND the user has push access, OR if the skills tree is not git-cloned at all. Otherwise surface the proposed entry to the user without writing. The full check + rationale lives in [`principles.md` § 6](principles.md).
 
 **Update protocol (per principle #6, after the write gate has passed):**
 1. Before appending: grep this file for the literal error string. If an entry exists, update its `Last confirmed` date and refine `Cause`/`Fix` if the new occurrence taught something — don't duplicate.
 2. New entries take the next free integer in the global ID space (highest active or archived ID + 1). IDs are never reused, even after archive.
 3. When the file exceeds 250 lines or 35 active entries, prune (move fixed-for-90+-days entries to archive, retire whole version-specific sections when a major version is no longer supported, promote recurring patterns to principles/role checklists).
-4. Run `../../_shared/scripts/_lint_troubleshooting.py --skill odoo-plan-development` after editing — it validates entry shape, flags duplicate IDs, and reports archive candidates.
+4. Run `scripts/_lint_troubleshooting.py` after editing — it validates entry shape, flags duplicate IDs, and reports archive candidates.
 
 ---
 
@@ -54,9 +54,9 @@ Fix: Reorder `data` in the manifest so producers come before consumers. Split la
 ### 8. Addon "installs" but a core field/menu is invisible — required feature group never enabled
 Applies: all versions. Status: active. Last confirmed: 2026-05-20.
 Cause: Odoo gates many "advanced" features (lots, variants, multi-currency, multi-step routes, pricelists, discounts, analytic, subtasks) behind `res.groups` flags toggled via Settings — `__manifest__.py:depends` doesn't surface them.
-Fix: Per SKILL.md Pre-Flight §B.2, list required feature groups in the plan's `Required configuration` heading with xmlid + UI path, then either add a `post_init_hook` that flips them on or document the operator pre-step. Stage 3 smoke asserts `env.ref('<xmlid>') in env.user.groups_id` for each.
+Fix: List required feature groups in the plan's `Required configuration` heading with xmlid + UI path, then either add a `post_init_hook` that flips them on or document the operator pre-step. Stage 3 smoke asserts `env.ref('<xmlid>') in env.user.groups_id` for each.
 
-### 9. `_install_module.py` flags `ERROR ... Importing test framework` even though install succeeds
+### 9. The install stage flags `ERROR ... Importing test framework` even though install succeeds
 Applies: Odoo 19. Status: active. Last confirmed: 2026-05-20.
 Cause: Addon's top-level `__init__.py` does `from . import tests`, which transitively imports `odoo.tests.common`. Odoo 19's `common.py` logs `_logger.error("Importing test framework ...")` whenever imported outside `--test-enable`. The harness's "flag any ERROR" rule then fails Stage 2 even though install completed and exit code was 0.
 Fix: Drop `from . import tests` from the addon's top-level `__init__.py`. Odoo's test loader discovers the `tests` subpackage on its own when `--test-enable` is active.
@@ -65,16 +65,22 @@ Fix: Drop `from . import tests` from the addon's top-level `__init__.py`. Odoo's
 
 ## Static lint (Stage 1)
 
-### 10. `_install_module.py` reports `<string>:38: (ERROR/3) Unexpected indentation.`
+### 10. The install stage reports `<string>:38: (ERROR/3) Unexpected indentation.`
 Applies: all versions. Status: active. Last confirmed: 2026-05-20.
 Cause: Odoo parses each module's `__manifest__.py:description` as reStructuredText. RST-tricky shapes (numbered lists with continuation indents, mixed inline markup) produce `docutils` warnings printed at module-load time, which the installer's regex catches as ERROR.
 Fix: Keep `description` as a plain prose paragraph — no headings, no numbered lists, no continuation indents. Anything richer belongs in `<addon>/doc/user_manual.md`.
 
-### 11. `_install_module.py` reports `FAIL ... did not complete cleanly` after a successful install
+### 11. The install stage reports `FAIL ... did not complete cleanly` after a successful install
 Applies: Odoo 19. Status: active. Last confirmed: 2026-05-20.
 Cause: Installer's suspicious-line regex matches Odoo's framework-level warnings that aren't actually failures — chiefly entries #9 (test framework import) and #10 (RST description).
 Fix: Verify via `psql -tAc "SELECT state FROM ir_module_module WHERE name='<module>';"` — if `installed`, treat the FAIL as false positive. Long-term: tighten the installer's regex to downgrade the two known patterns to warnings.
 
+---
+
+### 49. `odoo-bin --i18n-export` rejected with "no such option" when exporting a .pot
+Applies: tooling. Status: active. Last confirmed: 2026-06-13.
+Cause: The CLI translation-export option is not exposed in this build's `odoo-bin` (the option parser rejects `--i18n-export=` outright with exit 2), so the documented one-liner to generate `i18n/<module>.pot` fails.
+Fix: Export via the `base.language.export` wizard in `odoo-bin shell` instead: create one with `format='po'`, `modules=[(6,0,[mod.id])]`, call `act_getfile()`, then `base64.b64decode(exp.data)` and write to the addon's `i18n/<module>.pot`. Leave `lang` blank for a POT template.
 ---
 
 ## Operational smoke (Stage 3)
@@ -93,30 +99,6 @@ Fix: In test `setUpClass`, give each user that will call `set_approval` membersh
 Applies: Odoo 19, web_studio. Status: active. Last confirmed: 2026-05-20.
 Cause: Upstream `studio_approval.check_approval` wraps `_set_approval` in a `try/except UserError` and falls back to `_create_request` on any `UserError`, including domain-specific errors the subclass meant the user to see. The UI shows the generic "An approval is missing" notification.
 Fix: Also override `check_approval` and raise the domain-specific `UserError` *before* calling super (so it propagates out before the upstream try/except catches it). Keep the `_set_approval` override too — it covers direct "Approve" clicks on the activity which don't go through `check_approval`.
-
----
-
-## DB / Pre-Flight
-
-### 16. `dropdb: database "X" is being accessed by other users`
-Applies: all versions. Status: active. Last confirmed: 2026-05-20.
-Cause: Odoo's HTTP server or a previous shell session is still connected.
-Fix: `REVOKE CONNECT ON DATABASE <db> FROM PUBLIC; SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '<db>';` then retry `dropdb`. Or restart Odoo first.
-
-### 17. New instance's DB doesn't show up in browser DB selector
-Applies: all versions. Status: active. Last confirmed: 2026-05-20.
-Cause: `dbfilter` in the conf doesn't match the DB name — e.g. `dbfilter = ^19_acme_dev$` won't match `19_acme_dev_staging`.
-Fix: Use `dbfilter = ^<version>_<instance>(_.*)?$` so siblings of the same instance are visible too. `_create_instance.py` renders this exact pattern.
-
-### 18. `ALTER ROLE odoo CREATEDB` requires superuser
-Applies: all versions. Status: active. Last confirmed: 2026-05-20.
-Cause: The Postgres user running the privilege probe doesn't have superuser rights.
-Fix: `sudo -u postgres psql -c "ALTER ROLE odoo CREATEDB;"` or have the DBA do it. The skill never attempts this automatically — privilege probe in `_create_instance.py` catches it before `createdb`.
-
-### 19. After renaming a Postgres DB, attachments fail with `FileNotFoundError` on hashed paths
-Applies: all versions. Status: active. Last confirmed: 2026-05-20.
-Cause: Odoo's filestore is keyed by DB name (`~/Library/Application Support/Odoo/filestore/<db>/` on macOS). `ALTER DATABASE … RENAME TO …` doesn't move the filestore — every `ir.attachment` row's `store_fname` resolves to the old path.
-Fix: Rename the filestore dir to match: `mv "$FS/<old>" "$FS/<new>"` after confirming any stub at the new name has only matching content-addressed hashes. Pair SQL rename with filestore rename in the same step.
 
 ---
 
@@ -149,17 +131,17 @@ Fix: When refactoring away from a state-mutating hook, add a one-shot `data` XML
 ### 50. `@api.onchange` summing sibling x2many rows double-counts (false "over-allocated")
 Applies: all versions. Status: active. Last confirmed: 2026-06-13.
 Cause: Reading `self.<parent>.<line_ids>` inside a per-row onchange counts the current row twice (as `self` and in the parent set) and includes the editable list's blank "new" row with its default values — so a sum-vs-limit check fires on the very first entry.
-Fix: Sum only rows with a different identifying key (`l.lot_id != self.lot_id`), excluding the current-row duplicate and the lot-less blank row. See reference/odoo_runtime_idioms.md § `@api.onchange`.
+Fix: Sum only rows with a different identifying key (`l.lot_id != self.lot_id`), excluding the current-row duplicate and the lot-less blank row. See odoo_runtime_idioms.md § `@api.onchange`.
 
 ### 51. `_get_available_quantity` flags a correctly-booked confirmed line as a shortage
 Applies: all versions, `stock`. Status: active. Last confirmed: 2026-06-13.
 Cause: Available = on-hand − reserved, and *reserved* includes THIS document's own reservation. Once a confirmed order reserves its committed lot, that lot's available drops to 0, so "is my committed lot still available?" reads as a shortage/exception.
-Fix: Add back this line's own reservation (`move_ids.move_line_ids.quantity_product_uom` for the lot, non-done/cancel) before comparing; subtract only OTHER documents' claims. See reference/odoo_runtime_idioms.md § Reservation & availability semantics.
+Fix: Add back this line's own reservation (`move_ids.move_line_ids.quantity_product_uom` for the lot, non-done/cancel) before comparing; subtract only OTHER documents' claims. See odoo_runtime_idioms.md § Reservation & availability semantics.
 
 ### 52. A lot/lock guard on `stock.move.line` blocks order/delivery cancellation
 Applies: all versions, `stock`. Status: active. Last confirmed: 2026-06-13.
 Cause: Cancel → `stock.move._action_cancel` → `_do_unreserve()` → `move_line.unlink()`. A `write`/`unlink` guard meant to stop manual lot tampering also fires on this system unreserve, so the order can't be cancelled.
-Fix: Exempt system unreserve by overriding `_do_unreserve` to run `with_context(<bypass>=True)` and checking that flag in the guard; manual deletes call `unlink()` directly and stay blocked. See reference/odoo_runtime_idioms.md § Guards vs system flows.
+Fix: Exempt system unreserve by overriding `_do_unreserve` to run `with_context(<bypass>=True)` and checking that flag in the guard; manual deletes call `unlink()` directly and stay blocked. See odoo_runtime_idioms.md § Guards vs system flows.
 
 ### 58. Receiving a serial: a second move line doubles demand and blocks validation
 Applies: all versions, `stock`. Status: active. Last confirmed: 2026-06-14.
@@ -193,80 +175,27 @@ Fix: Use `<field name="image_128" widget="image" options="{'size':[200,200]}"/>`
 ### 53. A `raise` in a transient-wizard button blanks the dialog instead of showing the error
 Applies: all versions. Status: active. Last confirmed: 2026-06-13.
 Cause: The web client `web_save`s the wizard before calling the button; if the method raises, the transaction (including the just-saved lines) rolls back and the dialog re-renders empty — the user sees the wizard wipe itself, not the error.
-Fix: For recoverable input, cap-and-warn in `@api.onchange` (`return {'warning': {...}}`) so the value is corrected before save; keep a save-time `raise` only as a backstop. See reference/odoo_runtime_idioms.md § Transient wizards.
+Fix: For recoverable input, cap-and-warn in `@api.onchange` (`return {'warning': {...}}`) so the value is corrected before save; keep a save-time `raise` only as a backstop. See odoo_runtime_idioms.md § Transient wizards.
 
 ### 54. A `<button>` between list field columns shifts every following column's header
 Applies: all versions. Status: active. Last confirmed: 2026-06-13.
 Cause: Button cells emit no header `<th>`, so each field to the button's right inherits the previous column's header — e.g. a status badge renders under the wrong label.
-Fix: Place row-action buttons LAST in the `<list>`, or give the button an explicit `width=`. See reference/odoo_runtime_idioms.md § Editable lists & inline buttons.
+Fix: Place row-action buttons LAST in the `<list>`, or give the button an explicit `width=`. See odoo_runtime_idioms.md § Editable lists & inline buttons.
 
 ### 55. List/action button icon renders grey (colours only on hover)
 Applies: all versions. Status: active. Last confirmed: 2026-06-13.
 Cause: `class="text-warning"` on a `<button>` is overridden by button styling, so the FontAwesome icon shows muted and tints only on hover.
-Fix: Put the colour in the `icon` attribute — `icon="fa-warning text-warning"` (core pattern, `stock_orderpoint_views.xml`). See reference/odoo_runtime_idioms.md § Icons, decorations & indicators.
+Fix: Put the colour in the `icon` attribute — `icon="fa-warning text-warning"` (core pattern, `stock_orderpoint_views.xml`). See odoo_runtime_idioms.md § Icons, decorations & indicators.
 
 ### 56. A list column stretches into a big blank gap before the row controls
 Applies: all versions. Status: active. Last confirmed: 2026-06-13.
 Cause: The trailing no-width column absorbs all leftover table width; if it's a narrow icon/button column, the slack shows as dead space before the delete control.
-Fix: Give numeric/icon columns explicit `width=` and leave one text column width-less so it (not the icon column) takes the remainder. See reference/odoo_runtime_idioms.md § Editable lists & inline buttons.
+Fix: Give numeric/icon columns explicit `width=` and leave one text column width-less so it (not the icon column) takes the remainder. See odoo_runtime_idioms.md § Editable lists & inline buttons.
 
 ### 62. `t-field` of a Monetary/Date field inside a `<td>` raises "QWeb widgets do not work correctly on 'td' elements"
 Applies: Odoo 19, QWeb (report PDF + portal/website templates). Status: active. Last confirmed: 2026-06-15.
 Cause: `t-field` renders via the field's widget (monetary, date, …); the widget injects markup the table-cell layout can't host, so QWeb asserts at RENDER time. Install/lint pass — it only fails when the template renders (a portal page 500s; a report falls back to an HTML error doc, so `_render_qweb_pdf` returns ctype `html` not `pdf`). A redirect into the broken portal page also 500s a controller test that looked unrelated.
 Fix: In table cells use `t-out` for the plain value and add the currency name separately — `<td><span t-out="o.amount"/> <span t-out="o.currency_id.name"/></td>` — instead of `<td><span t-field="o.amount"/></td>`. `t-field` with a widget is fine outside `<td>`/`<th>` (in a `<div>`/`<span>`/`<p>`).
-
----
-
-## Tooling (skill scripts / IDE)
-
-### 28. `launch.json` patch produces invalid JSON / corrupts comments
-Applies: tooling. Status: active. Last confirmed: 2026-05-20.
-Cause: Naive `json.dump`-and-rewrite loses comments and trailing commas; or the array-end finder picks the wrong `]` (inside a nested string).
-Fix: Use the patcher in `_create_instance.py` — it strips JSONC only for validation, walks balanced brackets to find the configurations array's end, inserts adjacent to the previous entry, and re-validates the output. On failure: SKIP, no rewrite.
-
-### 29. Skill assumes `<instance>/odoo.conf` layout, breaks on a server with a different convention
-Applies: tooling. Status: active. Last confirmed: 2026-05-20.
-Cause: Hard-coded canonical layout in agent actions.
-Fix: Always run `_detect_environment.py` first. If a sibling instance exists, mirror its `conf_filename` / `custom_addons_dirname` / `dbfilter_pattern`. If nothing exists, propose the canonical layout and get user approval before writing.
-
-### 30. Skill prints IDE setup instructions on a headless server
-Applies: tooling. Status: active. Last confirmed: 2026-05-20.
-Cause: Old behaviour fell back to a template even when no IDE was detected.
-Fix: Detection is by file presence (`.vscode/`, `.cursor/`, `.idea/`, `*.code-workspace`). If nothing found, skip the IDE step silently — no template, no instructions.
-
-### 32. Detector returns no instances after the layout migration
-Applies: tooling. Status: active. Last confirmed: 2026-05-20.
-Cause: As of 2026-05-08 the convention is `<repo>/instances/<name>/` instead of `<repo>/<name>/`. `_detect_environment.py` only scans under `instances/`.
-Fix: `mkdir -p instances && mv <name> instances/<name>` then update the conf's addons_path tail and any IDE `launch.json` `--config` arg. DBs/filestores aren't affected (keyed by DB name, not path).
-
-### 49. `odoo-bin --i18n-export` rejected with "no such option" when exporting a .pot
-Applies: tooling. Status: active. Last confirmed: 2026-06-13.
-Cause: The CLI translation-export option is not exposed in this build's `odoo-bin` (the option parser rejects `--i18n-export=` outright with exit 2), so the documented one-liner to generate `i18n/<module>.pot` fails.
-Fix: Export via the `base.language.export` wizard in `odoo-bin shell` instead: create one with `format='po'`, `modules=[(6,0,[mod.id])]`, call `act_getfile()`, then `base64.b64decode(exp.data)` and write to the addon's `i18n/<module>.pot`. Leave `lang` blank for a POT template.
-
----
-
-## nginx / macOS env
-
-### 33. nginx returns 502 Bad Gateway on a freshly-scaffolded instance even though upstream is healthy
-Applies: tooling, macOS + homebrew nginx. Status: active. Last confirmed: 2026-05-20.
-Cause: nginx master (running as root) creates the missing `odoo_<instance>.{access,error}.log` as `root:wheel` 644 on first reload. `nginx -t` validates as the worker user (`nobody`), which can't write to root-owned 644 logs → `nginx -t` fails. `setup_nginx_sudo.sh` aborts AFTER `/etc/hosts` was edited but BEFORE reload — nginx keeps serving 1d+ old config and returns 502 for unknown server_names.
-Fix: `write_nginx_config()` now pre-touches the log files as the invoking user. Repair an existing case: `sudo chown "$USER":admin /opt/homebrew/var/log/nginx/odoo_<instance>.{access,error}.log && sudo nginx -s reload`. Diagnostic: compare nginx master etime vs conf mtime; if master is older, reload was the missing step.
-
-### 34. `<instance>.local` URLs stall ~5s on macOS before resolving
-Applies: macOS. Status: active. Last confirmed: 2026-05-20.
-Cause: macOS reserves `.local` for mDNS/Bonjour. Every `*.local` lookup is sent to mDNS first; only after the 5s mDNS timeout does the resolver fall back to `/etc/hosts`.
-Fix: Use a reserved, mDNS-free dev TLD. This repo uses `.internal` (ICANN-reserved for private use since 2024); `.test` (RFC 6761) is an equally valid alternative. Both skip the mDNS hook and resolve instantly from `hosts(5)`. Do NOT use a real public gTLD (`.run`, `.dev`, `.app`) — those are registrable and leak unlisted lookups to public DNS. `_create_instance.py` writes `.internal` URLs into `odoo.conf` and `nginx.conf` from the start.
-
-### 48. Downloads from `<host>.internal` hang in browser queue (Chrome/Arc `.crdownload` placeholder never finalizes)
-Applies: tooling, macOS + homebrew nginx + Chromium-based browsers (Arc especially). Status: active. Last confirmed: 2026-05-23.
-Cause: Chromium browsers (Arc more aggressively than vanilla Chrome) treat `http://*.internal` as an untrusted insecure origin — `localhost` has an explicit secure-context carve-out but a custom dev TLD doesn't (the same applies to `.test` or any non-localhost host). For downloads from insecure origins the browser holds the `.crdownload` placeholder waiting for additional end-of-stream signals beyond `Content-Length`. Arc's download tray will silently hang indefinitely; vanilla Chrome shows a warning chip. Surface-level nginx tweaks (`proxy_buffering off`, `keepalive_timeout 0`, etc.) either make it worse (Content-Length framing breaks → 216-byte truncation, or premature stream close) or have no effect.
-Fix: switch instance URLs to HTTPS. `brew install mkcert && mkcert -install` once (adds local CA to macOS keychain, auto-trusted by Arc/Chrome/Safari). Generate `.nginx/certs/instances.internal.pem` covering every `<host>.internal` SAN, then each `<version_folder>/instances/<name>/nginx.conf` has a 301-redirect server on `:80` + a real `listen 443 ssl;` server with the cert paths. `_create_instance.py` does this end-to-end for new instances (regenerating the shared cert with all hostnames each scaffold). Keep the standard `proxy_http_version 1.1; proxy_set_header Connection "";` on `location /`. Temporary workaround if HTTPS isn't set up yet: use Safari, or access via `http://localhost:<http_port>/` (localhost is a secure context).
-
-### 63. Discuss shows "Real-time connection lost…" — nginx routes /websocket to an unbound longpolling/gevent port
-Applies: Odoo 16+ (websocket bus), any reverse-proxied single-process instance. Status: active. Last confirmed: 2026-06-15.
-Cause: The bus/Discuss WebSocket (`/websocket`) only binds a *separate* gevent port in MULTI-worker mode (`workers >= 1`). A dev instance with `workers` unset (= 0, threaded) serves the WebSocket on the MAIN `http_port`. If the nginx `*_chat` upstream points at a dedicated port (the old `longpolling_port`, e.g. 8073), nothing listens there → every handshake is refused → the Discuss client loops "real-time connection lost, trying to reconnect." Regular pages work because `location /` points at the live http port. Compounded by `longpolling_port`/`xmlrpc_port` being unknown options in v19 (ignored), so a stale conf value silently mislead the nginx template.
-Fix: point the nginx `/websocket` (and legacy `/longpolling`) upstream at the SAME `127.0.0.1:<http_port>` for single-process instances; keep the `Upgrade`/`Connection: upgrade` headers on the `/websocket` block. `_create_instance.py` now generates this (chat upstream = http port). Only split to a separate port if you actually run `workers >= 1` — then set `gevent_port` in the conf and route `/websocket` to it. Verify: `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:<http_port>/websocket` returns `400` (alive, wants upgrade); a refused connection on the chat port confirms the mismatch.
 
 ---
 
@@ -322,7 +251,7 @@ Fix: Drop `name` from the move vals entirely — `description_picking` auto-comp
 ### 60. Custom `account.report` handler is an `AbstractModel` — needs no ACL, isn't searchable
 Applies: Odoo 19 Enterprise (`account_reports`). Status: active. Last confirmed: 2026-06-15.
 Cause: A custom financial report's handler subclasses `account.report.custom.handler` as `models.AbstractModel` (no DB table). It has a `_name`, so naive tooling treats it like a stored model: Stage-1 lint demands an `ir.model.access.csv` row (false error), and Stage-3 smoke `search([])`es it → `relation "<table>" does not exist` → aborts the transaction. Real enterprise handlers ship NO ACL row.
-Fix: AbstractModel handlers need NO ACL and must NOT be searched. `_lint_addon.py` and `_smoke_module.py` now skip `_name`s whose class extends `AbstractModel` (smoke also runs each probe in a savepoint). For your own checks, gate on `env[model]._abstract`. Don't add a bogus ACL row to silence a linter.
+Fix: AbstractModel handlers need NO ACL and must NOT be searched. Static lint and operational smoke should skip `_name`s whose class extends `AbstractModel` (smoke also runs each probe in a savepoint). For your own checks, gate on `env[model]._abstract`. Don't add a bogus ACL row to silence a linter.
 
 ### 61. Custom `account.report` with a variable number of period/bucket columns
 Applies: Odoo 19 Enterprise (`account_reports`). Status: active. Last confirmed: 2026-06-15.

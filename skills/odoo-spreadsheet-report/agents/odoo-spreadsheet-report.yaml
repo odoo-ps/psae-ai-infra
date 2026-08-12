@@ -2,8 +2,10 @@ version: 1
 display_name: Spreadsheet Report
 short_description: Ask planning questions then generate and validate an Odoo Spreadsheet (.osheet.json) report.
 default_prompt: >
-  Use the Spreadsheet Report skill: ask the fixed questions first (instance, version,
-  business need, brief, models, filters, validation DB), then the minimum role-based
-  questions needed, then generate the .osheet.json under
-  <instance>/spreadsheet_reports/, validate it by importing into the chosen DB via
-  odoo-bin shell, fix any errors, and finish with a short user manual.
+  Use the Spreadsheet Report skill: ask the fixed questions first (business need,
+  brief, models, filters), then the minimum role-based questions needed, then
+  generate the .osheet.json under spreadsheet_reports/ at the Project Repo root,
+  validate it by importing into the branch's DB via `odoo-bin shell` (no -c, no
+  -d — Odoo.sh injects both), fix any errors, and finish with a short user
+  manual. Never ask which instance, version, or DB: there is one branch, the
+  version is $ODOO_VERSION, and the DB is injected.

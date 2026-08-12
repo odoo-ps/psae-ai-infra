@@ -4,6 +4,9 @@
 Modes:
   --probe                    Addons-path availability check; canonical
                              warning + exit 1 if unreachable.
+
+Roots are the fixed Odoo.sh paths (/home/odoo/src/{odoo,enterprise}) plus the
+Project Repo named by --cwd, which is the custom-addons root on a branch.
   --models m1,m2,m3          Batch resolve each model to {exists, module,
                              edition, path}.
   --plan <file>              Regex-extract _inherit / Many2one / Many2many /
@@ -27,14 +30,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Addons roots RELATIVE to a version folder. Prefixed at resolve time with
-# `root_prefix` — `v*` (default) spans every version stack (v19, v20, …); a
-# concrete `v19` scopes the probe to one version.
-ADDONS_ROOTS_REL = [
-    "odoo/odoo/addons",
-    "odoo/addons",
-    "enterprise",
-    "instances/*/custom_addons",
+# Absolute addons roots on an Odoo.sh container. These are fixed by the
+# platform (principle #13) — there is no version folder and no `instances/`
+# tree, so nothing here is relative to the caller's cwd. `--cwd` still names
+# the Project Repo, which is itself the custom-addons root on Odoo.sh.
+ADDONS_ROOTS = [
+    ("/home/odoo/src/odoo/addons", "community"),
+    ("/home/odoo/src/odoo/odoo/addons", "community"),
+    ("/home/odoo/src/enterprise", "enterprise"),
 ]
 
 GREP_TOOL = "rg" if shutil.which("rg") else "grep"
@@ -51,27 +54,26 @@ def _edition(rel):
     return "community"
 
 
-def resolve_roots(cwd, root_prefix="v*"):
-    found = []
-    for rel in ADDONS_ROOTS_REL:
-        combined = f"{root_prefix}/{rel}" if root_prefix else rel
-        if "*" in combined:
-            for p in Path(cwd).glob(combined):
-                if p.is_dir():
-                    found.append((p, _edition(rel)))
-        else:
-            p = Path(cwd) / combined
-            if p.is_dir():
-                found.append((p, _edition(rel)))
+def resolve_roots(cwd, root_prefix=None):
+    """Absolute platform roots, plus the Project Repo as the custom-addons root.
+
+    `root_prefix` is accepted and ignored — it existed for a multi-version
+    workstation layout that no longer exists. Kept so an old call site does not
+    crash; it has no effect.
+    """
+    found = [(Path(r), ed) for r, ed in ADDONS_ROOTS if Path(r).is_dir()]
+    repo = Path(cwd)
+    if repo.is_dir():
+        found.append((repo, "custom"))
     return found
 
 
-def probe(cwd, root_prefix="v*"):
+def probe(cwd, root_prefix=None):
     roots = resolve_roots(cwd, root_prefix)
     if not roots:
         sys.stderr.write(
             "WARNING: Odoo source not found under "
-            + ", ".join(f"{root_prefix}/{r}" for r in ADDONS_ROOTS_REL)
+            + ", ".join(r for r, _ in ADDONS_ROOTS)
             + ". Standard-Odoo claims cannot be verified — surface this on the deliverable.\n"
         )
         print(json.dumps({"available": False, "roots": []}))
@@ -152,7 +154,7 @@ def grep_models(models, roots):
     return results
 
 
-def check_models(models, cwd, root_prefix="v*"):
+def check_models(models, cwd, root_prefix=None):
     roots = resolve_roots(cwd, root_prefix)
     if not roots:
         sys.stderr.write("Source unavailable — cannot verify claims.\n")
@@ -185,7 +187,7 @@ def extract_claims(plan_path):
     return sorted(claims - new_models)
 
 
-def check_plan(plan_path, cwd, root_prefix="v*"):
+def check_plan(plan_path, cwd, root_prefix=None):
     claims = extract_claims(plan_path)
     if not claims:
         print(json.dumps({"claims": [], "results": {}}))
@@ -199,10 +201,8 @@ def main():
     p.add_argument("--models", help="Comma-separated model names")
     p.add_argument("--plan", help="Plan file to extract claims from")
     p.add_argument("--cwd", default=os.getcwd(), help="Project root (default: cwd)")
-    p.add_argument("--root-prefix", default="v*",
-                   help="Version folder prefix for addons roots. `v*` (default) "
-                        "spans every version; pass a concrete folder (e.g. `v19`) "
-                        "to scope the check to one version.")
+    p.add_argument("--root-prefix", default=None,
+                   help=argparse.SUPPRESS)  # deprecated no-op; roots are fixed
     args = p.parse_args()
 
     if args.probe:

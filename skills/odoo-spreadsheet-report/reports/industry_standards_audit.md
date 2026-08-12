@@ -91,7 +91,7 @@ These frameworks are widely-recognized by BI / analytics practitioners. They're 
 
 - **`cf_operators.md` as a hard reference card.** The Stage-1 verifier hashes against the operator registry — a CI-grade enforcement that's stricter than what Material / Few / Knaflic prescribe (they offer guidelines; this is rejection of an out-of-registry operator).
 - **Pre-flight source sync (`_sync_o_spreadsheet_source.py`).** Reading the runtime's TypeScript source for ground truth rather than the minified bundle. No external framework requires this; it emerged from the skill's troubleshooting log (#12 / #14 / `cf_operators.md`).
-- **`troubleshooting.md` in plan-dev's 4-line format.** Refactored from the original mixed-content shape to match plan-dev's discipline; the linter at `_shared/scripts/_lint_troubleshooting.py` enforces uniformly.
+- **`troubleshooting.md` in the shared 4-line format.** Refactored from the original mixed-content shape to match the shared discipline; the linter at `_shared/scripts/_lint_troubleshooting.py` enforces uniformly.
 - **`design_system.md` as canonical source.** Layout / sizing / palette / styling lives in one file, not duplicated across SKILL.md. The skill's recent refactor reduced SKILL.md by ~130 lines.
 
 ---

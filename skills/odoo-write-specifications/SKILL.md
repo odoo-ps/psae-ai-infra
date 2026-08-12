@@ -1,13 +1,13 @@
 ---
 name: odoo-write-specifications
-description: Produce a professionally formatted Odoo functional specification as a .docx file for hand-off to a development team. Interviews business and technical stakeholders one question at a time and **drafts the document to disk incrementally** as each section's input lands — no plan mode, no end-of-interview cliff. After the interview, runs a 14-anchor parallel quality review against the docx draft; user accepts/rejects findings; final docx lands at <repo_root>/specifications/. The spec serves both audiences — business stakeholders sign off on the workflow shape; developers pick it up as the input to odoo-plan-development.
-when_to_use: Use this skill when the user wants a written Odoo functional specification (typically pre-development, often pre-contract) — NOT when they want code built. The next step after this skill is odoo-plan-development against the same scope.
+description: Produce a professionally formatted Odoo functional specification as a .docx file for hand-off to a development team. Interviews business and technical stakeholders one question at a time and **drafts the document to disk incrementally** as each section's input lands — no plan mode, no end-of-interview cliff. After the interview, runs a 14-anchor parallel quality review against the docx draft; user accepts/rejects findings; final docx lands at <repo_root>/specifications/. The spec serves both audiences — business stakeholders sign off on the workflow shape; the technical consultant picks it up as the input to implementation.
+when_to_use: Use this skill when the user wants a written Odoo functional specification (typically pre-development, often pre-contract) — NOT when they want code built. The next step after this skill is hand-off to the technical consultant, who implements against the same scope.
 allowed-tools: Read, Edit, Write, Bash, Grep, Glob, Agent, Skill, AskUserQuestion, ToolSearch, TodoWrite
 ---
 
 # Specification Development
 
-Turn a business request into a `.docx` functional specification suitable for hand-off to a development team. The audience is **both business and technical** — procurement officers and finance managers read the same document the developers later use as the input to `odoo-plan-development`. Skill-specific discipline below; cross-cutting principles live in [`skills/_shared/principles.md`](../_shared/principles.md) and apply here too.
+Turn a business request into a `.docx` functional specification suitable for hand-off to a development team. The audience is **both business and technical** — procurement officers and finance managers read the same document the technical consultant later uses as the input to implementation. Skill-specific discipline below; cross-cutting principles live in [`skills/_shared/principles.md`](../_shared/principles.md) and apply here too.
 
 This skill is **documentation-only**. It produces a Word document, not deployable code. No `instances/` to scaffold, no `createdb`, no `odoo-bin` calls.
 
@@ -71,7 +71,7 @@ Produce, in this order:
 - **Post-interview anchor pass** — fires the full 14-anchor set in parallel against the on-disk docx (per § Post-Interview Anchor Pass below). Findings come back as severity-graded suggestions; the user accepts or rejects each blocker; the skill applies approved patches and re-runs affected anchors.
 - **Stage 1 lint** + **Stage 3 visual review** as the final exit checks (see § Validation below).
 - **Optional `mocks/` subfolder** — if the user accepts the finish-line offer to visualise the screens, `odoo-mock-design` writes a self-contained interactive HTML mock to `<spec-folder>/mocks/` (see § Offer mock screens (finish line)). The docx remains the primary deliverable; the mock is a companion. Absence of `mocks/` never fails the contract.
-- **Optional `dev_handoff` key in SPEC_DATA** — a top-level key inside the builder's SPEC_DATA dict carries structured context for the downstream `odoo-plan-development` skill (P12 inferences, lifecycle/contention decisions, per-workflow validation surface, process-skip markers, integration surface, dataset scale, standard-Odoo overlap decisions). **The builder ignores this key**, so nothing renders to the docx — the docx stays clean for stakeholders while plan-dev consumes the structure directly from `_reference/_build_<task-code>.py`. Absence of `dev_handoff` never fails the contract; see § Dev-Only Hand-off to odoo-plan-development.
+- **Optional `dev_handoff` key in SPEC_DATA** — a top-level key inside the builder's SPEC_DATA dict carries structured context for the technical consultant who implements the spec (P12 inferences, lifecycle/contention decisions, per-workflow validation surface, process-skip markers, integration surface, dataset scale, standard-Odoo overlap decisions). **The builder ignores this key**, so nothing renders to the docx — the docx stays clean for stakeholders while the technical consultant reads the structure directly from `_reference/_build_<task-code>.py`. Absence of `dev_handoff` never fails the contract; see § Dev-Only Hand-off to the Technical Consultant.
 
 A docx that's missing any of the **5 numbered top-level sections** (or the Table of Contents front-matter page), lives outside its per-spec folder, has placeholder strings (`TODO`, `TBD`, `Lorem ipsum`), or fails the filename convention does NOT satisfy the contract.
 
@@ -98,15 +98,19 @@ A docx that's missing any of the **5 numbered top-level sections** (or the Table
 
 `python-docx` is always required. `Pillow` is required only when a workflow opts into a BPMN diagram.
 
-**`python-docx`** — check at skill entry. This skill is documentation-only (no instance / no version routing), so it just needs *an* Odoo dev venv with `python-docx`. `v19/odoo/.venv` is shown throughout as the concrete example — substitute whichever version folder exists (`v20/odoo/.venv`, …); any of them works.
+**`python-docx`** — check at skill entry, using the container's own Python. There is no `instances/` tree and no version folder on Odoo.sh (principle #13).
 
 ```bash
-./v19/odoo/.venv/bin/python -c "import docx" 2>&1
+python3 -c "import docx" 2>&1
 ```
 
-If the import fails, surface the install command and gate it behind explicit user confirmation per principle #4: `./v19/odoo/.venv/bin/pip install python-docx`. Builder fails fast with `ModuleNotFoundError` if invoked without it — no silent fallback to plain-text output.
+**If the import fails, do NOT try to install it.** `pip install` is denied by the Guard Hook — dependency changes are the technical consultant's job, and on Odoo.sh they are declarative. Stop and tell the user:
 
-**`Pillow`** — Pillow ships with Odoo's `requirements.txt`, so it's already present on any Odoo dev venv and on Odoo.sh. Bare-Python-venv invocations are the only realistic miss. Check happens at the **Diagram-choice checkpoint** (after Q6, see § Diagram-choice checkpoint) — not at skill entry, because BPMN need is content-dependent. The checkpoint runs the import-test, prompts to install via `AskUserQuestion` per P4 if missing, or demotes BPMN choices to `flow_strip` on decline. The builder also raises `ImportError` defensively at use-site as a safety net.
+> *"`python-docx` isn't available on this branch. It's declared in the Project Repo's `requirements.txt` and installed by the platform at build time — this isn't something I can install from here. Ask the technical consultant to add `python-docx` to `requirements.txt` and rebuild the branch, then re-run this skill."*
+
+The builder fails fast with `ModuleNotFoundError` if invoked without it — no silent fallback to plain-text output. Halting here costs seconds; discovering it after a 40-minute interview costs the interview (user story 24).
+
+**`Pillow`** — ships in Odoo's own `requirements.txt`, so it is present on every Odoo.sh build. Check happens at the **Diagram-choice checkpoint** (after Q6, see § Diagram-choice checkpoint) — not at skill entry, because BPMN need is content-dependent. The checkpoint runs the import-test and demotes BPMN choices to `flow_strip` if it is missing; it never offers to install. The builder also raises `ImportError` defensively at use-site as a safety net.
 
 ## Fixed Questions (Ask In This Order)
 
@@ -142,7 +146,7 @@ The skill then parses the reply into three Business Case dimensions (problem / a
 
 ### Necessity filter (P12) per question
 
-Before asking each question: is the answer inferable from the invocation, an on-disk artifact, or a read-only pre-flight? Would the answer materially change the spec? If either gate fails, skip and append the inference to `dev_handoff.assumptions` in SPEC_DATA (see § Dev-Only Hand-off to odoo-plan-development) — `{question, inferred, source}`. The docx stays clean; the inferences travel to plan-dev structurally rather than as a docx appendix. If the user wants to see the running set during the interview, point them at `_reference/_build_<task-code>.py`.
+Before asking each question: is the answer inferable from the invocation, an on-disk artifact, or a read-only pre-flight? Would the answer materially change the spec? If either gate fails, skip and append the inference to `dev_handoff.assumptions` in SPEC_DATA (see § Dev-Only Hand-off to the Technical Consultant) — `{question, inferred, source}`. The docx stays clean; the inferences travel onward structurally rather than as a docx appendix. If the user wants to see the running set during the interview, point them at `_reference/_build_<task-code>.py`.
 
 Tie cases (two interpretations roughly equally plausible) surface alternatives + ask per P12's tie-case rule — never silently pick.
 
@@ -277,7 +281,7 @@ What lands where:
 
 ### When to skip
 
-- **User explicitly asks**: `--skip-critique`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.critique_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to odoo-plan-development) so plan-dev knows the critique wasn't run on its inputs. The docx stays clean — no top-of-document SKIPPED banner. Mirrors the anchor-pass skip convention.
+- **User explicitly asks**: `--skip-critique`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.critique_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to the Technical Consultant) so the implementer knows the critique wasn't run on its inputs. The docx stays clean — no top-of-document SKIPPED banner. Mirrors the anchor-pass skip convention.
 - **Iteration on an already-critiqued spec** (re-running on the same task code with unchanged Q5/Q6) — the critique was done the first time; skip silently. If Q5 or Q6 changed since the first pass, re-run.
 
 ### What this is NOT
@@ -295,13 +299,11 @@ Surface the per-workflow Process Flow diagram choices in a single inventory befo
 - **flow_strip** if 1 actor and ≥3 sequential steps with no branching
 - **none** otherwise (1 actor, ≤2 steps, or non-sequential / stateless)
 
-**Pillow pre-flight + install gate** — only if the computed inventory includes ≥1 BPMN. Pillow ships with Odoo's `requirements.txt`, so present on any Odoo dev venv / Odoo.sh; the missing-Pillow case is the bare-Python-venv invocation.
+**Pillow pre-flight** — only if the computed inventory includes ≥1 BPMN. Pillow ships in Odoo's own `requirements.txt`, so it is present on every Odoo.sh build; a miss here is unexpected.
 
-1. Run `./v19/odoo/.venv/bin/python -c "import PIL" 2>&1`.
+1. Run `python3 -c "import PIL" 2>&1`.
 2. **If import succeeds**: proceed to the accept-or-override ask.
-3. **If import fails**: `AskUserQuestion` per P4 (pip install mutates the venv) with two options:
-   - **Install Pillow now** — run `./v19/odoo/.venv/bin/pip install Pillow` via Bash, then proceed with the original inventory.
-   - **Skip Pillow** — demote all BPMN entries in the inventory to `flow_strip` (call out the demotion in the narration); proceed with the demoted inventory.
+3. **If import fails**: demote all BPMN entries in the inventory to `flow_strip` and call out the demotion in the narration. Do **not** offer to install it — `pip install` is denied by the Guard Hook. Mention once that the technical consultant can restore BPMN by adding Pillow to the branch's `requirements.txt`.
 
 The `ImportError` in `render_bpmn_image` (build-time) is the defensive safety net for skill-bypass paths — it should not fire when this checkpoint is honoured.
 
@@ -375,7 +377,7 @@ Walk these three roles **last** in the per-workflow walk so their nudges layer o
    - **Capitalisation convention.** Title-case for named roles / groups / Odoo features when referring to the named entity: *Store Keeper, Sales Agent, Accountant, Supervisor, Approvals app, Internal Transfer*. Lowercase for adjectival qualifiers in prose: *sender Store Keeper, receiver Accountant* (sender / receiver are adjectives, not part of the role name).
 6. **Cross-workflow references restate the condition.** When workflow N references workflow M's behaviour, restate the trigger or condition in full rather than referencing an internal label. ❌ *"Studio approval cycle does not attach (Workflow 1 skip-rule a)"* → ✅ *"Studio approval cycle does not attach (destination warehouse's Resupply From is empty)"*. Internal labels (*"step 7"*, *"skip-rule a"*, *"rule 3"*) are invisible from outside that workflow — restate the condition each time.
 
-The interview questions still pull from the role checklists (which are written for the technical audience of `odoo-plan-development`), but the **answers landing in the docx are translated to business language** before they're written and pass these six rules. Stage 1 lint catches the worst technical-jargon leaks and the post-interview anchor pass surfaces tone drift.
+The interview questions still pull from the role checklists (which are written for a technical audience), but the **answers landing in the docx are translated to business language** before they're written and pass these six rules. Stage 1 lint catches the worst technical-jargon leaks and the post-interview anchor pass surfaces tone drift.
 
 **Interview discipline (same as Fixed Questions — invariant)** — every per-workflow question is a single `AskUserQuestion` turn with 2–4 options drawn from the role checklist file you are currently walking. One atomic ask per turn. **This is the highest-drift section of the entire skill**: 11 role checklists × N workflows means a long sequence of role asks, and bundling temptation compounds with fatigue. Pause and re-read the § Interview discipline invariant before opening each role checklist if you feel tempted to combine. Never ask "what fields does the user see, and which are required?" — that's two asks across two turns.
 
@@ -407,7 +409,7 @@ The renderer is tuned to read like a human drew it in a proper BPMN tool, not an
 
 **Flow strip (modern block diagram).** When a workflow specifies `flow_strip` as a list of step labels, the builder renders a modern PIL-based PNG: rounded plum-outlined pills with an accent top-stripe, numbered step badges, and clean plum arrows between them — visually consistent with the BPMN diagram language. `render_flow_strip_image` + `make_flow_strip_diagram` produce and embed it (also at readable native width). The legacy table-based `make_flow_strip()` renderer remains as the **fallback path** only (when Pillow is unavailable) — white-fill cells with a plum border, numbered `1. … 2. …` prefixes, and floating `→` connectors between pills. The graceful degradation reads as a refinement of the same flow language, not a different aesthetic.
 
-**Pillow dependency.** Both BPMN AND the modern flow_strip use Pillow. `render_bpmn_image` raises `ImportError` if Pillow is missing (defensive — should not fire when the Diagram-choice checkpoint is honoured). `flow_strip` degrades gracefully to the legacy table renderer if Pillow is missing — the docx still builds. Install with `./v19/odoo/.venv/bin/pip install Pillow`. Pillow ships with Odoo's `requirements.txt`, so it's already present in any Odoo dev venv and on Odoo.sh; the missing-Pillow case is the bare-venv scenario only.
+**Pillow dependency.** Both BPMN AND the modern flow_strip use Pillow. `render_bpmn_image` raises `ImportError` if Pillow is missing (defensive — should not fire when the Diagram-choice checkpoint is honoured). `flow_strip` degrades gracefully to the legacy table renderer if Pillow is missing — the docx still builds. Pillow ships in Odoo's own `requirements.txt`, so it is present on every Odoo.sh build; a miss is unexpected and is handled by demotion, never by installing (`pip install` is denied by the Guard Hook).
 
 ### Schema
 
@@ -495,11 +497,11 @@ After the linear per-workflow walkthrough completes — the docx is already full
 
 ### Invocation
 
-**ALL 14 Agent calls go in ONE message, foreground only.** (Write-specs runs 14 anchors — plan-dev runs 15, the extra one being `scaffolding-anchor`. Scaffolding correctness is plan-dev-specific and doesn't apply to a docx artifact.) The single-batched-message rule survives even though we're no longer using it as a plan-mode gate — running anchors sequentially or in separate messages defeats the parallel-perspective benefit. See [`../odoo-plan-development/SKILL.md` § Pre-ExitPlanMode Anchor Pass](../odoo-plan-development/SKILL.md) for the procedural mechanics (anchor invocation, tag namespace); only the anchor *target* (here, the `_build_<task-code>.py` SPEC_DATA — see § Invocation note above; plan-dev anchors read the markdown plan file directly), what the anchors audit *against*, and what happens after differ:
+**ALL 14 Agent calls go in ONE message, foreground only.** The single-batched-message rule survives even though we're no longer using it as a plan-mode gate — running anchors sequentially or in separate messages defeats the parallel-perspective benefit. See [`../_shared/anchor_pass.md`](../_shared/anchor_pass.md) for the procedural mechanics (anchor invocation, reconciliation, tag namespace); only the anchor *target* (here, the `_build_<task-code>.py` SPEC_DATA — see § Invocation note above), what the anchors audit *against*, and what happens after differ:
 
 - `principles-anchor` — vs `_shared/principles.md` (16 numbered principles)
-- `plan-structure-anchor` — adapted: audits the docx's 5 numbered top-level sections (+ Cover + TOC front matter) + 11 per-workflow subsections against [`reference/content_outline.md`](reference/content_outline.md), not odoo-plan-development's Output Contract
-- `troubleshooting-anchor` — vs `../odoo-plan-development/reference/troubleshooting.md` (catches the spec re-deriving a known workaround instead of citing the entry)
+- `plan-structure-anchor` — audits the docx's 5 numbered top-level sections (+ Cover + TOC front matter) + 11 per-workflow subsections against [`reference/content_outline.md`](reference/content_outline.md), which is this skill's Output Contract
+- `troubleshooting-anchor` — vs [`../_shared/troubleshooting.md`](../_shared/troubleshooting.md) (catches the spec re-deriving a known workaround instead of citing the entry)
 - `business-analyst-anchor` … `ux-ui-anchor` (×11) — vs the matching role checklist, audited against the docx's per-workflow subsection that the role owns
 
 ### Reconciliation (no gate — user decides)
@@ -507,24 +509,24 @@ After the linear per-workflow walkthrough completes — the docx is already full
 After all 14 reports return:
 
 1. **Verify completeness** — all 14 `auditor` fields present in the returned JSON. Re-call any anchor that errored, before reconciling.
-2. **Collect, dedupe, bucket** findings by `tags` and `severity`. Same tag namespace as odoo-plan-development: `principle:<n>`, `structure:<aspect>`, `role:<slug>`, `checklist:<artifact>`, `drift:<pattern>`.
+2. **Collect, dedupe, bucket** findings by `tags` and `severity`. Same tag namespace as every Anchor Pass: `principle:<n>`, `structure:<aspect>`, `role:<slug>`, `checklist:<artifact>`, `drift:<pattern>`.
 3. **Present blockers to the user one at a time** per the interview invariant (§ Interview discipline), each with a single-question `AskUserQuestion` patch-accept-reject ask. Never bundle two blockers into one ask, even if they're in the same section. The docx is already on disk so the user can open it, see the flagged section, and decide.
    - **Bundling self-test.** If your drafted `AskUserQuestion` body contains "Blocker 1" / "Blocker 2", the phrase ` and also `, or two `?`s, **that's bundling — split into two turns.** Same-section blockers are still two turns; section affinity is not a bundling licence.
 4. **Apply approved patches** to the builder's `SPEC_DATA` (not the docx directly — P1), re-run the builder, the docx updates. Re-run any anchors whose domain a patch touched.
-   - **Route by audience, not by severity.** A finding patches the **docx body** only if it changes something a business stakeholder reads — a workflow step, a business rule, a success criterion, an app-impact statement. A finding that is **implementation discipline** — constant-time secret compare, cron `limit=`/give-up terminal, expression index, sudo narrowness, timeout on an outbound call — lands in `dev_handoff` (the matching `assumptions[]` / `*_notes` slot), NOT the docx. The integration/security/devops anchors legitimately raise many of the latter against a business spec; routing them to `dev_handoff` keeps the docx clean while the discipline still reaches plan-dev. When unsure which a finding is, ask: "would a procurement officer reading the spec act on this?" — if no, it's `dev_handoff`.
+   - **Route by audience, not by severity.** A finding patches the **docx body** only if it changes something a business stakeholder reads — a workflow step, a business rule, a success criterion, an app-impact statement. A finding that is **implementation discipline** — constant-time secret compare, cron `limit=`/give-up terminal, expression index, sudo narrowness, timeout on an outbound call — lands in `dev_handoff` (the matching `assumptions[]` / `*_notes` slot), NOT the docx. The integration/security/devops anchors legitimately raise many of the latter against a business spec; routing them to `dev_handoff` keeps the docx clean while the discipline still reaches the technical consultant. When unsure which a finding is, ask: "would a procurement officer reading the spec act on this?" — if no, it's `dev_handoff`.
 5. **Nit-severity findings are NOT appended to the docx.** The Open Nits appendix was removed per the conciseness pass. If a nit is worth keeping for the dev team, fold it into the relevant per-workflow subsection inline (e.g., as a row note in the Business Rules & Validations table). Otherwise drop it.
 6. **No `ExitPlanMode`.** When the user accepts the docx as-is, the docx on disk is the deliverable. Before the final "Done", make the finish-line mock offer (§ Offer mock screens (finish line)); then say "Done — open `<path>`" and stop.
 
 ### When to skip
 
-- User explicitly asks: `--skip-audit`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.anchor_pass_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to odoo-plan-development) so plan-dev knows the docx wasn't self-vetted on role-checklist drift. The docx stays clean — no top-of-document SKIPPED banner.
+- User explicitly asks: `--skip-audit`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.anchor_pass_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to the Technical Consultant) so the implementer knows the docx wasn't self-vetted on role-checklist drift. The docx stays clean — no top-of-document SKIPPED banner.
 - Iteration on an already-anchored docx where the only change is a typo or styling tweak — anchors are for spec *decisions*, not formatting fixes.
 
-## Dev-Only Hand-off to odoo-plan-development
+## Dev-Only Hand-off to the Technical Consultant
 
-The interview generates context that's valuable for the downstream developer skill but would clutter the docx for business stakeholders. The builder reserves a top-level `dev_handoff` key in SPEC_DATA for exactly this: **anything inside `dev_handoff` is read by `odoo-plan-development` (which loads `_reference/_build_<task-code>.py` directly per its own SKILL.md § Reference Material) but is NOT rendered to the docx.** The docx stays clean; the structured hand-off survives.
+The interview generates context that's valuable for the downstream developer skill but would clutter the docx for business stakeholders. The builder reserves a top-level `dev_handoff` key in SPEC_DATA for exactly this: **anything inside `dev_handoff` is read by the technical consultant (who opens `_reference/_build_<task-code>.py` directly) but is NOT rendered to the docx.** The docx stays clean; the structured hand-off survives.
 
-`odoo-plan-development` runs `SPEC_DATA.get("dev_handoff", {})` when ingesting a spec folder and uses each field below to P12-skip its own interview questions (citing the `dev_handoff` source in its Assumptions section, per its P12 rule). Every field is **optional** — a spec that omits `dev_handoff` entirely still satisfies the contract; plan-dev defaults gracefully when a field is absent.
+The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec folder; each field below records a decision already made during the interview, so it need not be re-litigated. Every field is **optional** — a spec that omits `dev_handoff` entirely still satisfies the contract.
 
 ### Fields
 
@@ -533,7 +535,7 @@ The interview generates context that's valuable for the downstream developer ski
     # P12 inferences the spec interview chose to make rather than ask.
     # Each entry pairs the question with the inferred answer and the
     # source it came from (a brief excerpt, a workflow subsection, an
-    # earlier role answer). plan-dev cites these when it P12-skips the
+    # earlier role answer). the technical consultant reads these instead of re-asking the
     # same question on its side.
     "assumptions": [
         {"question": "dataset scale",
@@ -554,7 +556,7 @@ The interview generates context that's valuable for the downstream developer ski
 
     # P16 completeness decisions per workflow. The spec body captures
     # these as Business Rules / Automated Behaviours rows; this is the
-    # structured mirror plan-dev needs to skip its lifecycle &
+    # structured mirror the technical consultant needs for the lifecycle &
     # contention asks. Key each entry by the workflow's snake_case slug
     # (derived from its `name`), or by 1-indexed position ("wf1", "wf2").
     # Omit a workflow's entry entirely if it commits/locks/reserves
@@ -572,11 +574,11 @@ The interview generates context that's valuable for the downstream developer ski
                 "frees_stale_via": "warehouse refresh on quote expiry",
             },
             "availability_frame": "warehouse-scoped",
-            # Where this workflow's behaviour lives, so plan-dev knows up
+            # Where this workflow's behaviour lives, so the implementer knows up
             # front which automated tier can prove it (and which can't):
             #   "backend"      — pure server/ORM; Stage 1/2/3 + tests cover it.
             #   "owl-frontend" — POS button/popup, custom OWL widget; INVISIBLE
-            #                    to every automated stage. plan-dev must split
+            #                    to every automated stage. The implementer must split
             #                    the logic into guarded server methods (testable)
             #                    + a thin frontend, and budget a manual UI
             #                    checklist + server-method shell smoke (Stage 3c).
@@ -586,15 +588,15 @@ The interview generates context that's valuable for the downstream developer ski
         },
     },
 
-    # Q5d-equivalent for plan-dev. Often invisible in prose. Keep
-    # structured so plan-dev's devops-role gate ("external surface?")
+    # Implementation input. Often invisible in prose. Keep
+    # structured so the devops-role gate ("external surface?")
     # is answerable without re-reading the whole spec.
     "integration_surface": ["none"],
     # Valid entries: "none", "inbound webhook", "outbound API call",
     # "file import/export", "email triggers". List form so multiple
     # touchpoints can coexist.
 
-    # Performance-role engagement gate for plan-dev. Plan-dev engages
+    # Performance-role engagement gate. The implementer engages
     # Performance on >10k or cron present — make the signal explicit
     # instead of inferred from "feels routine."
     "dataset_scale": "<10k",            # "<10k" / "10k-100k" / ">100k"
@@ -602,7 +604,7 @@ The interview generates context that's valuable for the downstream developer ski
 
     # Critical Brief Evaluation Check 2 outcomes structured. The §4
     # Apps Impacted prose covers this for stakeholders; the structured
-    # form lets plan-dev assess complexity-vs-reuse without re-eliciting
+    # form lets the implementer assess complexity-vs-reuse without re-eliciting
     # the standard-module overlap list.
     "overlap_decisions": [
         {"workflow": "wf1", "module": "stock", "choice": "extend",
@@ -612,8 +614,8 @@ The interview generates context that's valuable for the downstream developer ski
     # Free-form role-discipline notes routed here from the anchor pass
     # (see § Reconciliation step 4 "Route by audience"). These are the
     # implementation-discipline findings that would clutter the docx but
-    # plan-dev's matching role gate should see. Each is a list of short
-    # strings; omit any slot that's empty. plan-dev reads them as
+    # the matching role gate should see. Each is a list of short
+    # strings; omit any slot that's empty. The implementer reads them as
     # advisory build obligations, not interview answers.
     "security_notes": [
         "webhook secret stored in ir.config_parameter, system-group read only.",
@@ -634,11 +636,11 @@ The interview generates context that's valuable for the downstream developer ski
 - **Never render `dev_handoff` content in the docx.** If a stakeholder needs to see one of these facts, lift the specific finding into the matching docx subsection (e.g. an availability-frame decision becomes a Business Rule row). Don't echo the whole `dev_handoff` block — that's the same docx-clutter this carve-out exists to prevent.
 - **Don't mirror.** If a fact is already captured as a Business Rule row, an Automated Behaviours row, or in the New Models / New Fields table, do NOT also stamp it into `dev_handoff.completeness`. The structured form is for facts the docx CAN'T cleanly carry (the lifecycle inverse never written, the dataset-scale assumption no row captures), not a redundant shadow of everything.
 - **Lint silence is intentional.** Stage 1 lint walks the rendered docx; it does not validate `dev_handoff` shape. The builder treats unknown SPEC_DATA keys as no-ops. The principle here is "extra context is cheap; wrong docx content is expensive" — keep the validation gate on what reaches stakeholders.
-- **Append, don't rewrite.** During the interview, when a question gets P12-skipped or a critique check fires, *append* the new entry to the relevant `dev_handoff` field rather than rewriting the structure. The accumulated list is the audit trail plan-dev consumes.
+- **Append, don't rewrite.** During the interview, when a question gets P12-skipped or a critique check fires, *append* the new entry to the relevant `dev_handoff` field rather than rewriting the structure. The accumulated list is the audit trail the technical consultant consumes.
 
 ## Validation (three stages, reshaped for documentation)
 
-The three-stage validation pattern from `odoo-plan-development` and `odoo-spreadsheet-report` adapts to a documentation artifact:
+The three-stage validation pattern (shared principle #2) adapts to a documentation artifact:
 
 ### Stage 1 — Static docx lint ([`reference/scripts/_lint_spec.py`](reference/scripts/_lint_spec.py))
 
@@ -687,7 +689,7 @@ the dev team reads alongside the spec.
    (Recommended)** / **No, the docx is enough**.
    - **Skip the ask entirely when the invocation already committed to mocks** —
      e.g. the user pre-declared a pipeline ("write-specs → mock-design →
-     plan-dev") or asked for mocks up front. Re-asking is pure ceremony; proceed
+     implementation") or asked for mocks up front. Re-asking is pure ceremony; proceed
      straight to step 3 and note that you're doing so.
 2. **If No** — say "Done — open `<path>`" and stop. Nothing else changes.
 3. **If Yes** — invoke `odoo-mock-design` via the **Skill tool**, in the main

@@ -25,8 +25,8 @@ Covers what the addon does for the end user. Sections:
 Covers how to install and verify the addon. Sections:
 - **Install command** — exact, copy-paste, including conf path and DB name.
 - **Upgrade command** — same with `-u`.
-- **Run tests** — `odoo-bin -c ... -d ... --test-enable --test-tags=/<addon>`.
-- **Manual smoke checklist** — list mirroring `_smoke_module.py`'s checks.
+- **Run tests** — `odoo-bin -u <addon> --test-enable --test-tags=/<addon> --stop-after-init --no-http`.
+- **Manual smoke checklist** — module installed, models searchable, menus resolve, a sample record creates/computes/unlinks, ACLs cover every model.
 - **Uninstall command** — including any cleanup the user must do (external resources, custom DB objects).
 
 ### `<addon>/__manifest__.py` `description`
@@ -89,7 +89,7 @@ For any addon already installed in a prior release (shipping a manifest version 
 
 1. **User manual entry** — Output Contract requires `<addon>/doc/user_manual.md`. Declare the file as a deliverable with sections (Purpose / Workflow / Field reference / Edge cases / Glossary).
 2. **Testing manual entry** — declare `<addon>/doc/testing_manual.md` as a deliverable. Commands must be copy-paste-ready with the concrete conf path + DB name from this run, not placeholders.
-3. **Uninstall command** — testing manual's uninstall section must name the actual command (e.g. `odoo-bin -c <conf> -d <db> --no-http --stop-after-init -u <addon> -i base --without-demo=all` plus any external cleanup steps), not `-u <addon>` (which is install/upgrade, not uninstall).
+3. **Uninstall path** — the testing manual's uninstall section must name the actual steps. On Odoo.sh uninstalling is done from Apps in the UI (or an ORM shell `module.button_immediate_uninstall()`), plus any external cleanup. Do not document a `-d <db>` command line: it is denied by the Guard Hook, and `-u <addon>` is upgrade, not uninstall.
 4. **Manifest description** — declare the one-paragraph description that ships in `__manifest__.py`.
 5. **Public method docstring inventory** — list every new public method (no leading underscore) the addon adds. Each gets a one-line docstring before the build is declared done.
 6. **Changelog entry** — for any upgrade-type addon, declare the `CHANGELOG.md` entry for the new manifest version. Empty for greenfield first-install addons.

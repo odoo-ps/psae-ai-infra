@@ -1,6 +1,6 @@
 ---
 name: localization-anchor
-description: Audit a odoo-plan-development plan file against _shared/role_checklists/localization.md. Flags drift in i18n boundaries, currency assumptions, RTL/LTR handling, and locale-sensitive logic. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
+description: Audit a plan file or specification draft against _shared/role_checklists/localization.md. Flags drift in i18n boundaries, currency assumptions, RTL/LTR handling, and locale-sensitive logic. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
 tools: Read, Grep, Glob
 ---
 
