@@ -1,7 +1,7 @@
 ---
 name: odoo-mock-design
 description: Generate a self-contained, click-through HTML mock of the proposed Odoo screens so stakeholders and developers can *see* a solution before it's built. Reads an existing solution artifact (an odoo-write-specifications spec folder, or a written brief), maps each workflow step to an Odoo view type (form / list / kanban / wizard), and composes screens from a baked "recognizably-Odoo" component catalog (real Odoo 19 design tokens, layouts, class names). Output is a portable folder — index.html + assets/ — with workflow navigation and numbered annotation markers, and ZERO external/network dependencies (lint-enforced). Runs two ways: embedded at the finish line of odoo-write-specifications, or standalone against a brief/spec you point it at.
-when_to_use: Use this skill when someone wants a visual mock-up of proposed Odoo screens to explain or sign off a solution — either right after odoo-write-specifications, or standalone against an existing brief/spec. NOT for building a working addon (that's odoo-plan-development) and NOT for writing the spec itself (that's odoo-write-specifications).
+when_to_use: Use this skill when someone wants a visual mock-up of proposed Odoo screens to explain or sign off a solution — either right after odoo-write-specifications, or standalone against an existing brief/spec. NOT for building a working addon (that's the technical consultant's job — refer it) and NOT for writing the spec itself (that's odoo-write-specifications).
 allowed-tools: Read, Edit, Write, Bash, Grep, Glob, Agent, AskUserQuestion, ToolSearch, TodoWrite
 ---
 
@@ -102,7 +102,7 @@ contract.
   walkthrough-bar layout, per-workflow overview shape, Next-button labels).
 - [`reference/field_placement.md`](reference/field_placement.md) — how to
   discover where standard fields live, at runtime, from live
-  `odoo/` / `enterprise/` source. Best-effort warning when source absent is
+  `/home/odoo/src/{odoo,enterprise}` source. Best-effort warning when source absent is
   single-sourced from
   [`reference/templates/source_unavailable_warning.md`](reference/templates/source_unavailable_warning.md).
 - [`reference/interactions.md`](reference/interactions.md) — the `data-mock-*`
@@ -144,7 +144,8 @@ field, row, and supporting surface earns its place — pass it through
   Fall back to the `.docx` if absent.
 - **Brief** (Workflow 2 with no spec): read the `.md`/`.txt`.
 - **Source-availability check** (`field_placement.md` Step 0). Without
-  `odoo/`/`enterprise/`, screens become best-effort — say so on the cover.
+  `/home/odoo/src/odoo/` and `/home/odoo/src/enterprise/`, screens become
+  best-effort — say so on the cover.
 - **Model verification (enforced).** Run
   `python3 skills/_shared/scripts/_check_odoo_source.py --models <comma-list of standard Odoo models named in brief/spec>`
   once. `exists=false` halts screen composition; `edition=enterprise`
@@ -155,15 +156,18 @@ field, row, and supporting surface earns its place — pass it through
   `<body class="o-community">`) is DETECTED from source presence, then baked
   into `<body>` and the cover kicker (`Odoo <ver> · Enterprise` /
   `· Community`). Decision procedure, in order:
-  1. Probe for Enterprise source once:
-     `ls -d enterprise 2>/dev/null && ls enterprise/web_enterprise 2>/dev/null`
-     (the presence of an `enterprise/` addons tree containing `web_enterprise`
-     is the signal).
+  1. Probe for Enterprise source once, at its ABSOLUTE Odoo.sh path:
+     `ls -d /home/odoo/src/enterprise/web_enterprise 2>/dev/null`
+     (an `enterprise/` addons tree containing `web_enterprise` is the signal).
+     Never probe a relative `enterprise/` — the writable tree is
+     `/home/odoo/src/user`, so a relative probe always misses and the mock
+     silently ships the wrong chrome.
   2. **If Enterprise source IS present → the mock MUST default to Enterprise
      chrome.** Do NOT add `o-community` to `<body>`; kicker reads
      `· Enterprise`. This is **not overridable by inferring "Community" from
      where standard models resolve** — standard models ALWAYS live under
-     `odoo/addons` (Community core) even on an Enterprise install, so their
+     `/home/odoo/src/odoo/addons` (Community core) even on an Enterprise
+     install, so their
      resolution path says nothing about the deployment edition. Enterprise
      source present ⇒ Enterprise look.
   3. **If Enterprise source is NOT present → do NOT assume Community. ASK the
@@ -173,7 +177,7 @@ field, row, and supporting surface earns its place — pass it through
      Community-only workspace the user confirms) sets `o-community`.
 
   The recurring failure this gate closes: standard models resolving under
-  `odoo/addons` were mistaken for a *Community deployment*, so the mock
+  `/home/odoo/src/odoo/addons` were mistaken for a *Community deployment*, so the mock
   shipped with the wrong purple chrome even though `enterprise/` was present.
   Presence of Enterprise source is authoritative; absence is a QUESTION, not
   a Community default.
@@ -542,7 +546,7 @@ title.
     app slip through — app coverage implies none of these. The independent
     yardstick is the complete enumerated inventory judged at the chosen tier.
   - **Tell `mock-fidelity-anchor` to re-derive the edition, not trust it.** In
-    its prompt, instruct it to independently probe for `enterprise/` in the
+    its prompt, instruct it to independently probe `/home/odoo/src/enterprise/` in the
     workspace and check the mock's chrome (`<body>` `o-community` class + cover
     kicker) against the § Edition gate: `enterprise/` present ⇒ must be
     Enterprise. Do NOT state the edition as a settled fact in the prompt — a
@@ -585,7 +589,7 @@ disciplines keep it from drifting:
    the catalog's fragment is wrong, fix the catalog, not the package.
 2. **Justify every catalog edit by a real Odoo path.** Edits to
    `catalog/` must cite the Odoo 19 source path they're derived from
-   (e.g. `odoo/addons/web/static/src/views/form/...`). The reference
+   (e.g. `/home/odoo/src/odoo/addons/web/static/src/views/form/...`). The reference
    ensures the catalog stays calibrated to a real version.
 
 When extending the catalog with a new fragment, render the gallery
@@ -654,10 +658,10 @@ Per principle #8. Skill-specific notes:
 
   The lookup loop, in order:
   1. **Verify Odoo source is reachable.** `field_placement.md` Step 0 (the
-     source-availability check) tells you whether `odoo/` / `enterprise/`
+     source-availability check) tells you whether `/home/odoo/src/{odoo,enterprise}`
      are present in the workspace.
   2. **Find the real implementation.** `grep -rn` the SCSS / XML / OWL
-     template under `odoo/addons/` and `enterprise/` for the class name,
+     template under `/home/odoo/src/odoo/addons/` and `/home/odoo/src/enterprise/` for the class name,
      widget name, or visible label the user described. Read the file(s).
   3. **Port it into the catalog.** Add (or extend) the relevant
      `catalog/components/*.html` fragment + the matching block in

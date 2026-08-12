@@ -64,13 +64,11 @@ default_prompt: >
   run the **Diagram-choice checkpoint** per § Diagram-choice checkpoint
   in SKILL.md: compute per-workflow diagram shape (BPMN if ≥2 actors or
   non-linear flow; flow_strip if 1 actor and ≥3 sequential steps; else
-  none); if any BPMN chosen, pre-flight Pillow via
-  `./v19/odoo/.venv/bin/python -c "import PIL"` and if missing, ask the user
-  via AskUserQuestion (P4 confirm-before-destructive) — Install Pillow
-  now (proceed with BPMN) OR Skip Pillow (demote BPMN choices to
-  flow_strip in the inventory). Pillow is in Odoo's standard
-  requirements.txt so it's present in any Odoo dev venv and on Odoo.sh
-  — the missing-Pillow case applies only to a bare Python venv. Then
+  none); if any BPMN chosen, pre-flight Pillow via `python3 -c "import PIL"`
+  and if missing, demote all BPMN choices to flow_strip and say so. NEVER
+  offer to install it: `pip install` is denied by the Guard Hook. Pillow is
+  in Odoo's standard requirements.txt so it is present on every Odoo.sh
+  build; a miss is unexpected. Then
   narrate the (possibly post-demotion) diagram inventory in one block
   and ask ONCE via AskUserQuestion to accept-or-override the choices.
   Then for EACH workflow walk the role checklists asking only what
@@ -121,8 +119,6 @@ default_prompt: >
   are verb phrases** (not states) and **compound-trigger table rows
   split** into one-trigger-one-outcome per row. AFTER the per-workflow walkthrough completes, fire ALL
   14 anchors at skills/_shared/anchors/ in ONE message foreground as a quality
-  review (write-specs runs 14 anchors; plan-dev runs 15, the extra one being
-  scaffolding-anchor, which is plan-dev-specific and skipped for the docx)
   review (NOT a gate — the docx is already on disk). Present blockers one
   at a time per the interview invariant; user accepts or rejects each;
   apply approved patches by editing SPEC_DATA and re-running the builder.

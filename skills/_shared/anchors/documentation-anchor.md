@@ -1,6 +1,6 @@
 ---
 name: documentation-anchor
-description: Audit a odoo-plan-development plan file against _shared/role_checklists/documentation.md. Flags drift in user manual and testing manual coverage, copy-paste-ready commands, and uninstall path. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
+description: Audit a plan file or specification draft against _shared/role_checklists/documentation.md. Flags drift in user manual and testing manual coverage, copy-paste-ready commands, and uninstall path. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
 tools: Read, Grep, Glob
 ---
 
@@ -15,22 +15,33 @@ Single prompt argument: absolute path to the plan file.
 
 1. Walk up to find `skills/`; read
    `skills/_shared/role_checklists/documentation.md`.
-2. Read the plan file in full.
+2. Read the target artifact in full.
+
+   **Determine the artifact class first — it gates half the checks below.**
+   If the artifact ships **deployable addon code** (it names a
+   `__manifest__.py`, an addon folder, or model/view files), run every check.
+   If it is a **documentation deliverable** (a `.docx` functional spec, its
+   SPEC_DATA builder, a mock package), the addon-shaped checks marked
+   *(addon only)* DO NOT APPLY — skip them silently. Firing them against a
+   spec produces guaranteed false blockers, because a spec has no addon,
+   no manifest, and no testing manual.
+
 3. Drift patterns to hunt:
 
-   - **No user manual reference** — Output Contract requires
+   - *(addon only)* **No user manual reference** — Output Contract requires
      `<addon>/doc/user_manual.md`; plan doesn't mention this file →
      `blocker`.
-   - **No testing manual reference** — Output Contract requires
+   - *(addon only)* **No testing manual reference** — Output Contract requires
      `<addon>/doc/testing_manual.md` containing install / upgrade /
      test / manual smoke / uninstall commands; missing → `blocker`.
-   - **Commands not copy-paste-ready** — testing manual section
-     contains placeholders (`<your-db>`, `<addon-name>`) rather than
-     the concrete values for the chosen instance/DB → `blocker`.
-   - **No uninstall path** — testing manual lacks a uninstall /
-     rollback command, or the command is `<addon> -u` (which is
-     install, not uninstall) → `blocker`.
-   - **Screenshots / mockups absent for UI changes** — addon adds a
+   - *(addon only)* **Commands not copy-paste-ready** — testing manual
+     section leaves the addon name as a placeholder (`<addon-name>`)
+     → `blocker`. Note: conf paths and DB names must NOT be filled in —
+     Odoo.sh injects both, and naming a DB is denied by the Guard Hook.
+   - *(addon only)* **No uninstall path** — testing manual lacks an
+     uninstall / rollback path, or offers `-u <addon>` (which is
+     upgrade, not uninstall) → `blocker`.
+   - *(addon only)* **Screenshots / mockups absent for UI changes** — addon adds a
      menu, form view, or kanban but user manual has no
      screenshot/diagram describing the result → `nit`.
    - **Glossary missing** — addon introduces domain jargon (medical
@@ -39,12 +50,11 @@ Single prompt argument: absolute path to the plan file.
    - **Changelog entry absent** — for any upgrade-type addon (already
      installed in a previous version), no changelog/migration-notes
      entry → `nit`.
-   - **Manuals not in plan's Output Contract verification** — the
-     plan's Production-readiness checklist must include "[ ] User
-     manual written" and "[ ] Testing manual written" rows — missing
-     → `blocker`.
+   - *(addon only)* **Manuals not in the artifact's own readiness
+     checklist** — it must include "[ ] User manual written" and
+     "[ ] Testing manual written" rows — missing → `blocker`.
 
-   - **`__manifest__.py` description empty or placeholder** — checklist
+   - *(addon only)* **`__manifest__.py` description empty or placeholder** — checklist
      Production criterion #3 requires the manifest's `description` field
      to carry a one-paragraph summary (purpose, primary workflow, target
      user). Plan describes the addon but doesn't include the manifest

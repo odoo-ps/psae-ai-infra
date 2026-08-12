@@ -9,10 +9,27 @@ description: >-
 # Odoo views / XML — small functional changes
 
 Yours: label / help text, field order or placement in an **existing** view,
-search filters & group-bys on **existing** fields, report wording. A new
-`<record>`, action, menu, or structural xpath that reshapes the view → **refer
-to the technical consultant**. Edit through inheritance; never rewrite the
-technical consultant's arch.
+search filters & group-bys on **existing** fields, report wording — delivered as
+an **inherited `ir.ui.view` record**, which is the normal and allowed way to
+change a view. Edit through inheritance; never rewrite the technical
+consultant's arch.
+
+## The five tests every view record must pass
+
+The Guard Hook permits an `ir.ui.view` `<record>` only when **all five** hold.
+Fail one and it is a Major Change — stop and refer it.
+
+| Test | Requirement | Refused when |
+|---|---|---|
+| Is it an extension? | `inherit_id` is present | a new standalone view |
+| Is it *still* an extension? | mode is not `primary` | inherit-then-detach |
+| Is it a real view? | type is not `qweb` | a template, website page, or report layout |
+| Is it additive? | every `position` is `after` / `before` / `inside` / `attributes` / `move` | `position="replace"` — structural surgery |
+| Is it non-destructive? | the parent is not deactivated | `active="False"` on a standard view |
+
+A **non-view** `<record>` — action, menu, report action, security rule, cron,
+sequence, mail template — is always the technical consultant's. So is a
+`<menuitem>`, `<act_window>`, `<report>`, `<template>`, or `<delete>`.
 
 ## Inherited view — three rules
 

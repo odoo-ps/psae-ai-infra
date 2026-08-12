@@ -1,6 +1,6 @@
 ---
 name: data-migration-anchor
-description: Audit a odoo-plan-development plan file against _shared/role_checklists/data_migration.md. Flags drift in backfill strategy, idempotency, and rollback discipline for plans that modify populated models. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
+description: Audit a plan file or specification draft against _shared/role_checklists/data_migration.md. Flags drift in backfill strategy, idempotency, and rollback discipline for plans that modify populated models. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
 tools: Read, Grep, Glob
 ---
 

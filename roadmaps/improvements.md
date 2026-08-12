@@ -202,7 +202,7 @@ script that enforces the README's maintenance rules across every skill.
     `skill-template` lands. Until then, presence-only with name fuzziness.
   - **Cross-skill consistency** — every skill that runs an anchor pass
     references the same Pre-ExitPlanMode Anchor Pass anchor list shape
-    (or documents the carve-out, e.g. write-specs skips `scaffolding-anchor`).
+    (or documents the carve-out — e.g. an anchor that applies only to addon plans, not to a docx).
   - **`_shared/` non-fork rule** — no role-checklist or principle copied
     into `<skill>/reference/` (grep heads of `_shared/role_checklists/*.md`
     against every skill's `reference/`).
@@ -234,7 +234,7 @@ read uniformly.
 **Risks introduced.** A noisy lint trains people to ignore it. The
 hardest part isn't the script — it's tuning thresholds so the lint stays
 load-bearing. False positives on legitimate carve-outs (skills that
-deliberately deviate from the template, write-specs skipping `scaffolding-anchor`)
+deliberately deviate from the template, or an anchor scoped to addon plans only)
 need explicit allow-listing inside the script, not silenced via prose.
 
 **Risks capped.** Silent SKILL.md bloat past the 500-line guidance.

@@ -1,6 +1,6 @@
 # Shared Principles for Odoo-Dev Skills
 
-Cross-cutting discipline that every skill in this repo (`odoo-plan-development`, `odoo-spreadsheet-report`, future) is expected to follow. Skills link to this file in their **Reference Material** section. A skill may extend or override a principle for skill-specific reasons — but the override must be explicit and justified inline.
+Cross-cutting discipline that every skill in this Corpus (`odoo-write-specifications`, `odoo-mock-design`, `odoo-spreadsheet-report`, future) is expected to follow. Skills link to this file in their **Reference Material** section. A skill may extend or override a principle for skill-specific reasons — but the override must be explicit and justified inline.
 
 Read this once at the start of any skill run. The skill's own SKILL.md handles the details specific to its artifact; this file is the operating doctrine.
 
@@ -15,7 +15,7 @@ Read this once at the start of any skill run. The skill's own SKILL.md handles t
 Why builders pay off when they fit: hand-edited artifacts drift across iterations. Builders make repeats safe — style numbers stay consistent, repeated patterns stay DRY, layout coordinates stay calculable, and "what changed and why" lives in one diffable place.
 
 Practical rules (apply when a builder is in use):
-- Place the builder under the skill's output folder (e.g. `<instance>/spreadsheet_reports/_build_<slug>.py`, `<instance>/custom_addons/_scaffold_<addon>.py`).
+- Place the builder under the skill's own output folder at the Project Repo root (e.g. `spreadsheet_reports/_build_<slug>.py`, `specifications/<folder>/_reference/_build_<task-code>.py`). Those roots are the Document-path carve-out; a builder written anywhere else is measured against the Python floor and refused.
 - Make the builder idempotent — running it twice produces byte-identical output.
 - Hand-edits to the artifact must be back-ported into the builder before the next run, or they vanish.
 
@@ -55,11 +55,16 @@ Don't silently invent a model or field that doesn't exist — surface the gap im
 Any of the following require an explicit user confirmation block listing the exact change before it runs:
 
 - Installing or uninstalling Odoo modules (state changes, ACLs, menus).
-- Creating, dropping, or initialising a database.
 - Writing files outside the skill's own output folder.
 - Modifying or deleting existing user data.
-- Force-pushing or rewriting git history.
 - Sending messages to chat platforms, tickets, or external services.
+
+**Not confirmable — these are DENIED outright** by the Guard Hooks, so never
+offer them behind a `y/N`: creating, dropping, initialising, or naming a
+database (`createdb` / `dropdb` / `-d` / `--database`); `git push` / `merge` /
+`rebase`; switching to staging or production; installing pip or npm packages.
+Offering a confirmation for an action that cannot run wastes the consultant's
+turn and teaches them the gate is theatre. Stop and refer instead.
 
 The confirmation block must be a single, scannable list — not a paragraph. Wait for an explicit `y` (or equivalent). Treat anything else as decline → halt.
 
@@ -79,7 +84,7 @@ if prior:
 
 ## 6. Troubleshooting-log discipline
 
-Every skill ships a `reference/troubleshooting.md` (active lookup index) and a sibling `reference/troubleshooting-archive.md` (fixed/obsolete entries, not loaded at run time). The active file is a **living lookup**, not an append-only journal: read it before generating, update it after every new failure mode encountered.
+The addon-implementation corpus lives at `_shared/troubleshooting.md` with its sibling `_shared/troubleshooting-archive.md` (fixed/obsolete/retired entries, not loaded at run time). A skill whose failure surface is materially different ships its own pair under `<skill>/reference/` — today only `odoo-spreadsheet-report` does. Either way the active file is a **living lookup**, not an append-only journal: read it before generating, update it after every new failure mode encountered.
 
 Each entry follows this strict four-line shape (Fix may include a minimal snippet when essential):
 
@@ -112,22 +117,22 @@ if ! git -C "$SKILL_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 elif [ -z "$(git -C "$SKILL_DIR" remote get-url --push origin 2>/dev/null)" ]; then
     # Git working tree but no remote — local git only, write freely
     WRITE_OK=true
-elif git -C "$SKILL_DIR" push --dry-run --no-verify >/dev/null 2>&1; then
-    # Remote exists AND push access verified — write freely
-    WRITE_OK=true
 else
-    # Cloned with remote but no push access (or offline) — DO NOT write
+    # Remote exists. Do NOT probe with `git push --dry-run` — pushing from a
+    # branch is denied by the Guard Hook, and `git -C <dir> push` only slips
+    # past it on a technicality. Assume no push access and surface the entry
+    # to the user instead of writing it.
     WRITE_OK=false
 fi
 ```
 
-The check is best-effort: `git push --dry-run` requires network reachability, so an offline run produces a false "no push" (the write is skipped when it could have succeeded). The conservative default is correct — a skipped write is recoverable from session notes; a write lost on the next `git pull` is silently gone.
+The check is deliberately conservative: a Corpus clone on a branch has a remote and no push path, so the answer is almost always "surface, don't write". That is the correct default — a surfaced entry is recoverable from session notes; a write lost on the next `git pull` is silently gone. The Corpus is maintained in the Infra Repo, not from a consultant's branch.
 
 **Update protocol — required, not optional, AFTER the write gate has passed:**
 
 1. **Before appending: grep the file for the literal error string.** If an entry already exists, update its `Last confirmed` date and refine `Cause`/`Fix` if the new occurrence taught something new — never duplicate.
 2. **Monotonic IDs.** New entries take the next free integer in the *combined* ID space (active + archive). IDs are never reused, even after an entry archives.
-3. **Categorical, not chronological.** Group entries under the section headers in the active file (Install / Stage 1 / Stage 3 / DB / Demo data / Compute-API / Views / Tooling / nginx / Version-specific / Planning-process). Within a section, IDs run in declaration order.
+3. **Categorical, not chronological.** Group entries under the section headers in the active file (Install / Stage 1 / Stage 3 / Demo data / Compute-API / Views / Version-specific / Planning-process). Within a section, IDs run in declaration order.
 4. **Prune at thresholds.** When the active file exceeds 250 lines or 35 active entries, move `fixed`-for-90+-days entries to archive, retire whole version-specific sections when no supported deployment runs that version, and promote recurring patterns to principles/role checklists (incidents that abstracted upstream don't belong here).
 5. **Lint the file.** The shared linter at [`_shared/scripts/_lint_troubleshooting.py`](scripts/_lint_troubleshooting.py) validates every skill's troubleshooting file against the 4-line shape. Run it after editing — `_shared/scripts/_lint_troubleshooting.py --skill <skill-name>` audits one skill; the same command without `--skill` audits all skills that ship a troubleshooting file. The linter flags duplicate IDs, malformed dates, and reports archive candidates (entries fixed for 90+ days).
 
@@ -167,7 +172,7 @@ Don't apologise and revert to a generic safe baseline; that erases work the user
 
 Field names rot. Method signatures move. Module ownership shifts across versions. Before extending or referencing existing code:
 
-- Re-grep the source (`odoo/`, `enterprise/`, `<instance>/custom_addons/`).
+- Re-grep the source (`/home/odoo/src/odoo/`, `/home/odoo/src/enterprise/`, and this branch's own addons under `/home/odoo/src/user`), or run `_shared/scripts/_check_odoo_source.py --models <list>`.
 - Confirm the field type, method signature, and owning module match what you're about to write.
 - Treat in-tree code as authoritative for the running version, not memory or training data.
 
@@ -208,11 +213,11 @@ How it works:
    schema via `ToolSearch` first if it's deferred).
 2. **Conduct the interview** (fixed questions, then role-based) one-at-a-time per
    principle #10. All read-only.
-3. **Run read-only pre-flight**: environment detection, model/field verification,
-   version detection, module-dependency resolution. Do NOT install modules, create
-   DBs, or write builder scripts yet.
+3. **Run read-only pre-flight**: model/field verification, module-dependency
+   resolution, `$ODOO_VERSION`. Do NOT install modules or write builder scripts
+   yet. (There is no environment detection and no DB creation — see P13.)
 4. **Build up the plan file** at `<repo_root>/plans/<slug>.md` incrementally (the repo root's `plans/` directory, NOT `.claude/plans/`; create the dir if missing — Write auto-creates parents). The plan
-   must include: resolved instance/DB, scoped artifact (addon name or report slug),
+   must include: the scoped artifact (addon name or report slug),
    models/fields used, owning modules to install, validation strategy, and a
    verification section.
 5. **Call `ExitPlanMode`** to request approval. The user's approval is the gate for
@@ -263,9 +268,9 @@ only if BOTH gates pass.**
 
 **Gate 1 — Not inferable.** The answer is not already determinable from:
 - The user's invocation prompt or earlier conversation.
-- An existing `odoo.conf`, `__manifest__.py`, builder script, or other on-disk artifact.
-- A read-only pre-flight detection (environment, Odoo/o-spreadsheet version,
-  installed modules, existing instance layout, `ir.model.data` ownership).
+- An existing `__manifest__.py`, builder script, or other on-disk artifact.
+- A read-only pre-flight: `$ODOO_VERSION`, the current git branch, the
+  o-spreadsheet bundle version, installed modules, `ir.model.data` ownership.
 
 When the answer IS inferable, surface the inference in the plan file under an
 **Assumptions** heading — `Assumed <X> from <Y>` — rather than asking. The user
@@ -284,8 +289,8 @@ request:
   and ships no record rules.
 
 Default state for the role-based gates is already in the role table — extend the
-same logic to fixed questions: if Q2 (Odoo version) is inferable from an existing
-conf and Q3 (new vs update) is inferable from the invocation ("add a field to
+same logic to fixed questions: the Odoo version is always `$ODOO_VERSION` (never
+ask), and if Q3 (new vs update) is inferable from the invocation ("add a field to
 `muzu_credit_limit.account_move`"), don't re-ask. Note the inference, move on.
 
 **Tie case — multiple plausible interpretations.** When two or more interpretations are roughly equally plausible (no clear winner from the invocation + on-disk artifacts + pre-flight detection), do **not** pick one silently and bury the alternative in Assumptions. Surface both — list them in the plan file under a `Plausible interpretations` heading AND ask via the interview to pick. The bar to skip the question is *one confident inference*, not "I'd guess (a)." If you find yourself thinking "I'll just pick the more likely one," stop — that's the trap this clause exists to catch.
@@ -299,28 +304,22 @@ at a time.
 
 ---
 
-## 13. Architecture-aware execution
+## 13. Odoo.sh is the only target architecture
 
-Skills run in different host architectures — Local (version folders `v<major>/` each holding a managed `instances/` tree with `odoo.conf` + venv + nginx + IDE patches), Odoo.sh's managed PaaS, Docker / docker-compose, and bare-metal / system Python. The Pre-Flight, scaffolding, and validation steps written for one architecture **collide with another's directives** when run blindly: a Local-style instance scaffold makes no sense on Odoo.sh's repo-root addon layout; a `createdb` call has no target on a Docker-Postgres or Odoo.sh DB; an IDE patch is noise on a headless server.
+**Every skill in this Corpus runs inside an Odoo.sh development-branch container. There is no architecture detection and no per-architecture branching.** Do not probe for Docker, bare-metal, or a local multi-version workstation; do not ask the user which host they are on. It is a question with only one possible answer.
 
-**Every skill MUST detect the execution architecture before any other action** — before Q1, before Pre-Flight, before any filesystem write. Probe read-only signals:
-- **Odoo.sh** — `.odoo.sh.yaml` at repo root; git remote URL matches `*odoo.sh.*` or contains `runbot.odoo.com`; env var `ODOO_SH=1`; `odoo.sh/` directory at repo root.
-- **Docker** — `docker-compose.yml`, `compose.yml`, or `Dockerfile` at repo root referencing an Odoo image / service.
-- **Local** — a version folder `v<major>/instances/<name>/odoo.conf` matches the canonical layout; the matching `v<major>/odoo/.venv/bin/python` exists (the detector reports these as `versions[]` + version-tagged `instances[]`).
-- **Bare-metal** — `/etc/systemd/system/odoo*.service` or `/etc/init.d/odoo` exists; `which odoo-bin` returns a system path.
+What that fixes in place:
 
-After probing, surface the inferred architecture to the user (in the plan file under an `Architecture` heading) and **always confirm** before proceeding. Per P12's tie-case rule, zero-signal or multi-signal cases must surface alternatives and ask explicitly — never silently pick.
+- **The writable tree is the Project Repo** at `/home/odoo/src/user`, checked out on the **development** branch. Nothing else on the filesystem is writable, and the Guard Hook denies any write that resolves outside it.
+- **The framework source is read-only** at `/home/odoo/src/{odoo,enterprise,themes}`.
+- **The database is injected.** Never create, drop, name, or re-wire it — no `createdb` / `dropdb`, no `-d` / `--database` on `odoo-bin`. There is no `instances/` tree, no `odoo.conf` to author, no venv to build, no nginx to scaffold, no IDE patch to apply. Those are workstation concepts and none of them exist here.
+- **The Odoo version is in `$ODOO_VERSION`.** Read it; never infer it from a folder name like `v19/`.
+- **The container is ephemeral.** Uncommitted or unpushed work is lost on rebuild — commit and `odoosh-push` once a change is verified. Plain `git push` fails on Odoo.sh.
+- **Promotion development → staging → production is the user's job in the Odoo.sh UI**, never a skill's.
 
-Each skill defines its own per-architecture branches; the shared rule is only that detection-and-confirmation happens first, and that **no Local-flavoured action runs until the architecture is confirmed Local**.
+Any path a skill writes must therefore be relative to the Project Repo root. A skill that inherited a `v<major>/instances/<name>/…` output path from a workstation corpus is broken on a branch — the write is refused by the Guard Hook, not merely misplaced.
 
-**Documentation-only skills are exempt.** A skill that produces only a documentation artifact (e.g. `odoo-write-specifications` emits a `.docx`) does not need architecture detection — the host architecture doesn't affect the artifact's shape or content. Such skills document the exemption inline in their SKILL.md and skip Q0. The spec *content* may still mention target architecture; that's authored by the user during the interview, not detected by the skill.
-
-**Safety-net handoff pattern.** A skill that detects an architecture for which it hasn't yet implemented a full branch must not fall back to Local. Instead, every safety-net branch follows the same four-step shape — each SKILL.md lists only its own skill-specific questions in step 2:
-
-1. **Confirm detection** with the user, naming the firing signal: "Detected `<env>` (signal: `<x>`). I don't yet have a fully-spec'd branch for this. Walk me through your setup before I proceed."
-2. **Ask the skill's per-env questions one at a time** (per principle #10), capturing answers as `Assumptions` in the plan file.
-3. **Adapt** the rest of the skill's behaviour to those answers for this run; do not assume Local conventions.
-4. **Promote** to a full branch in a future revision if the per-run answers prove repeatable across users / projects.
+**Documentation-only skills** (e.g. `odoo-write-specifications` emits a `.docx`) never needed detection anyway; the host does not affect the artifact's shape. The spec *content* may still name a target architecture — that is authored by the user during the interview, never detected.
 
 ---
 
@@ -353,10 +352,10 @@ The audience is functional consultants — they should never need to `git checko
 **Apply consistently to**:
 - Role checklists under `_shared/role_checklists/` — `Mechanisms / Tools`, `Common Pitfalls`, `Required artifacts` sections.
 - Anchors under `_shared/anchors/` — drift-pattern lists.
-- Troubleshooting files (`<skill>/reference/troubleshooting.md`) — already follow this convention via dedicated `## Version-specific — Odoo X` sections and per-entry `Applies: <version>` lines.
+- Troubleshooting files (`_shared/troubleshooting.md`, `<skill>/reference/troubleshooting.md`) — already follow this convention via dedicated `## Version-specific — Odoo X` sections and per-entry `Applies: <version>` lines.
 
 **Does NOT apply to calibration-snapshot artifacts**:
-- Mock-design's `reference/` catalog files (`style_guide.md`, `field_placement.md`, `view_types.md`, `interactions.md`, `REFRESH.md`) — the entire catalog represents one Odoo major version end-to-end. Per-version sectioning would fork every file; the discipline instead is a wholesale catalog refresh per [`odoo-mock-design/reference/REFRESH.md`](../../odoo-mock-design/reference/REFRESH.md) on each major bump.
+- Mock-design's `reference/` catalog files (`style_guide.md`, `field_placement.md`, `view_types.md`, `interactions.md`, `REFRESH.md`) — the entire catalog represents one Odoo major version end-to-end. Per-version sectioning would fork every file; the discipline instead is a wholesale catalog refresh per `odoo-mock-design/reference/REFRESH.md` on each major bump.
 - `reports/industry_standards_audit.md` per skill — point-in-time audits, stale-tolerant by design (per [README § Conventions](../../README.md) `reference/` vs `reports/` distinction). Re-run on demand against the new version rather than sectioned in-file.
 - SKILL.md files — describe the *process*, not version-specific patterns. Version-bound content belongs in the role checklists / reference assets the SKILL.md links to.
 
@@ -396,4 +395,4 @@ An upstream artifact — a stakeholder's answer, a brief, a spec, or a mock — 
 
 ## How skills extend this file
 
-A skill may add skill-specific principles in its own `SKILL.md` (e.g. odoo-spreadsheet-report's Design System, odoo-plan-development's three-stage addon validation pipeline). It should not silently violate a shared principle — if there's a reason to deviate, document it inline with the deviation.
+A skill may add skill-specific principles in its own `SKILL.md` (e.g. odoo-spreadsheet-report's Design System). It should not silently violate a shared principle — if there's a reason to deviate, document it inline with the deviation.

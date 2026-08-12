@@ -15,7 +15,7 @@ Checks (per skill):
   - Reports archive candidates: entries with Status: fixed YYYY-MM-DD older than 90 days.
   - Flags duplicate symptoms (heuristic — same normalised heading text).
 
-ID namespaces are PER-SKILL. Plan-dev's #1 and spreadsheet-report's #1 are unrelated.
+ID namespaces are PER-SKILL. _shared's #1 and spreadsheet-report's #1 are unrelated.
 
 Exit codes:
   0   clean across all linted skills
@@ -24,7 +24,7 @@ Exit codes:
 
 Usage:
   ./_lint_troubleshooting.py                              # lint every skill with a troubleshooting file
-  ./_lint_troubleshooting.py --skill odoo-plan-development # lint one skill
+  ./_lint_troubleshooting.py --skill odoo-spreadsheet-report # lint one skill
   ./_lint_troubleshooting.py --root <path>                 # override skills/ root
   ./_lint_troubleshooting.py --strict                      # warnings → errors
 """
@@ -170,24 +170,35 @@ def find_skills_root(start: Path) -> Path | None:
     return None
 
 
-def discover_skills_with_troubleshooting(skills_root: Path) -> list[Path]:
-    """Return every skill dir under skills_root that has reference/troubleshooting.md.
+def troubleshooting_pair(skill_dir: Path) -> tuple[Path, Path]:
+    """(active, archive) paths for a skill dir.
 
-    Skips _shared/ (no skill there) and agents/ (anchor agents, not a skill).
+    Skills keep the pair under `reference/`. `_shared/` keeps it at its own root:
+    the addon-implementation corpus lives there because it outlives any one
+    skill, and the anchors audit against it directly.
+    """
+    base = skill_dir if skill_dir.name == "_shared" else skill_dir / "reference"
+    return base / "troubleshooting.md", base / "troubleshooting-archive.md"
+
+
+def discover_skills_with_troubleshooting(skills_root: Path) -> list[Path]:
+    """Every dir under skills_root carrying a troubleshooting pair.
+
+    Includes `_shared/`, which owns the addon-implementation corpus. Skips
+    agents/ (anchor agents, not a skill).
     """
     skill_dirs: list[Path] = []
     for entry in sorted(skills_root.iterdir()):
-        if not entry.is_dir() or entry.name in ("_shared", "agents"):
+        if not entry.is_dir() or entry.name == "agents":
             continue
-        if (entry / "reference" / "troubleshooting.md").exists():
+        if troubleshooting_pair(entry)[0].exists():
             skill_dirs.append(entry)
     return skill_dirs
 
 
 def lint_skill(skill_dir: Path) -> tuple[list[str], list[str], int, int]:
     """Lint one skill's troubleshooting pair. Returns (errors, warnings, active_count, line_count)."""
-    active_path = skill_dir / "reference" / "troubleshooting.md"
-    archive_path = skill_dir / "reference" / "troubleshooting-archive.md"
+    active_path, archive_path = troubleshooting_pair(skill_dir)
 
     errors: list[str] = []
     warnings: list[str] = []
@@ -299,7 +310,7 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=None, help="skills/ root override")
     parser.add_argument(
         "--skill", type=str, default=None,
-        help="Skill name (e.g., odoo-plan-development). Default: lint every skill with a troubleshooting file."
+        help="Skill name (e.g., odoo-spreadsheet-report). Default: lint every skill with a troubleshooting file."
     )
     parser.add_argument("--strict", action="store_true", help="warnings → errors")
     args = parser.parse_args()
@@ -325,8 +336,7 @@ def main() -> int:
     overall_warnings = 0
 
     for skill_dir in skill_dirs:
-        active_path = skill_dir / "reference" / "troubleshooting.md"
-        archive_path = skill_dir / "reference" / "troubleshooting-archive.md"
+        active_path, archive_path = troubleshooting_pair(skill_dir)
 
         # Count for the active file (so we can show even when missing)
         active_entries = parse_file(active_path) if active_path.exists() else []

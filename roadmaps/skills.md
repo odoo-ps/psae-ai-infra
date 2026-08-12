@@ -1,5 +1,15 @@
 # Skills Roadmap — candidate future skills
 
+> **Stale premise — read first.** Entries below reason about
+> `odoo-plan-development` as a live skill that builds addons. It was **removed
+> from the Corpus** (ADR 0003): every item of its output contract —
+> `__manifest__.py`, `security/`, a new model `_name`, a deployment push — is a
+> Major Change the Guardrail denies, so it could not run on a branch at all.
+> Where an entry says "plan-development does X" or "pairs with
+> plan-development", read that as **"the technical consultant does X, outside
+> this Corpus"**. Any skill admitted from this backlog must declare which Judge
+> Gate exit it serves and must require no action the Policy Source denies.
+
 A **non-committal backlog** of skills that would extend the Odoo suite. Nothing
 here is scheduled; this is the shortlist to revisit when a real engagement makes
 one of these worth building. Each entry states what the skill does, the
@@ -93,7 +103,7 @@ against source — a direct fit for the validate-by-import pattern.
 target model exists) or runs standalone for a pure data-load engagement.
 
 **Could an existing skill cover this?** Partially. The `data_migration` role
-checklist ([`_shared/role_checklists/data_migration.md`](../_shared/role_checklists/data_migration.md))
+checklist ([`_shared/role_checklists/data_migration.md`](../skills/_shared/role_checklists/data_migration.md))
 exists and is rich — but it's consumed *inside* `odoo-plan-development` when
 an addon modifies an existing populated model. A standalone legacy-data load
 (legacy CRM → Odoo, no new addon involved) isn't plan-dev's surface — it's a
@@ -207,7 +217,7 @@ launch."
 *designed* screens composed from the baked catalog — useful before the build
 exists, deliberately unfaithful to the running instance (the catalog tracks
 Odoo majors, not your tenant's exact data and configuration). The
-[`documentation` role checklist](../_shared/role_checklists/documentation.md)
+[`documentation` role checklist](../skills/_shared/role_checklists/documentation.md)
 covers *written* end-user manuals (markdown / docx prose embedded inside
 plan-dev), but no skill captures and bundles the live system's actual UI as a
 clickable artifact. Screencast tools sit outside the suite and don't produce
@@ -313,7 +323,7 @@ the agreed-on subset.
 **Validates by.** Re-measuring the same workload after applying recommendations
 — same set of pages / RPC calls / cron runs — and confirming P50 / P95
 improvement against the pre-audit baseline. Reuses
-[`_shared/role_checklists/performance.md`](_shared/role_checklists/performance.md)
+[`_shared/role_checklists/performance.md`](../skills/_shared/role_checklists/performance.md)
 as the per-role lens.
 
 **Slots in.** Triggered by a customer reporting "Odoo is slow." Distinct from
@@ -325,7 +335,7 @@ instance's *actual* behaviour.
 `odoo-plan-development`'s `performance-anchor` audits a planned addon's
 performance shape — forward-looking ("will this addon scale?"). This skill
 is backward-looking ("why is this deployment slow today?"). The
-[`performance` role checklist](../_shared/role_checklists/performance.md) is
+[`performance` role checklist](../skills/_shared/role_checklists/performance.md) is
 the shared input — both consume it — but the walkthroughs differ: plan-dev
 applies it to one new addon; perf-audit applies it to a whole tenant.
 
@@ -346,7 +356,7 @@ criteria once a tuning is proposed.
 ## `odoo-security-audit` — security audit of a live instance — **Medium**
 
 **What.** Targets an *existing* deployment. Walks
-[`_shared/role_checklists/security.md`](_shared/role_checklists/security.md) +
+[`_shared/role_checklists/security.md`](../skills/_shared/role_checklists/security.md) +
 the OWASP Top 10 mapping against the live tenant: ACL coverage on every
 custom model, record-rule scoping on company-scoped data, public-route
 inventory + their CSRF / rate-limit / auth posture, `.sudo()` inventory + per-
@@ -367,7 +377,7 @@ planned addon.
 **Could an existing skill cover this?** No, not in current shape. Same
 pattern as `odoo-perf-audit`: `security-anchor` audits a planned addon;
 this audits a deployed tenant. The
-[`security` role checklist](../_shared/role_checklists/security.md) + OWASP
+[`security` role checklist](../skills/_shared/role_checklists/security.md) + OWASP
 Top 10 mapping are the shared input; the walkthroughs differ.
 
 **Why a separate skill.** Different scope (every existing custom model +
@@ -448,4 +458,4 @@ highest-value knowledge without needing a driver skill on top.
 
 *Revisit this file when scoping a new engagement: if the ask matches a candidate
 above, that's the signal to graduate it from roadmap to `skills/<name>/`. Follow
-[README.md § Adding a new skill](README.md#adding-a-new-skill) when you do.*
+[README.md § Adding a new skill](../README.md#adding-a-new-skill) when you do.*

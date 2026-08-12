@@ -2,8 +2,8 @@
 
 **There is no per-model cache.** Where a standard Odoo field lives (which group,
 which notebook tab, the statusbar stages) is discovered **at generation time from
-the actual Odoo source** in the repo's `odoo/` (Community) and `enterprise/`
-checkouts. This guarantees the mock matches the *real* code present — including
+the actual Odoo source** at `/home/odoo/src/odoo/` (Community) and
+`/home/odoo/src/enterprise/`, both read-only on every Odoo.sh build. This guarantees the mock matches the *real* code present — including
 module inheritance — instead of a stale, hand-maintained snapshot.
 
 The reason placement must come from source and not memory: an Odoo form is not
@@ -41,7 +41,7 @@ Same rule for any field pair you're tempted to fuse for visual economy
 (`partner_id` + `partner_shipping_id` are two rows, not one
 "Customer + Shipping" composite; `date_order` + `commitment_date` are
 two rows, not "Order → Delivery"). When in doubt, grep the model's
-form view in `odoo/addons/<app>/views/` — every `<field name="...">`
+form view in `/home/odoo/src/odoo/addons/<app>/views/` — every `<field name="...">`
 is its own row.
 
 The single exception: small Odoo helpers that wrap two fields in a
@@ -52,19 +52,19 @@ Those are explicit patterns in source, not invented.
 
 Before deriving any standard screen, check what's present:
 
-- `odoo/` (Community source) — required for faithful base screens.
-- `enterprise/` — required for enterprise-only models/fields (accounting
+- `/home/odoo/src/odoo/` (Community source) — required for faithful base screens.
+- `/home/odoo/src/enterprise/` — required for enterprise-only models/fields (accounting
   extensions, subscriptions, field service, etc.).
 
 Then:
 
 - **Both present** → derive from source (below). Note in the plan which trees
   were read.
-- **Community only** → derive from `odoo/`, and **warn**: enterprise-only fields
+- **Community only** → derive from `/home/odoo/src/odoo/`, and **warn**: enterprise-only fields
   / pages won't appear, so enterprise screens may differ from reality.
 - **Neither present** → **STOP and warn the user explicitly**, e.g.:
 
-  > ⚠ Odoo source (Community/Enterprise) was not found at `odoo/` / `enterprise/`.
+  > ⚠ Odoo source (Community/Enterprise) was not found at `/home/odoo/src/odoo/` / `/home/odoo/src/enterprise/`.
   > Field placement and screen structure are **best-effort and may not match real
   > Odoo**. Provide the checkout for faithful screens, or treat these mocks as
   > approximate.
@@ -80,10 +80,10 @@ For each screen that represents a standard model:
 1. **Find the primary form view.** Grep the source for the model's form record,
    e.g. the `<field name="model">sale.order</field>` form arch, or the known
    `*_views.xml` under the owning module
-   (`grep -rl 'view_order_form\|model">sale.order' odoo/addons enterprise`).
+   (`grep -rl 'view_order_form\|model">sale.order' /home/odoo/src/odoo/addons /home/odoo/src/enterprise`).
 2. **Resolve inheritance.** Grep for views that inherit it — `inherit_id` on the
-   model plus `position="…"` / `xpath` snippets across `odoo/addons/*/views/` and
-   `enterprise/*/views/`. Merge them mentally into the effective arch (this is
+   model plus `position="…"` / `xpath` snippets across `/home/odoo/src/odoo/addons/*/views/` and
+   `/home/odoo/src/enterprise/*/views/`. Merge them mentally into the effective arch (this is
    what adds module-specific fields like Warehouse).
 3. **Extract the structure** the catalog needs:
    - Statusbar stages (`<field name="state" widget="statusbar" statusbar_visible="…">`)

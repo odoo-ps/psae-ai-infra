@@ -1,6 +1,6 @@
 ---
 name: plan-structure-anchor
-description: Audit a odoo-plan-development plan file against the Output Contract in skills/odoo-plan-development/SKILL.md. Catches missing required sections, empty placeholders, ordering drift, and plan-file naming drift. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
+description: Audit a plan file or specification draft against the calling skill's own Output Contract. Catches missing required sections, empty placeholders, ordering drift, and plan-file naming drift. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
 tools: Read, Grep, Glob
 ---
 
@@ -14,28 +14,19 @@ Single prompt argument: absolute path to the plan file.
 
 ## Procedure
 
-1. **Locate SKILL.md.** Walk up from the plan-file path to find a
-   `skills/` directory; the file is at
-   `<that>/skills/odoo-plan-development/SKILL.md`. If missing, emit a
-   single `blocker` finding and stop.
+1. **Locate the structure contract.** Walk up from the target path to find
+   the `skills/` directory, then read the calling skill's contract:
+   - `odoo-write-specifications` → `odoo-write-specifications/reference/content_outline.md`
+   - any other skill → that skill's `SKILL.md` § Output Contract
 
-2. **Extract the Output Contract + named-sections list.** Read SKILL.md
-   and find the `## Output Contract` section AND the "Plan-file named
-   sections (required, always)" subsection of `## Pre-Flight: Instance,
-   Database, Dependencies`. Extract:
-   - The bullet list of required plan-file artifacts.
-   - The required top-level headings: `## Architecture` (P13),
-     `## Assumptions` (P12), `## Dependencies` (Pre-Flight B.1),
-     `## Required configuration` (Pre-Flight B.2), `## nginx`
-     (Pre-Flight A.11 surface — required on every Local-arch plan, may
-     be `N/A` for non-Local or existing-instance plans but the heading
-     itself must exist so the user reads an explicit answer).
-   - Structural rules: heading naming, ordering, plan-file path
-     convention.
-   - Cross-referenced sections: Stage 1/2/3 command snippets (P2),
-     user manual + testing manual paths (Output Contract), nginx
-     final-ask (A.11 — only when nginx scaffolded), troubleshooting
-     append.
+   If neither exists, emit a single `blocker` finding and stop.
+
+2. **Extract the required structure.** From the contract, pull:
+   - The bullet list of required artifacts.
+   - The required section headings and their order.
+   - Structural rules: heading naming, ordering, output-path convention.
+   - `## Assumptions` (P12) is required on any artifact that records
+     P12-skipped questions.
 
 3. **Read the plan file** and parse its `#`/`##`/`###` headings into
    an ordered list.
@@ -50,14 +41,17 @@ Single prompt argument: absolute path to the plan file.
    | Heading naming deviates from contract wording | `nit` (suggest exact wording) |
    | Extra non-contract sections | ignore (extra detail is fine unless misleading) |
 
-5. **Verify the plan-file path itself.** Per principle #11, plan files
-   live at `<repo>/plans/<instance>-<functionality>.md`. If the given
-   path doesn't match the pattern, file a `blocker`. Specifically:
-   - parent directory must be `plans/` at repo root (not `.claude/plans/`)
-   - filename must be `<instance>-<functionality>.md`
-   - `<instance>` matches `^[a-z][a-z0-9_]*$` (underscores allowed)
-     OR is a synthetic prefix `skills-` / `repo-`
-   - `<functionality>` matches `^[a-z0-9-]+$` (kebab only, no underscores)
+5. **Verify the output path — only when the target IS a plan file.**
+   **Skip this step entirely if the target is a builder or data file**
+   (e.g. `_reference/_build_<task-code>.py`, a `.docx`, a mock package):
+   those have their own naming rules in their skill's contract, and
+   applying the plan-file pattern to them is a guaranteed false blocker.
+
+   For an actual `.md` plan file, per principle #11 it lives at
+   `<repo>/plans/<slug>.md`. File a `blocker` if:
+   - the parent directory is not `plans/` at the repo root
+     (`.claude/plans/` specifically is wrong)
+   - `<slug>` does not match `^[a-z0-9-]+$` (kebab only)
 
 6. **Check for the `.claude/plans/<random>.md` placeholder.** If a
    harness-generated random-name plan still exists in `.claude/plans/`

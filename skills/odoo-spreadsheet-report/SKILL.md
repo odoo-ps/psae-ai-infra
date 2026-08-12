@@ -1,33 +1,41 @@
 ---
 name: odoo-spreadsheet-report
-description: Plan and generate an Odoo Spreadsheet (.osheet.json) report by asking structured questions (instance/version/business need/brief/models/filter/output) then role-based questions; produce an importable spreadsheet JSON, validate it by importing into the chosen Odoo DB via odoo-bin shell, and fix errors until it loads cleanly.
-when_to_use: Use this skill when the user wants a new Odoo Spreadsheet KPI/dashboard report generated for an existing instance and validated by import into Odoo.
+description: Plan and generate an Odoo Spreadsheet (.osheet.json) report on an Odoo.sh development branch by asking structured questions (business need/brief/models/filter/output) then role-based questions; produce an importable spreadsheet JSON, validate it by importing into the branch DB via odoo-bin shell, and fix errors until it loads cleanly.
+when_to_use: Use this skill when the user wants a new Odoo Spreadsheet KPI/dashboard report generated on the current Odoo.sh branch and validated by import into its DB.
 allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 ---
 
 # Spreadsheet Report
 
-Turn a reporting objective into a working Odoo Spreadsheet report (`.osheet.json`) that imports cleanly into the chosen Odoo DB.
+Turn a reporting objective into a working Odoo Spreadsheet report (`.osheet.json`) that imports cleanly into the branch's Odoo DB.
 
 ## Scope — NEVER custom development
 
-This skill produces a **reporting artifact only** — a spreadsheet document, a dashboard, docs. It **never** adds Python code, models, fields, views, or automations to any addon (custom or standard). If the ask cannot be satisfied by (a) formulas over standard model fields, (b) existing custom-addon fields consumed *as installed*, or (c) o-spreadsheet's built-in operators / pivots / lists / charts, then this skill is the wrong tool — halt and tell the user the ask is out of scope. Custom addons under `<version_folder>/instances/<selected_instance>/custom_addons/` are read-only dependencies here; their code is not touched.
+This skill produces a **reporting artifact only** — a spreadsheet document, a dashboard, docs. It **never** adds Python code, models, fields, views, or automations to any addon (custom or standard). If the ask cannot be satisfied by (a) formulas over standard model fields, (b) existing custom-addon fields consumed *as installed*, or (c) o-spreadsheet's built-in operators / pivots / lists / charts, then this skill is the wrong tool — halt and tell the user the ask is out of scope. Custom addons already deployed on this branch are read-only dependencies here; their code is not touched.
 
-## Entry: Architecture detection (Q0, runs before everything else, per principle #13)
+## Environment — Odoo.sh, always (principle #13)
 
-Before Q1, before Pre-Flight, before any filesystem write — detect the host architecture and confirm it with the user. Skipping this is what causes Local-flavoured behaviour (`<version_folder>/instances/<inst>/spreadsheet_reports/` builder path, local `odoo-bin shell` import) to fire on Odoo.sh / Docker / bare-metal repos where the path or the shell access doesn't exist.
+**No architecture detection. No Q0.** This skill runs inside an Odoo.sh
+development-branch container and nowhere else. There is no `instances/` tree, no
+version folder, no local venv, and no `odoo-bin shell` you may run against an
+arbitrary DB.
 
-**Detection signals, ask, and routing** are identical to the `odoo-plan-development` skill — see [odoo-plan-development/SKILL.md § Entry: Architecture detection](../odoo-plan-development/SKILL.md). Run [`../odoo-plan-development/reference/scripts/_detect_environment.py`](../odoo-plan-development/reference/scripts/_detect_environment.py) and read the top-level `architecture` field (`local | odoo.sh | docker | bare_metal | unknown`).
+What that fixes:
 
-**Routing:**
-- `architecture: local` → continue with the rest of this document (Output Contract through Iteration Etiquette describe the Local branch).
-- `architecture: odoo.sh` → load [`reference/architecture_branches.md#odoosh-branch`](reference/architecture_branches.md#odoosh-branch).
-- `architecture: docker` → load [`reference/architecture_branches.md#docker-branch-safety-net`](reference/architecture_branches.md#docker-branch-safety-net).
-- `architecture: bare_metal` → load [`reference/architecture_branches.md#bare-metal-branch-safety-net`](reference/architecture_branches.md#bare-metal-branch-safety-net).
+- **Everything this skill writes lands under `spreadsheet_reports/` at the
+  Project Repo root** (`/home/odoo/src/user`). That folder is a Document Skill
+  output root — the Guard Hook exempts it from the Python and XML floors so the
+  builder can be a real builder. Writing anywhere else is refused.
+- **The branch is the one you are on.** `git branch --show-current`. Never ask
+  "which branch?", never operate on another branch's DB.
+- **The Odoo version is `$ODOO_VERSION`.** Read it; never infer it from a folder
+  name.
+- **The DB is the one injected for this branch.** Never name it, create it, or
+  pass `-d` / `--database` — the Guard Hook denies all three.
 
 ## When To Use
 
-Use this skill when the user wants a new Odoo Spreadsheet KPI/dashboard report generated for an existing instance and validated by import into Odoo.
+Use this skill when the user wants a new Odoo Spreadsheet KPI/dashboard report generated on the current branch and validated by import into its DB.
 
 ## Entry: Plan mode for the first iteration
 
@@ -52,9 +60,8 @@ happen outside plan mode.
 mode is already active. The skill's first message to the user is always Q1 of
 the Fixed Questions list (or the first that survives principle #12), never a
 free-form scope prompt. Plan mode's default opener is an anti-pattern here; it
-collapses Q1–Q3 into a single business-need answer and skips the
-instance / version / model-source context that the Pre-Flight and three-stage
-validation depend on. See principle #11 ("Plan mode normalizes execution state;
+collapses the opening questions into a single business-need answer and skips the
+model-source context that the Pre-Flight and three-stage validation depend on. See principle #11 ("Plan mode normalizes execution state;
 it does not reshape the interview.")
 
 ## Output Contract
@@ -62,12 +69,14 @@ it does not reshape the interview.")
 Produce:
 
 - **Interactive Planning Questions**: ask questions **one by one** (never as a batch). After each answer, update assumptions and ask the next single best question.
-- **Python builder script** at `<version_folder>/instances/<selected_instance>/spreadsheet_reports/_build_<report_slug>.py` that emits the JSON. The builder is the source of truth — JSON is regenerated from it. Hand-editing the JSON is not the workflow.
-- **Generated Report**: a single `.osheet.json` written to `<version_folder>/instances/<selected_instance>/spreadsheet_reports/<report_slug>.osheet.json` by running the builder.
-- **Validation script** at `<version_folder>/instances/<selected_instance>/spreadsheet_reports/_validate_import.py` that imports via `odoo-bin shell` and verifies round-trip.
-- **Validated Import**: the JSON is imported into the chosen DB. Errors are fixed iteratively until the report **loads cleanly in the browser** (server-side round-trip is necessary but not sufficient — always reload the page).
+- **Python builder script** at `spreadsheet_reports/_build_<report_slug>.py` that emits the JSON. The builder is the source of truth — JSON is regenerated from it. Hand-editing the JSON is not the workflow.
+- **Generated Report**: a single `.osheet.json` written to `spreadsheet_reports/<report_slug>.osheet.json` by running the builder.
+- **Validation script** at `spreadsheet_reports/_validate_import.py` that imports via `odoo-bin shell` and verifies round-trip.
+- **Validated Import**: the JSON is imported into the branch's DB. Errors are fixed iteratively until the report **loads cleanly in the browser** (server-side round-trip is necessary but not sufficient — always reload the page).
 - **Production-ready visuals**: layout, color palette, conditional formatting, and number formats follow the Design System section. A "functional but ugly" report does NOT satisfy the contract.
-- **Short docs**: `<version_folder>/instances/<selected_instance>/spreadsheet_reports/doc/<report_slug>.md` covering what the report shows, refresh, and re-import instructions.
+- **Short docs**: `spreadsheet_reports/doc/<report_slug>.md` covering what the report shows, refresh, and re-import instructions.
+
+All paths are relative to the Project Repo root — the only writable tree.
 
 Do not output a generation prompt. Start producing the JSON once minimally unblocked.
 
@@ -81,33 +90,31 @@ Per shared principle #10, ask one at a time, reflect, ask the next.
 
 **Apply principle #12 (necessity filter) to every question below.** Before asking,
 check: is the answer inferable from the invocation, an existing builder/report, or
-a read-only pre-flight (instance conf, o-spreadsheet bundle version, installed
+a read-only pre-flight (`$ODOO_VERSION`, o-spreadsheet bundle version, installed
 modules, `ir.model.data`)? Would the answer materially change the report shape?
 If either gate fails, skip the question and record the inference under an
 **Assumptions** heading in the plan file. User overrides at `ExitPlanMode`.
 
 Typical skips for this skill:
-- **Q1 (instance)** skipped if the invocation names it.
-- **Q2 (Odoo version)** skipped if the chosen instance has a conf on disk —
-  version is the instance's own version folder (`instances[].version` from the
-  detector) and is cross-checked against the bundle's `@version` JSDoc.
+- **Q1 (instance)** and **Q2 (Odoo version)** are never asked at all — see below.
 - **Q6 (data-source models)** partially skipped when the invocation already names
   them ("AR aging by partner" → `account.move`, `account.move.line`, `res.partner`
   are obvious); still confirm the list in the plan.
-- **Q8 (validation DB)** skipped — default to the `dbfilter`-implied DB silently.
+- **Q8 (validation DB)** never asked — the branch's injected DB is the only target.
 
 Q3 (business need), Q4 (delivery shape), Q5 (report brief), and Q7 (primary filter
 / scope) are almost never inferable in full — ask unless the invocation already
 contains them.
 
-1. **Which instance is this for?**
-   - List the instances the detector reports in `instances[]`, each labelled with its version folder (e.g. `ai_test (v19)`, `acme (v20)`) since instances live under `v<major>/instances/`.
-   - The selected instance MUST already exist. Do **not** create a new instance — if the user names one that doesn't exist, ask them to pick an existing one (or use the `odoo-plan-development` skill to scaffold a new one first).
-   - **`<version_folder>` (used throughout this skill) is the selected instance's version folder** — `instances[].version` (`v19`, `v20`, …). Every path below (builder, report, validator, docs, odoo-bin, venv, source-search roots) routes to it; never assume `v19`.
-   - The output `.osheet.json` will be written to `<version_folder>/instances/<selected_instance>/spreadsheet_reports/<report_slug>.osheet.json`.
-   - All custom addons under `<version_folder>/instances/<selected_instance>/custom_addons/` are automatically considered as additional sources of models/fields.
+1. ~~**Which instance is this for?**~~ — **never asked.** There is one branch and
+   one DB. Detect the branch with `git branch --show-current` and record it under
+   the plan's `Assumptions`; the user overrides at `ExitPlanMode`. Every custom
+   addon already deployed on this branch counts as an additional source of
+   models/fields, read-only.
 
-2. **Which Odoo version is this for?**
+2. ~~**Which Odoo version is this for?**~~ — **never asked.** Read `$ODOO_VERSION`
+   and cross-check it against the o-spreadsheet bundle's `@version` JSDoc. Surface
+   a mismatch; do not ask the user to arbitrate a fact both sources state.
 
 3. **What is the business need?** (problem + who consumes the report + what decision it informs)
 
@@ -121,13 +128,13 @@ contains them.
 5. **What is the report brief?** (KPIs, charts, layout sections — high level; sample structures live under `reference/samples/STRUCTURE.md`)
 
 6. **Which Odoo models are the data sources?** (e.g. `project.task`, `account.analytic.line`)
-   - Verify each model exists by searching first in `<version_folder>/odoo/`, then `<version_folder>/enterprise/`, then `<version_folder>/instances/<selected_instance>/custom_addons/`.
+   - Verify each model exists by searching first in `/home/odoo/src/odoo/`, then `/home/odoo/src/enterprise/`, then this branch's own addons. All three are read-only.
    - If a needed field doesn't exist, surface this immediately — do NOT silently invent it, and do NOT propose adding it here (see § Scope).
 
 7. **What is the primary filter / scope?** (global filters: date range, project, employee, manager — type each as `date | relation | text | selection | numeric | boolean`)
 
 8. **Which DB should the report be imported into for validation?**
-   - Default-suggest the `dbfilter` value from `<selected_instance>`'s Odoo config if one exists.
+   - Never asked — the branch's injected DB is the only target.
 
 After these, proceed with role-based questions.
 
@@ -261,7 +268,8 @@ When unsure, run the resolver below.
 ### Detection script
 
 ```python
-# Run via: ./<version_folder>/odoo/.venv/bin/python ./<version_folder>/odoo/odoo-bin shell -c <conf> -d <db> --no-http --stop-after-init < this.py
+# Run via: odoo-bin shell --no-http --stop-after-init < this.py
+# (No -c, no -d: Odoo.sh injects the config and the DB. Passing -d is denied.)
 HOSTING = ["spreadsheet", "documents", "documents_spreadsheet"]
 MODELS  = ["account.move", "project.project", "account.analytic.line"]  # extend per report
 
@@ -284,8 +292,10 @@ print("ALL_NEEDED:", ",".join(sorted(owners)))
 ### Install missing modules in one shot
 
 ```
-./<version_folder>/odoo/.venv/bin/python ./<version_folder>/odoo/odoo-bin -c <conf> -d <db> --no-http --stop-after-init -i <comma,separated,missing>
+odoo-bin -i <comma,separated,missing> --no-http --stop-after-init
 ```
+
+This prompts for confirmation (it mutates the branch DB) — expected, per principle #4.
 
 ### Confirm with the user before installing
 Module installs add data, ACLs, menus, and may pull in transitive deps. Show the user the exact list (`Layer A + Layer B`) and ask before running `-i`. Honor overrides (e.g. user may decline `documents_spreadsheet` and accept dashboard-only target).
@@ -307,17 +317,18 @@ Run a small Python verifier that walks the generated JSON and surfaces structura
 - **Visible sheet sanity**: title in A1 (or merged A1:_:1), `areGridLinesVisible: false`.
 - **Bracket balance** on every formula cell.
 
-A reference verifier ships at `<version_folder>/instances/<selected_instance>/spreadsheet_reports/_verify_sheets.py` (extend per report). Exit code 1 on any error. Run before invoking the shell-side validator.
+A reference verifier ships at `spreadsheet_reports/_verify_sheets.py` (extend per report). Exit code 1 on any error. Run before invoking the shell-side validator.
 
 ### Stage 2 — Server-side import (odoo-bin shell)
 
 Once Stage 1 passes:
 
-1. Locate `<version_folder>/odoo/odoo-bin` and `<version_folder>/instances/<selected_instance>/<config>.conf`. Use that version's Odoo virtualenv if one exists (e.g. `<version_folder>/odoo/.venv/bin/python`).
-2. Open a shell session against the chosen DB:
+1. `odoo-bin` is on `PATH`; the config and DB are injected by the platform. Do not locate, author, or pass either.
+2. Open a shell session against the branch DB:
    ```
-   ./<version_folder>/odoo/.venv/bin/python ./<version_folder>/odoo/odoo-bin shell -c <version_folder>/instances/<selected_instance>/<config>.conf -d <db> --no-http --stop-after-init
+   odoo-bin shell --no-http --stop-after-init
    ```
+   This prompts for confirmation (the ORM shell can mutate) — expected.
 3. Load the `.osheet.json`. **Prefer** `documents.document` (full editable UX); fall back to `spreadsheet.dashboard` only when `documents_spreadsheet` is not installed and the user declined to install it:
    - **`documents.document`** — `create({"name": ..., "handler": "spreadsheet", "mimetype": "application/o-spreadsheet", "folder_id": <id>, "spreadsheet_data": <raw_json>})`
    - **`spreadsheet.dashboard`** — `create({"name": ..., "dashboard_group_id": <id>, "spreadsheet_data": <raw_json>})`
@@ -357,7 +368,7 @@ If the import fails, capture the traceback. Common failure modes and fixes:
 
 After import succeeds, formulas evaluate, and the **production checklist** passes:
 
-- Write `<version_folder>/instances/<selected_instance>/spreadsheet_reports/doc/<report_slug>.md` with:
+- Write `spreadsheet_reports/doc/<report_slug>.md` with:
   - One-paragraph business purpose (who consumes it, what decision it informs)
   - Sheet inventory (visible + hidden) with one-line role each
   - KPI table: name · plain-English formula · source model · healthy threshold · color semantics

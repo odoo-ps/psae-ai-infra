@@ -1,14 +1,57 @@
-# Functional-consultant guardrail — human-readable summary of the policy.
+# Functional-consultant guardrail — the Policy Source.
 #
-# NOTE: documentation only. The ENFORCED rules live in settings.json
-# (permissions) and hooks/guard_change.py + hooks/guard_bash.py. Keep this file
-# in sync when you change those — it is not read at runtime.
+# This file states the policy in one piece. It is NOT read at runtime: the
+# enforced rules live in settings.json (the Permission Layer) and
+# hooks/guard_change.py + hooks/guard_bash.py (the Guard Hooks). Change the
+# policy here first, then make the layers agree — a layer that disagrees with
+# this file is a defect in the layer.
+#
+# The two layers are not redundant and are not expected to be identical:
+#   * The Guard Hooks are the containment. They are stricter and they see
+#     content and resolved paths, so they catch forms a glob cannot express
+#     (`odoo-bin -u x -d db`, `../odoo/addons/...`, a QWeb record).
+#   * The Permission Layer is coarse and prompts. It cannot see content, so it
+#     is a subset by design — never rely on it alone for containment.
+#
+# PRECEDENCE, which matters for document_paths: Claude Code evaluates
+# deny -> ask -> allow. An `ask` glob therefore wins over a more specific
+# `allow` glob. A builder script at specifications/_reference/_build_x.py still
+# matches `Edit(**/*.py)` and prompts once; the Guard Hook exempts it from the
+# python_floor so it is never DENIED. Non-Python deliverables (.docx, .html,
+# .osheet.json, .md) match the allow rules and land silently.
+#
+# The floors below are stated in prose; the fixture corpus in tests/ states the
+# same floors as worked examples. The prose is the policy — the corpus is what
+# that policy means in a concrete case, and it is the finer instrument. A
+# disagreement between them is a defect in one or the other, so run
+# `python3 tests/run_guardrail_fixtures.py` after any change here or in hooks/.
 
 persona: |
   Functional consultant on Odoo.sh, guardian of what the technical consultant
   built. Goal: meet the client's small change in the simplest way, with minimal
   disturbance. Behaviour: always analyse and ask; act only when the change is
   small AND in the allowed area AND preserves the architecture — else refer.
+
+judge_gate:            # three exits, in assessment order. Doctrine: CLAUDE.md
+  - document: "the request needs no code — a Spec Folder, a mock, or a
+      spreadsheet report. Writes only to document_paths. Always available;
+      reach for it before concluding a request must be referred."
+  - small_change: "small AND in the allowed area AND preserves the
+      architecture. Bounded by python_floor and xml_floor below."
+  - refer: "everything else. Never partial, never worked around. Offer a
+      Handover at handovers/<short-name>.md."
+
+skills:                # a skill may only join the Corpus if it declares a
+  small_change:        # judge_gate exit and needs no action denied below.
+    - functional-edits
+    - odoo-python
+    - odoo-views
+    - odoo-tests
+    - odoo-upgrade
+  document:
+    - odoo-write-specifications   # -> specifications/
+    - odoo-mock-design            # -> <spec-folder>/mocks/ or mocks/
+    - odoo-spreadsheet-report     # -> spreadsheet_reports/
 
 development_branch: "development"   # persist with `odoosh-push`, never `git push`
 writable_root: "/home/odoo/src/user"
@@ -25,6 +68,15 @@ review_paths:          # ask; the hooks then classify the content
   - "**/report/**"
   - "**/data/**"
 
+document_paths:              # the Document Skills' own output folders, at the
+  - "specifications/**"      # repo root. Deliverables, not deployable code — no
+  - "mocks/**"               # manifest, never loaded by the server — so the
+  - "handovers/**"           # python_floor below does not apply. A builder
+  - "spreadsheet_reports/**" # script IS the output for specs and spreadsheets.
+  - "plans/**"               # Matched on the FIRST path segment, so a mock
+                             # nested at specifications/<folder>/mocks/ is
+                             # covered by the specifications/ entry.
+
 protected_paths:       # hard-deny (technical consultant only)
   - "**/controllers/**"
   - "**/security/**"
@@ -34,13 +86,13 @@ protected_paths:       # hard-deny (technical consultant only)
   - "/home/odoo/src/enterprise/**"
   - "/home/odoo/src/themes/**"
 
-python_floor:          # enforced by guard_change.py within **/*.py
+python_floor:          # enforced by guard_change.py within **/*.py, except document_paths
   allowed: "add/adjust a field, an @api.constrains / SQL constraint, a short compute (~2-5 lines); a focused test under tests/"
   blocked: "new model (_name=), ORM overrides (create/write/unlink/copy/default_get/read_group/search/name_*/web_save/get_view), controller routes, or > ~20 added lines (~80 under tests/)"
 
-xml_floor:             # enforced by guard_change.py within views/ report/ data/
-  allowed: "in-place label / wording / field tweaks; a small inherited ir.ui.view record (filters, group-bys, field order, layout)"
-  blocked: "new menu / action / report / QWeb <template> / <delete>, or any non-ir.ui.view record (security, crons, sequences, mail templates added as new records)"
+xml_floor:             # enforced by guard_change.py within views/ report/ data/, except document_paths
+  allowed: "in-place label / wording / field tweaks; a Cosmetic View Edit — an ir.ui.view record that extends an existing view (filters, group-bys, field order, layout) via position after/before/inside/attributes/move"
+  blocked: "new menu / action / report / QWeb <template> / <delete>; any non-ir.ui.view record (security, crons, sequences, mail templates added as new records); and an ir.ui.view record that is not a genuine extension — no inherit_id (standalone view), mode=primary (inherit then detach), type=qweb (a template by another spelling), active=False (deactivating a standard view), or position=replace (structural replacement)"
 
 # --- commands ---------------------------------------------------------------
 
@@ -52,7 +104,7 @@ sanctioned_commands:
   - "odoosh-push"             # ask:   persist to the dev branch
   - "odoo-bin -i …"            # ask:   install an existing module on the dev build
 
-blocked_commands:
+blocked_commands:            # both layers deny these, except where noted
   - "git push"                # fails on Odoo.sh — use odoosh-push
   - "git merge"
   - "git rebase"

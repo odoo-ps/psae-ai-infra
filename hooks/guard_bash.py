@@ -34,13 +34,24 @@ def main():
     except Exception:
         sys.exit(0)
 
-    cmd = (data.get("tool_input", {}) or {}).get("command", "") or ""
+    # Anything unexpected in the payload must leave `cmd` empty rather than
+    # raise. A hook that raises exits non-zero, and Claude Code ignores a hook
+    # that errors — so a crash is a silently OPEN guardrail.
+    tool_input = data.get("tool_input") if isinstance(data, dict) else None
+    cmd = tool_input.get("command", "") if isinstance(tool_input, dict) else ""
+    cmd = cmd if isinstance(cmd, str) else ""
+
+    # Global options may sit between `git` and its subcommand, so `git push`
+    # and `git -C /some/repo push` are the same command. Matching only the
+    # adjacent form left the `-C` spelling reaching the network — the Corpus
+    # itself used it once, to probe push access.
+    git = r"\bgit\s+(?:(?:-[cC]|--exec-path|--git-dir|--work-tree)[=\s]\S+\s+|--no-pager\s+|--bare\s+)*"
 
     block = [
-        r"\bgit\s+push\b",
-        r"\bgit\s+merge\b",
-        r"\bgit\s+rebase\b",
-        r"\bgit\s+(checkout|switch)\b[^\n]*\b(production|staging)\b",
+        git + r"push\b",
+        git + r"merge\b",
+        git + r"rebase\b",
+        git + r"(checkout|switch)\b[^\n]*\b(production|staging)\b",
         r"\bpip[0-9.]*\s+install\b",
         r"\bnpm\s+(install|i|ci|add)\b",
         r"\b(yarn|pnpm)\s+(add|install|i)\b",

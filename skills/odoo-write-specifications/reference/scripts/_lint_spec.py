@@ -15,7 +15,7 @@ Walks the docx (or the SPEC_DATA Python file the builder consumes) and checks:
 Exit 0 if clean; non-zero on any error. Warnings are reported but don't fail.
 
 Usage:
-    ./v19/odoo/.venv/bin/python _lint_spec.py path/to/spec.docx
+    python3 _lint_spec.py path/to/spec.docx
 """
 from __future__ import annotations
 
@@ -27,7 +27,9 @@ try:
     from docx import Document
 except ImportError:
     sys.stderr.write(
-        "python-docx not installed; run: ./v19/odoo/.venv/bin/pip install python-docx\n"
+        "python-docx is not available on this build. It is declared in the "
+        "Project Repo's requirements.txt and installed by the platform — ask "
+        "the technical consultant to add it and rebuild the branch.\n"
     )
     sys.exit(2)
 

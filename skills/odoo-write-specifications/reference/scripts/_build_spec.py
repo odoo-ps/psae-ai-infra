@@ -9,7 +9,7 @@ functionality slug is auto-derived):
         └── _build_<task-code>.py                      ← this file, customised
 
 Run the per-task copy as:
-    ./v19/odoo/.venv/bin/python \\
+    python3 \\
         "<repo>/specifications/<task-code> - <client> - <func>/_reference/_build_<task-code>.py"
 
 The skill copies THIS file to the spec folder's `_reference/` subfolder per
@@ -21,7 +21,7 @@ tasks.
 Hand-editing the generated docx is NOT the workflow (P1). Edit SPEC_DATA, re-run.
 
 Requires python-docx:
-    ./v19/odoo/.venv/bin/pip install python-docx
+    (declared in the Project Repo's requirements.txt; installed at build time)
 """
 from __future__ import annotations
 
@@ -39,7 +39,9 @@ try:
     from docx.oxml import OxmlElement
 except ImportError:
     sys.stderr.write(
-        "python-docx not installed; run: ./v19/odoo/.venv/bin/pip install python-docx\n"
+        "python-docx is not available on this build. It is declared in the "
+        "Project Repo's requirements.txt and installed by the platform — ask "
+        "the technical consultant to add it and rebuild the branch.\n"
     )
     sys.exit(1)
 
@@ -935,7 +937,7 @@ def render_flow_strip_image(steps, output_path: Path, title: str = None) -> Path
     if not _PILLOW_AVAILABLE:
         raise ImportError(
             "Pillow is required for the modern flow strip renderer; "
-            "install with `./v19/odoo/.venv/bin/pip install Pillow` or use "
+            "add Pillow to the Project Repo's requirements.txt and rebuild, or use "
             "the legacy table-based `make_flow_strip()` fallback."
         )
 
@@ -1186,7 +1188,7 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
     if not _PILLOW_AVAILABLE:
         raise ImportError(
             "Pillow is required for BPMN diagrams; install with "
-            "`./v19/odoo/.venv/bin/pip install Pillow` or remove "
+            "add Pillow to requirements.txt and rebuild, or remove "
             "`bpmn_diagram` from the workflow's SPEC_DATA."
         )
 
@@ -1848,7 +1850,7 @@ def build_spec(spec_data: dict, output_path: Path) -> None:
 
     spec_data shape (canonical — Stage 1 lint enforces the docx-visible
     parts; non-rendered keys like `dev_handoff` are passed through and
-    consumed by `odoo-plan-development` directly):
+    consumed by the technical consultant directly):
         task_code, client_name, functionality_title, odoo_version,
         subtitle (optional; defaults to "Functional Specification"),
         metadata (dict: prepared_by, role, client, companion_to (optional),
@@ -1866,8 +1868,8 @@ def build_spec(spec_data: dict, output_path: Path) -> None:
                    per-workflow blocks keyed by snake_case (see
                    `_render_workflow_subsections` for the canonical list).
         dev_handoff (optional dict — NOT rendered to the docx; consumed
-                     by odoo-plan-development. See SKILL.md § Dev-Only
-                     Hand-off to odoo-plan-development for the shape.
+                     by the technical consultant. See SKILL.md § Dev-Only
+                     Hand-off to the Technical Consultant for the shape.
                      The builder ignores this key entirely; any unknown
                      top-level key is also ignored, so dev_handoff is a
                      convention, not a schema requirement).

@@ -18,13 +18,16 @@ cooperate and give good UX.
 
 Assess out loud:
 
-1. **Small?** field · constraint · short compute (~2–5 lines) · action button
-   wired to an existing method/action · label / layout / filter / report /
-   translation tweak. NOT a new model, new logic, or a rewrite.
-2. **In my allowed area?** (table below)
-3. **Preserves the architecture?** smallest edit, reuse what exists, match style.
+1. **Needs code at all?** If the ask is to scope new work, visualise screens, or
+   answer a reporting question, it takes the **Document** exit — `odoo-write-specifications`,
+   `odoo-mock-design`, `odoo-spreadsheet-report`. That is yours; don't refer it.
+2. **Small?** field · constraint · short compute (~2–5 lines) · action button
+   wired to an existing method/action · **Cosmetic View Edit** · label / filter /
+   report / translation tweak. NOT a new model, new logic, or a rewrite.
+3. **In my allowed area?** (table below)
+4. **Preserves the architecture?** smallest edit, reuse what exists, match style.
 
-All three yes *and* you're confident → do it. Otherwise → **stop and refer**.
+All yes *and* you're confident → do it. Otherwise → **stop and refer**.
 When in doubt, it's major. The letter of these limits IS their spirit — no
 partial versions, no workarounds, never reroute around a blocked tool call.
 
@@ -33,7 +36,8 @@ partial versions, no workarounds, never reroute around a blocked tool call.
 | Allowed — small, in-scope | Major — refer to technical |
 |---|---|
 | label / help / placeholder | new model / wizard / module |
-| field order, layout in an existing view | new `<record>` / action / menu, xpath surgery |
+| field order, layout in an existing view | non-view `<record>`: action / menu / security / cron |
+| **Cosmetic View Edit** — an `ir.ui.view` record that *extends* an existing view | a standalone view (no `inherit_id`), `mode=primary`, `type=qweb`, `active=False`, or `position="replace"` |
 | search filter / group-by on existing fields | controllers, security, JS / OWL (`static/src/`) |
 | action button wired to an existing method / action | a new action / server action / handler behind a button |
 | report wording, email / website text | override `create`/`write`/`unlink`, real business logic |
@@ -63,8 +67,13 @@ The file-type conventions load automatically: **odoo-python** (model/wizard),
    client's intent in plain language, the models / fields / security it would
    touch, and any acceptance criteria. A doc, not code.
 
+A Handover is reactive — you were stopped and you are preserving work in flight.
+If instead the client is scoping something new that nobody has started, that's a
+**Spec Folder**: run `odoo-write-specifications`.
+
 ## Never
 
 - Never edit controllers, security, the manifest, or `static/src/`.
-- Never create a model / module, override ORM CRUD, or add a record / action / menu.
+- Never create a model / module, override ORM CRUD, or add a **non-view** record /
+  action / menu. (An *inheriting* `ir.ui.view` record is allowed — see the table.)
 - Never `git push`, merge, switch to staging / production, or install packages.
