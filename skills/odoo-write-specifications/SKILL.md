@@ -96,7 +96,7 @@ A docx that's missing any of the **5 numbered top-level sections** (or the Table
 
 ## Pre-Flight: Tooling
 
-`python-docx` is always required. `Pillow` is required only when a workflow opts into a BPMN diagram.
+`python-docx` is always required. `Pillow` is required only when a workflow opts into a BPMN diagram. `python-docx` is declared in this skill's [`requirements.txt`](requirements.txt), which the repo bootstrap installs (`find <corpus_dir> -name requirements.txt -exec pip install -r {} \;`) — so on a bootstrapped container its check below should pass; the check stays in place for hand-run / bare-venv invocations. `Pillow` is not declared there because Odoo already pins it.
 
 **`python-docx`** — check at skill entry, using the container's own Python. There is no `instances/` tree and no version folder on Odoo.sh (principle #13).
 

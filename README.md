@@ -145,14 +145,24 @@ Verify in a Claude Code session:
 
 For Claude.ai web / Claude Desktop, upload each skill folder as a separate zip (one `SKILL.md` per zip root) via Settings → Capabilities → Skills. Anchors are Claude Code only — there's no equivalent on the web.
 
-**Optional Python dependencies** (only needed when the corresponding feature is exercised):
+**Python dependencies** — a skill that needs a package Odoo does not already ship declares it in its own `requirements.txt`, so a bootstrap can install them all in one sweep:
 
-| Package | Required by | Install |
+```bash
+find <corpus_dir> -name requirements.txt -exec pip install -r {} \;
+```
+
+| Package | Declared in | Required by |
 |---|---|---|
-| `python-docx` | `odoo-write-specifications` (always — the spec docx itself) | declare in the Project Repo's `requirements.txt`; the platform installs it at build time. `pip install` is denied by the Guard Hook. |
-| `Pillow` | `odoo-write-specifications` (only when a workflow opts into a BPMN diagram via `bpmn_diagram` in its SPEC_DATA) | ships in Odoo's own `requirements.txt`, so already present on every Odoo.sh build |
+| `python-docx` | `odoo-write-specifications/requirements.txt` | always — the spec docx itself (`_build_spec.py`, `_lint_spec.py`) |
 
-The skill skeletons fall back gracefully when an optional dependency is missing (e.g. without Pillow, BPMN-opting workflows emit a "Pillow not installed" placeholder paragraph; the rest of the spec renders normally).
+That is the whole list. Requirements are deliberately **unpinned**: a bare requirement is satisfied by whatever version is already installed, so pip won't upgrade — and break — Odoo's dependency set.
+
+Packages Odoo's own `requirements.txt` already pins are **not restated** here, to avoid redundancy. On Odoo.sh and in any Odoo dev venv they are present; only a bare-Python venv would miss them, and the skills degrade gracefully or gate an install on user confirmation when they do:
+
+- `Pillow` — BPMN swimlane diagrams and the modern `flow_strip` PNG (`odoo-write-specifications`); a new module's app icons (`odoo-plan-development`). Without it, BPMN-opting workflows emit a "Pillow not installed" placeholder and `flow_strip` falls back to a table renderer; the rest of the spec renders normally.
+- `passlib` / `Werkzeug` — the `admin_passwd` pbkdf2-sha512 hash in `odoo-plan-development`'s `_create_instance.py`, which falls back through both to a stdlib `hashlib` hash.
+
+One **non-pip** dependency the sweep cannot cover: `odoo-mock-design`'s `_render_mock_screens.py` and `_render_catalog.py` shell out to a headless **Chrome/Chromium binary** on `PATH` (`google-chrome`, `google-chrome-stable`, `chromium`, or `chromium-browser`). Install it with the OS package manager.
 
 ## Skills
 
