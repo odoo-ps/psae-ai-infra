@@ -1,0 +1,16 @@
+# odoo-write-specifications — Python dependencies
+#
+# Installed by the repo bootstrap:
+#   find <corpus_dir> -name requirements.txt -exec pip install -r {} \;
+#
+# Only packages Odoo does NOT already ship are listed here. Pillow (BPMN /
+# flow_strip PNG rendering) is pinned by Odoo's own requirements.txt, so it is
+# deliberately omitted rather than restated.
+#
+# Unpinned on purpose: a bare requirement is satisfied by whatever version is
+# already installed, so pip will not upgrade — and break — Odoo's dependency set.
+
+# _build_spec.py / _lint_spec.py — the .docx builder and its linter. The one
+# hard dependency in the corpus that Odoo does not provide; the builder fails
+# fast with ModuleNotFoundError without it.
+python-docx
