@@ -1,6 +1,6 @@
 ---
 name: performance-anchor
-description: Audit a plan file or specification draft against _shared/role_checklists/performance.md. Flags non-stored computes in search/sort, missing indexes, n+1 read patterns, and SQL views that won't scale. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
+description: Audit a odoo-plan-development plan file against _shared/role_checklists/performance.md. Flags non-stored computes in search/sort, missing indexes, n+1 read patterns, and SQL views that won't scale. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
 tools: Read, Grep, Glob
 ---
 
@@ -58,12 +58,14 @@ Single prompt argument: absolute path to the plan file.
      extends a known-large model (`account.move.line`,
      `stock.move.line`, `mail.message`); missing → `blocker`.
 
-   - **Python-loop aggregation instead of `read_group()`** — checklist
-     Mechanism #4: `read_group()` over Python loops for aggregations.
-     Plan declares an aggregation method (sum / count / group) using a
-     `for record in self:` loop instead of `self.read_group(...)` →
-     `blocker`. Suggest the equivalent `read_group` shape with the
-     `groupby` + `fields` arguments.
+   - **Python-loop aggregation or an ORM call per iteration** — checklist
+     Mechanisms "One ORM call for the whole collection" and "`_read_group`
+     for aggregations". Plan declares an aggregation (sum / count / group)
+     computed in a `for record in self:` loop, or a `create` /
+     `search` / `search_count` inside a loop → `blocker`. Suggest one
+     `_read_group(domain, groupby=[...], aggregates=[...])` mapped into a
+     dict, or `create(vals_list)`. A plan building on the public
+     `read_group` → `nit`: deprecated in v19, different signature in v20.
 
    - **`@api.depends` missing chain segment** — checklist Mechanism +
      Production criterion #4: depends must list every reading path,
@@ -78,6 +80,17 @@ Single prompt argument: absolute path to the plan file.
      only 1 sample record (or doesn't specify a record count) → `nit`.
      A 1-record smoke catches install failures but not query patterns
      that only show up under load.
+
+   ### Odoo 20+
+
+   - **Python non-stored compute where `compute_sql` fits** — a plan
+     targeting Odoo 20+ ships a computed field declared non-stored
+     with a plain-Python compute, referenced in a search domain,
+     `_order`, `<filter domain=...>`, or `groupby=`, where the
+     computation is SQL-representable → `blocker`. Suggest
+     `compute_sql=` so the field stays searchable / sortable in-DB
+     instead of forcing a full-scan Python filter; tag
+     `checklist:non-stored-search`.
 
 ## Output
 

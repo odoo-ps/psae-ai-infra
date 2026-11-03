@@ -1,0 +1,29 @@
+{
+  "_note": "Real-Odoo calibration screens. Paths assume a fresh --with-demo DB with web_enterprise,hr,hr_payroll_account,timesheet_grid,project,sale_management,crm,contacts installed (record ids are the demo ids of such a DB). steps: click (css) | clickText (+within) | press (key).",
+  "screens": [
+    { "name": "home", "url": "/odoo" },
+    { "name": "employees-list", "url": "/odoo/employees?view_type=list" },
+    { "name": "employees-kanban", "url": "/odoo/employees" },
+    { "name": "employee-form", "url": "/odoo/employees/7" },
+    { "name": "employee-form-cog", "url": "/odoo/employees/7", "steps": [{ "click": ".o_cp_action_menus button, .o_cp_action_menus .dropdown-toggle" }] },
+    { "name": "employee-archive-dialog", "url": "/odoo/employees/7", "steps": [{ "click": ".o_cp_action_menus button, .o_cp_action_menus .dropdown-toggle" }, { "clickText": "Archive" }] },
+    { "name": "sale-list", "url": "/odoo/orders" },
+    { "name": "sale-list-search-open", "url": "/odoo/orders", "steps": [{ "click": ".o_searchview_dropdown_toggler" }] },
+    { "name": "sale-list-grouped", "url": "/odoo/orders", "steps": [{ "click": ".o_searchview_dropdown_toggler" }, { "clickText": "Salesperson", "within": ".o_group_by_menu" }, { "press": "Escape" }] },
+    { "name": "sale-form", "url": "/odoo/orders/4" },
+    { "name": "sale-form-other-tab", "url": "/odoo/orders/4", "steps": [{ "clickText": "Other Info", "within": ".o_notebook" }] },
+    { "name": "sale-form-composer", "url": "/odoo/orders/4", "steps": [{ "clickText": "Send message" }] },
+    { "name": "crm-kanban", "url": "/odoo/crm" },
+    { "name": "project-kanban", "url": "/odoo/project" },
+    { "name": "tasks-kanban", "url": "/odoo/my-tasks" },
+    { "name": "settings", "url": "/odoo/settings" },
+    { "name": "settings-payroll", "url": "/odoo/settings#hr_payroll" },
+    { "name": "pivot", "url": "/odoo/action-sale.action_order_report_all?view_type=pivot" },
+    { "name": "graph", "url": "/odoo/action-sale.action_order_report_all?view_type=graph" },
+    { "name": "payslips-list", "url": "/odoo/payslips" },
+    { "name": "payslip-form", "url": "/odoo/payslips/1" },
+    { "name": "payrun-kanban", "url": "/odoo/pay-runs" },
+    { "name": "timesheets-grid", "url": "/odoo/timesheets" },
+    { "name": "timesheets-list", "url": "/odoo/all-timesheets?view_type=list" }
+  ]
+}

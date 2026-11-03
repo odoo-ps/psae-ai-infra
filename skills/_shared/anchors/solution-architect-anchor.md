@@ -1,6 +1,6 @@
 ---
 name: solution-architect-anchor
-description: Audit a plan file or specification draft against _shared/role_checklists/solution_architect.md. Flags drift in model/view design discipline, the module dependencies block, and the required configuration block. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
+description: Audit a odoo-plan-development plan file against _shared/role_checklists/solution_architect.md. Flags drift in model/view design discipline, the module dependencies block, and the required configuration block. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -35,9 +35,10 @@ Single prompt argument: absolute path to the plan file.
 
 4. **Source-claim resolution (single batched call).** Before walking the
    drift list, run `python3 skills/_shared/scripts/_check_odoo_source.py
-   --plan <plan_file>` ONCE. Its JSON output is the canonical
+   --root-prefix versions/v<major> --plan <plan_file>` ONCE, pinned to the
+   plan's instance version. Its JSON output is the canonical
    `{model → {exists, module, edition, path}}` map cited by the
-   depend-gap and `_inherit` checks below. Skip this if the
+   depend-gap and `_inherit` checks below. Skip this if the plan-dev
    skill already ran the pre-anchor sweep — the result is identical
    and the gate already fired; re-running is redundant.
 
@@ -93,11 +94,16 @@ Single prompt argument: absolute path to the plan file.
      component for a non-extension surface — `nit`. (Legacy QWeb is
      fine for extending existing views; the drift is new surfaces.)
 
-   - **`post_init_hook` without idempotency gate** — plan declares
-     a `post_init_hook` that does ORM work, with no description of
-     the "only on fresh install" / "only if X doesn't exist" gate.
-     Without a gate, the hook re-runs on every `-u` — `blocker`.
-     Should be guarded with a state check before mutating.
+   - **`post_init_hook` that is not idempotent** — plan declares a
+     `post_init_hook` that does ORM work with no per-item "only if not
+     already set" checks, or gates it on a run-once marker the
+     `uninstall_hook` does not delete. The hook runs on install only, never
+     on `-u` (`odoo/modules/loading.py:236-240` in v20), but again on every
+     reinstall after an uninstall, over the data the uninstall left behind
+     → `blocker`. Work the plan expects to run on upgrade but places in the
+     hook never runs → `blocker` (it belongs in a `migrations/` script). A
+     gate-less hook built from idempotent per-item checks is correct; do not
+     flag it.
 
    - **Custom code where Studio would suffice** — plan declares a
      custom module + dev cycle for what reads as a Studio-doable
@@ -151,6 +157,31 @@ Single prompt argument: absolute path to the plan file.
      at plan time (the plan reads fine) and surface late (install
      log warning, uninstall hook crash, or runtime exception in
      production) — each one wastes an iteration cycle.
+
+   ### Odoo 20+ drift patterns
+
+   - **Reference to the removed `account.group`** — v20 deleted the
+     CoA group model entirely. A plan that reads / writes / `_inherit`s
+     `account.group` fails at `-i` / `-u` or at runtime — `blocker`.
+     Redirect to the current CoA-hierarchy mechanism.
+   - **`depends` on the gone `stock_picking_batch` module** — in v20
+     `stock.picking.batch` moved into core `stock`; the standalone
+     `stock_picking_batch` module no longer exists, so a manifest
+     depending on it fails at `-i` — `blocker`. Depend on `stock`.
+   - **Hand-rolled join the `TableSQL` / `FieldSQL` API supersedes** —
+     Implementation builds a query with string-concatenated joins or
+     `Query.where(...)`, which raise `DeprecationWarning "Since 20.0"`
+     — `nit`. Suggest the `TableSQL` / `FieldSQL` builder.
+   - **v20-deprecated ORM call ("Since 20.0")** — Implementation uses
+     `env.clear()` (→ `transaction.clear` / `reset`), `clear_access_cache`
+     (→ `invalidate_access_cache`), field-form `check_access`
+     (→ `check_field_access()`), or the removed `_table_has_rows` — `nit`
+     (warns / fails on the next upgrade). Suggest the replacement.
+   - **Not-a-drift guard**: a `card` view type in `ir.ui.view`, a
+     `compute_sql` field attribute, or a `CachedModel` / `CacheLayer`
+     reference is valid v20 — do NOT flag these as unknown view types
+     / invalid field params. (Security data files unify into `ir.access`;
+     that drift is the security anchor's scope, not this one.)
 
 ## Output
 

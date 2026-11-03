@@ -1,47 +1,79 @@
 <!--
-  activity.html — Activity view (mail; real classes o_activity_view / o_activity_*).
-  A matrix of records (rows) × activity types (columns) with count cells; the
-  control panel sits above. Use when the step is "what's due / overdue across
-  records". Cells carry a count + a state colour (planned / today / overdue).
+  activity_matrix.html — Activity VIEW (records × activity types), Odoo 20
+  (mail/static/src/views/web/activity: activity_renderer.xml,
+  activity_record.xml, activity_cell.xml, activity_controller.scss).
+  Opened from a model's view switcher (clock icon). Render INSIDE
+  .o_action_manager right after the control panel (title ⋮ · search ·
+  pager · view switcher). For the global "Activity Overview" LIST use
+  activity_list.html instead.
+
+  TABLE: table.table.table-bordered.o_activity_view_table — white, full
+  width, straight on the gray page.
+    thead: page-gray band, inset bottom rule. First th empty (300px). One
+      th.o_activity_type_cell per type: name, then .o_activity_counter =
+      .o_column_progress (13px, radius 4, gray-300 track; .progress-bar
+      bg-success / bg-warning / bg-danger segments, inline width:% =
+      count / N x 100, min 5% — column_progress.xml) +
+      "<b>n</b>/N". LAST th = 32px optional-columns toggle (#o-settings-
+      adjust = tune); every body row ends with an empty <td>.
+    record cell td.o_activity_record (the model's activity-box template;
+      CRM shown): 32px avatar, bold name + muted amount, muted partner +
+      stage badge (badge rounded-pill o_badge_color_0).
+    activity cell td.o_activity_summary_cell.planned | .today | .overdue:
+      tinted 50% green / amber / red with DARK text — bold summary, then a
+      small row with the date (.o-mail-ActivityCell-deadline) and a 22px
+      assignee avatar. Empty cell: td.o_activity_summary_cell
+      .o_activity_empty_cell, WHITE (a hover-only + appears).
+    tfoot.o_activity_view_table_footer: gray band, teal btn-link
+      "+ Schedule activity" (#o-plus).
+  There is NO legend row and no count bubbles.
 -->
 <div class="o_activity_view">
-  <table class="o_activity_table">
+  <table class="table table-bordered o_activity_view_table">
     <thead>
       <tr>
         <th></th>
-        <th class="o_activity_type_cell">Email</th>
-        <th class="o_activity_type_cell">Call</th>
-        <th class="o_activity_type_cell">To Do</th>
-        <th class="o_activity_type_cell">Meeting</th>
+        <th class="o_activity_type_cell" width="25%"><div><span>Email</span></div>
+          <div class="o_activity_counter"><div class="o_column_progress progress"><div class="progress-bar bg-success" style="width:50%"></div><div class="progress-bar bg-danger" style="width:50%"></div></div><span class="o_animated_number"><b>2</b>/2</span></div></th>
+        <th class="o_activity_type_cell" width="25%"><div><span>Call</span></div>
+          <div class="o_activity_counter"><div class="o_column_progress progress"><div class="progress-bar bg-success" style="width:83.33%"></div><div class="progress-bar bg-warning" style="width:16.67%"></div></div><span class="o_animated_number"><b>6</b>/6</span></div></th>
+        <th class="o_activity_type_cell" width="25%"><div><span>Meeting</span></div><div class="o_activity_counter"></div></th>
+        <th class="o_activity_type_cell" width="25%"><div><span>To-Do</span></div><div class="o_activity_counter"></div></th>
+        <th><div class="o_optional_columns"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></div></th>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td class="o_activity_record">SO0042 — Deco Addict</td>
-        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_overdue">2</span></td>
-        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_today">1</span></td>
-        <td class="o_activity_cell o_activity_empty_cell"></td>
-        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_planned">1</span></td>
+      <tr class="o_data_row">
+        <td class="o_activity_record"><div><span class="o_user_avatar o_avatar_c1">M</span><div class="flex-grow-1">
+          <div class="d-flex justify-content-between"><span class="o_text_block o_text_bold">5 VP Chairs</span><span class="text-muted">$ 5,600.00</span></div>
+          <div class="d-flex justify-content-between"><span class="o_text_block text-muted">Azure Interior</span><span class="badge rounded-pill o_badge_color_0">Proposition</span></div></div></div></td>
+        <td class="o_activity_summary_cell overdue"><div><div class="fw-bold">Email invoice to customer</div><div class="d-flex justify-content-between"><div class="o-mail-ActivityCell-deadline">10/04/2026</div><span class="o_user_avatar o_avatar_c1">M</span></div></div></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td></td>
       </tr>
-      <tr>
-        <td class="o_activity_record">SO0041 — Gemini Furniture</td>
-        <td class="o_activity_cell o_activity_empty_cell"></td>
-        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_planned">1</span></td>
-        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_today">3</span></td>
-        <td class="o_activity_cell o_activity_empty_cell"></td>
+      <tr class="o_data_row">
+        <td class="o_activity_record"><div><span class="o_user_avatar o_avatar_c1">M</span><div class="flex-grow-1">
+          <div class="d-flex justify-content-between"><span class="o_text_block o_text_bold">Modern Open Space</span><span class="text-muted">$ 4,500.00</span></div>
+          <div class="d-flex justify-content-between"><span class="o_text_block text-muted"></span><span class="badge rounded-pill o_badge_color_0">Proposition</span></div></div></div></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td class="o_activity_summary_cell today"><div><div class="fw-bold">Conf call with technical service</div><div class="d-flex justify-content-between"><div class="o-mail-ActivityCell-deadline">10/06/2026</div><span class="o_user_avatar o_avatar_c1">M</span></div></div></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td></td>
       </tr>
-      <tr>
-        <td class="o_activity_record">SO0039 — Azure Interior</td>
-        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_planned">1</span></td>
-        <td class="o_activity_cell o_activity_empty_cell"></td>
-        <td class="o_activity_cell o_activity_empty_cell"></td>
-        <td class="o_activity_cell"><span class="o_activity_count o_activity_filter_overdue">1</span></td>
+      <tr class="o_data_row">
+        <td class="o_activity_record"><div><span class="o_user_avatar o_avatar_c1">M</span><div class="flex-grow-1">
+          <div class="d-flex justify-content-between"><span class="o_text_block o_text_bold">Distributor Contract</span><span class="text-muted">$ 19,800.00</span></div>
+          <div class="d-flex justify-content-between"><span class="o_text_block text-muted">Gemini Furniture</span><span class="badge rounded-pill o_badge_color_0">Won</span></div></div></div></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td class="o_activity_summary_cell planned"><div><div class="fw-bold">Call to renew service contract</div><div class="d-flex justify-content-between"><div class="o-mail-ActivityCell-deadline">10/07/2026</div><span class="o_user_avatar o_avatar_c3">D</span></div></div></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td class="o_activity_summary_cell o_activity_empty_cell"></td>
+        <td></td>
       </tr>
     </tbody>
+    <tfoot class="o_activity_view_table_footer"><tr><td colspan="100"><span class="btn btn-link"><svg class="o_icon"><use href="#o-plus"/></svg>Schedule activity</span></td></tr></tfoot>
   </table>
-  <div class="o_activity_legend">
-    <span><span class="o_activity_dot o_activity_filter_planned"></span> Planned</span>
-    <span><span class="o_activity_dot o_activity_filter_today"></span> Today</span>
-    <span><span class="o_activity_dot o_activity_filter_overdue"></span> Overdue</span>
-  </div>
 </div>

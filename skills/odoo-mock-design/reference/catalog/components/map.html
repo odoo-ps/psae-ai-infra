@@ -1,41 +1,45 @@
 <!--
-  map.html — Map view (enterprise web_map; real classes o-map-renderer / pin-list).
-  The real view uses Leaflet tiles (external) — a mock MUST NOT load tiles, so the
-  map area is a static on-brand placeholder with numbered pins, alongside the
-  pin-list sidebar Odoo shows. Render inside the backend shell.
+  map.html — Map view, Odoo 20 (enterprise web_map: map_renderer.{xml,js},
+  map_controller.xml). The real view draws Leaflet tiles (external): a mock
+  MUST NOT load tiles, so .o-map-renderer--container carries a CSS-only
+  street-map placeholder. Render INSIDE .o_action_manager right after the
+  control panel.
+
+  CONTROL PANEL: Google Maps is a btn-secondary "Maps" right after New
+  (MapView.Buttons, multicolour Google pin + "Maps") — it is NOT in the pin
+  list any more. The MapBox-token banner is tenant config: never shown.
+
+  LAYOUT (.o-map-renderer, `row g-0`):
+    .o-map-renderer--container FIRST: white-framed map, 16px left inset,
+      1px #dee2e6 border, no bottom border, 8px top radius. Leaflet zoom
+      (+ / −) top-left 10px; attribution bottom-right.
+      Markers (.o-map-pin): the 27x41 teal (#007E82) SVG teardrop with a
+      white centre, NO number (a count appears only when several records
+      share one point); grouped maps colour the pin per group. Position:
+      inline left/top % = the pin's tip.
+    .o-map-renderer--pin-list-container on the RIGHT (~280px, transparent
+      on the gray page): .o-map-renderer--pin-list-search ("Search..."
+      underline input + my_location button #o-my-location), then
+      ul.o-map-renderer--pin-list-details of plain
+      li.o-map-renderer--pin-clickable names (hover teal tint). No numbers,
+      addresses or drag handles. Grouped: a gray
+      .o-map-renderer--pin-list-group-header per group; records without
+      coordinates go in an "Unlocated" group (#o-explore).
 -->
-<!-- Map renderer = sidebar (pin list) + map area. The MapBox-token warning
-     banner that real Odoo shows when no token is set is a TENANT-CONFIG
-     notice — it's not a property of the view itself, so the catalog does
-     NOT include it. A mock depicting a properly-configured tenant should
-     look like this fragment. -->
 <div class="o-map-renderer">
-  <aside class="o-map-renderer--pin-list-container">
-    <button class="btn btn-primary o-map-google-btn">View in Google Maps</button>
-    <div class="o-map-renderer--pin-list-section">
-      <div class="o-map-renderer--pin-list-header"><svg class="o_icon o_icon_xs"><use href="#o-list"/></svg> PIPELINE</div>
-      <div class="o-map-renderer--pin-list-group">
-        <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">1</span>
-          <div><div class="o-map-pin-title">Deco Addict</div><div class="text-muted">77 Santa Barbara Rd, Pleasant Hill</div></div></div>
-        <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">2</span>
-          <div><div class="o-map-pin-title">Gemini Furniture</div><div class="text-muted">317 Fairchild Dr, Mountain View</div></div></div>
-        <div class="o-map-renderer--pin-list-details"><span class="o-map-pin-num">3</span>
-          <div><div class="o-map-pin-title">Azure Interior</div><div class="text-muted">4557 De Silva St, Fremont</div></div></div>
-      </div>
-    </div>
-  </aside>
   <div class="o-map-renderer--container">
-    <!-- Zoom controls (top-left, matches Leaflet's default placement) -->
-    <div class="o-map-zoom"><button>+</button><button>−</button></div>
-    <span class="o-map-watermark">Map</span>
-    <!-- Pin numerals must sit inside an inline wrapper (e.g. <span>) — not
-         as a bare text node — so .o-map-pin > * can counter-rotate them
-         upright. A bare text node won't match `> *` (CSS cannot target
-         text nodes) and ends up tilted with the teardrop. -->
-    <span class="o-map-pin" style="left:28%; top:38%;"><span>1</span></span>
-    <span class="o-map-pin" style="left:54%; top:62%;"><span>2</span></span>
-    <span class="o-map-pin" style="left:71%; top:33%;"><span>3</span></span>
-    <!-- Real Leaflet shows the attribution string at the bottom-right. -->
-    <span class="o-map-attribution">Leaflet | © Mapbox © OpenStreetMap <a class="o_form_link">Improve this map</a></span>
+    <div class="o-map-zoom"><button title="Zoom in">+</button><button title="Zoom out">−</button></div>
+    <span class="o-map-pin" style="left:30%; top:40%;"><svg width="27" height="41" viewBox="0 0 27 41"><ellipse cx="13.5" cy="34.8" rx="10.5" ry="5.25" fill="rgba(0,0,0,.15)"/><path fill="#007E82" d="M27,13.5C27,19.07 20.25,27 14.75,34.5C14.02,35.5 12.98,35.5 12.25,34.5C6.75,27 0,19.22 0,13.5C0,6.04 6.04,0 13.5,0C20.96,0 27,6.04 27,13.5Z"/><circle fill="white" cx="13.5" cy="13.5" r="6.5"/></svg></span>
+    <span class="o-map-pin" style="left:56%; top:62%;"><svg width="27" height="41" viewBox="0 0 27 41"><ellipse cx="13.5" cy="34.8" rx="10.5" ry="5.25" fill="rgba(0,0,0,.15)"/><path fill="#007E82" d="M27,13.5C27,19.07 20.25,27 14.75,34.5C14.02,35.5 12.98,35.5 12.25,34.5C6.75,27 0,19.22 0,13.5C0,6.04 6.04,0 13.5,0C20.96,0 27,6.04 27,13.5Z"/><circle fill="white" cx="13.5" cy="13.5" r="6.5"/></svg></span>
+    <span class="o-map-pin" style="left:72%; top:30%;"><svg width="27" height="41" viewBox="0 0 27 41"><ellipse cx="13.5" cy="34.8" rx="10.5" ry="5.25" fill="rgba(0,0,0,.15)"/><path fill="#007E82" d="M27,13.5C27,19.07 20.25,27 14.75,34.5C14.02,35.5 12.98,35.5 12.25,34.5C6.75,27 0,19.22 0,13.5C0,6.04 6.04,0 13.5,0C20.96,0 27,6.04 27,13.5Z"/><circle fill="white" cx="13.5" cy="13.5" r="6.5"/></svg></span>
+    <span class="o-map-attribution"><a>Leaflet</a> | © <a>Mapbox</a> © <a>OpenStreetMap</a> <a><b>Improve this map</b></a></span>
+  </div>
+  <div class="o-map-renderer--pin-list-container">
+    <div class="o-map-renderer--pin-list-search"><input class="o_input" placeholder="Search..."/><button class="btn btn-light" title="Center on my location"><svg class="o_icon"><use href="#o-my-location"/></svg></button></div>
+    <ul class="o-map-renderer--pin-list-details">
+      <li class="o-map-renderer--pin-clickable">Deco Addict</li>
+      <li class="o-map-renderer--pin-clickable">Gemini Furniture</li>
+      <li class="o-map-renderer--pin-clickable">Azure Interior</li>
+    </ul>
   </div>
 </div>

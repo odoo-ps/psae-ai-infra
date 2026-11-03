@@ -1,185 +1,337 @@
 <!--
-  control_panel.html — Odoo 19 control panel (control_panel.scss). Sits
-  directly under the navbar. **Swiss-army block — the SAME shell renders
-  on every view type, but the CONTENT of each cell differs by view.**
+  control_panel.html — Odoo 20 control panel
+  (web/static/src/search/control_panel/control_panel.{xml,scss} +
+  web_enterprise/static/src/search/control_panel/control_panel.{xml,scss}).
+  Sits directly under the navbar. **Same shell on every view type — the
+  CONTENT of each cell differs by view.** Two ready-made shells below:
+  LIST / KANBAN / REPORTING first, then FORM. Optional states (search
+  menu open, records selected, unsaved form, embedded actions, date
+  facet, collapsed ancestors) follow as commented snippets.
 
-  HIERARCHY (mirrors real Odoo's control_panel.xml):
+  LOOK (Enterprise): NO bar of its own — same gray as the page, no bottom
+  border, padding 8px 16px 16px. ONE desktop row:
+    [main buttons][title ⋮]  |  page-centred search  |  [pager][switcher]
+  Breadcrumbs and navigation are equal flex:1 sides, so the search (actions
+  cell, min-width MIN(600px, 33%)) is exactly centred on the page.
+  (body.o-community: white bar with a 1px rule.)
 
-    .o_control_panel                              ← outer wrapper (bg, border, padding)
-      .o_control_panel_main                       ← flex row: contains all 3 cells
+  HIERARCHY (mirrors control_panel.xml):
+
+    .o_control_panel                              ← outer wrapper
+      [.o_embedded_actions]                       ← optional row ABOVE the main row
+      .o_control_panel_main                       ← the single row
         .o_control_panel_breadcrumbs              ← CELL 1 (left)
-          .o_control_panel_main_buttons          ← nested FIRST inside breadcrumbs
-            <New button — style varies per view>
-            <view-defined layout buttons>
-          <ol class="o_breadcrumb">…</ol>
-          <span class="o_cp_action_menus">cog</span>
-        .o_control_panel_actions                  ← CELL 2 (center — form only)
-          <button-box (smart buttons)>
+          .o_control_panel_main_buttons           ← FIRST: New / Save + Discard
+          .o_breadcrumb                           ← title (or stacked parent + record)
+            … .o_control_panel_breadcrumbs_actions > .o_cp_action_menus > ⋮
+          .o_form_status_indicator                ← every editable form (buttons `invisible` when clean)
+        .o_control_panel_actions                  ← CELL 2 (centre)
+          .o_cp_searchview  (list/kanban/reporting)  |  smart buttons (form)
+          |  .o_selection_container (list/kanban with ticked records)
         .o_control_panel_navigation               ← CELL 3 (right)
-          .o_searchview                           ← list/kanban/grid/reporting
-          .o_cp_pager                             ← form OR list/kanban/grid (NOT reporting)
-          .o_cp_switch_buttons                    ← list/kanban/grid/reporting
+          .o_cp_pager                             ← form / list / kanban (NOT reporting)
+          [button[name=embedded_actions]]         ← tune toggle, only with embedded actions
+          nav.o_cp_switch_buttons                 ← list / kanban / reporting, >1 view
 
   AUTHORITATIVE CELL × VIEW-TYPE MATRIX (verified against
-  odoo/addons/web/static/src/views/{form,list,kanban}/*_controller.xml +
+  web/static/src/views/{form,list,kanban}/*_controller.xml +
   search/control_panel/control_panel.xml):
 
   | Cell / sub-cell                    | form                                | list                                | kanban                               | grid (web_grid)              | reporting (pivot / graph)    |
   |------------------------------------|-------------------------------------|-------------------------------------|--------------------------------------|------------------------------|------------------------------|
-  | breadcrumbs (ol)                   | always                              | always                              | always                               | always                       | always                       |
-  | cog (.o_cp_action_menus)           | always                              | always                              | always                               | always                       | always                       |
-  | .o_control_panel_main_buttons      | **outlined** New + dialog Save/Discard | **filled** New + edit Save/Discard  | **filled** New + select-mode actions | filled New                   | **empty** (toolbar lives in `.o_pivot_buttons` / `.o_graph_buttons`) |
+  | title (.o_breadcrumb)              | stacked: teal parent link / record  | single 16.8px regular title         | single title                         | single title                 | single title                 |
+  | ⋮ actions (.o_cp_action_menus)     | always                              | always (hidden while rows selected) | always                               | always                       | always                       |
+  | .o_control_panel_main_buttons      | **outlined** New                    | **filled** New                      | **filled** New                       | filled New                   | **empty** (toolbar lives in `.o_pivot_buttons` / `.o_graph_buttons`) |
   |  → New button class                | `btn btn-outline-primary o_form_button_create` | `btn btn-primary o_list_button_add` | `btn btn-primary o-kanban-button-new` | (custom per grid)            | n/a                          |
-  | .o_control_panel_actions           | button-box (smart buttons)          | **search bar** + facets             | **search bar** + facets              | **search bar** + facets      | **search bar** + facets      |
-  |  → contains                        | `.o-form-buttonbox`                 | `.o_searchview`                     | `.o_searchview`                      | `.o_searchview`              | `.o_searchview`              |
-  | .o_cp_pager                        | "27 / 81" (single record)           | "1-80 / 80" (range)                 | "1-80 / 80" (range)                  | "1-80 / 80"                  | **omitted** (aggregate view) |
-  | .o_cp_switch_buttons               | **omitted** (one record visible)    | switcher present                    | switcher present                     | switcher present             | switcher present             |
+  | .o_control_panel_actions           | smart buttons, or LITERALLY empty   | **search bar** + facets             | **search bar** + facets              | **search bar** + facets      | **search bar** + facets      |
+  |  → contains                        | `.o-form-buttonbox`                 | `.o_cp_searchview.rounded-pill`     | `.o_cp_searchview.rounded-pill`      | `.o_cp_searchview`           | `.o_cp_searchview`           |
+  | .o_cp_pager                        | "27 / 81" (record / total)          | "1-80 / 132" (range / total)        | "1-80 / 132"                         | "1-80 / 132"                 | **omitted** (aggregate view) |
+  | .o_cp_switch_buttons               | **omitted**                         | present (>1 view)                   | present (>1 view)                    | present                      | present                      |
+
+  - Pager on ONE page (total ≤ limit, e.g. "1-26 / 26", "1 / 1"): both
+    arrow buttons `disabled` (50% opacity). Grouped kanban has no pager;
+    a grouped list pager counts groups.
+  - Switcher: buttons follow the ACTION's view order, exactly ONE `.active`
+    (gray tile, never teal); omit the whole nav when the action has a
+    single view. Glyph per type = #o-view-<type>: list reorder · kanban
+    oi_view-kanban · calendar calendar_today · pivot oi_view-pivot · graph
+    bar_chart · map location_on · activity schedule · gantt view_timeline ·
+    cohort oi_view-cohort · hierarchy family_history · grid grid_view.
+  - List header buttons WITHOUT display="always" appear only while records
+    are selected (inside .o_selection_container); only display="always"
+    ones sit next to New (list_controller.xml).
+  - Settings uses the same shell: Save (btn-primary) + Discard
+    (btn-secondary) as main buttons, "Settings" title, a plain 6px-radius
+    search box (no pill, no menu) centred — see settings.html.
 
   **Read-only models** (e.g. stock.valuation.layer): even on a list view,
-  the New button is dropped (no record creation) — but the cell stays in
-  the DOM as an empty <div>. `d-empty-none` hides it visually.
+  the New button is dropped — leave .o_control_panel_main_buttons
+  literally empty (d-empty-none hides it).
 
   **The most common drift cluster**:
+  - v19 chrome: a cog (#o-cog) or favorite star next to the title, a bold
+    18px title, an inline "Parent / Record" path, a ▾ caret on the search,
+    solid purple facet pills, a teal active view button → all wrong in v20
   - filled `btn-primary` New on a form view → should be outlined `btn-outline-primary o_form_button_create`
   - searchview / view-switcher on a form view → form's locator is its breadcrumb + pager; drop both cells
-  - workflow buttons (Confirm, Validate, Post, Pass/Fail) in `.o_control_panel_main_buttons` on a form view → those live in `.o_form_statusbar.o_statusbar_buttons`, never here
-  - pivot/graph toolbar (Measures, Flip Axis, Expand All, Download xlsx, Bar/Line/Pie) in `.o_control_panel_main_buttons` on a reporting view → those live in a free-standing `.o_pivot_buttons` / `.o_graph_buttons` row BETWEEN the control panel and the view body (see `chart_views.html`). Insert in Spreadsheet is a nested entry inside the cog menu, NOT a sibling button on the toolbar.
+  - workflow buttons (Confirm, Validate, Post, Pass/Fail) in `.o_control_panel_main_buttons` on a form view → those live in `.o_form_statusbar > .o_statusbar_buttons`, never here
+  - pivot/graph toolbar (Measures, Spreadsheet, Flip Axis, Expand All, Download xlsx, Bar/Line/Pie) in `.o_control_panel_main_buttons` on a reporting view → those live in a free-standing `.o_pivot_buttons` / `.o_graph_buttons` row inside the content BELOW the control panel, on the same gray (see `chart_views.html`).
 
   mock-fidelity-anchor encodes these as `fidelity:wrong-slot-for-view`.
 -->
+
+<!-- ===================== LIST / KANBAN / REPORTING ===================== -->
 <div class="o_control_panel">
   <div class="o_control_panel_main">
 
-    <!-- CELL 1 — breadcrumbs (always present on every view type). -->
+    <!-- CELL 1 — breadcrumbs. -->
     <div class="o_control_panel_breadcrumbs">
-
-      <!-- main_buttons is NESTED INSIDE breadcrumbs (FIRST child, before
-           the breadcrumb <ol>). On desktop this renders the New button
-           visually LEFT of the breadcrumb path. Drop the cell contents
-           per view type — keep the empty <div> so the grid layout is
-           preserved.
-
-           SLOT: choose ONE pattern per view type:
-             [FORM]    <button class="btn btn-outline-primary o_form_button_create">New</button>
+      <!-- SLOT: main buttons, ONE pattern per view type:
              [LIST]    <button class="btn btn-primary o_list_button_add">New</button>
              [KANBAN]  <button class="btn btn-primary o-kanban-button-new">New</button>
-             [GRID]    <button class="btn btn-primary">New</button>   (or grid-specific action)
-             [REPORTING / READ-ONLY] leave empty
-             [SETTINGS] <button class="btn btn-primary">Save</button> + Discard
-      -->
-      <div class="o_control_panel_main_buttons">
-        <button class="btn btn-outline-primary o_form_button_create">New</button>
+             [REPORTING / READ-ONLY] leave the div LITERALLY empty
+           Layout buttons the real view adds go after New as btn-secondary
+           (e.g. CRM "Generate ▾"). A "New ▾" dropdown only where the app has
+           one (Sales quotation templates):
+             <button class="btn btn-primary o_list_button_add">New<svg class="o_icon o_caret"><use href="#o-caret-down"/></svg></button> -->
+      <div class="o_control_panel_main_buttons"><button class="btn btn-primary o_list_button_add">New</button></div>
+
+      <!-- Single level: the action title, 16.8px REGULAR (fs-4), then the ⋮
+           actions menu (more_vert, #o-ellipsis-v) INSIDE .o_breadcrumb. -->
+      <div class="o_breadcrumb">
+        <div class="o_last_breadcrumb_item active"><span><!-- SLOT: action title -->Sales Orders</span></div>
+        <div class="o_control_panel_breadcrumbs_actions">
+          <div class="o_cp_action_menus">
+            <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+          </div>
+        </div>
       </div>
-
-      <ol class="o_breadcrumb">
-        <!-- SLOT: breadcrumb trail -->
-        <li class="breadcrumb_item"><!-- e.g. Sales Orders --></li>
-        <li class="breadcrumb_sep">/</li>
-        <li class="o_last_breadcrumb_item"><!-- e.g. SO0042 --></li>
-      </ol>
-
-      <!-- Cog menu (Actions). Anchored after the breadcrumb so it sits
-           next to the record identity. Form views in Odoo 19 do NOT
-           carry a favorite-toggle star here — that's the search bar's
-           favorite menu on list/kanban. -->
-      <span class="o_cp_action_menus">
-        <svg class="o_icon o_cp_cog" title="Actions"><use href="#o-cog"/></svg>
-      </span>
     </div>
 
-    <!-- CELL 2 — layout-actions. Real Odoo's `t-slot="layout-actions"`
-         projects HERE; the slot's contents differ by view type:
-           [FORM]                    → button-box (smart buttons)
-           [LIST/KANBAN/GRID/REPORT] → search bar (.o_searchview)
-         The cell is `flex: 1 1 auto` so it expands to take the center
-         of the control panel between breadcrumbs (left) and navigation
-         (right). Drop the wrong half per view type. -->
+    <!-- CELL 2 — search bar (pill input-group). NO caret: the end-cap
+         button is empty on desktop (o-dropdown-no-caret). The search menu
+         (Filters / Group By / Favorites) is the last child; give its
+         data-mock-toggle id a per-screen-unique name.
+         List / kanban / reporting / grid AUTOFOCUS the search on load, and
+         the real input then carries class `focus`: the pill and end cap
+         draw the teal focus border. Keep `focus` for that resting state;
+         drop it while a dialog, a form field or another input has focus. -->
     <div class="o_control_panel_actions">
+      <div class="o_cp_searchview input-group rounded-pill" role="search">
+        <div class="o_searchview form-control">
+          <svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg>
+          <div class="o_searchview_input_container">
+            <!-- SLOT: facets (drop when none is active). Light-gray chip =
+                 tinted icon square + small value + close_small remove.
+                 Label variant by facet type:
+                   filter / field → .o_searchview_facet_label + #o-filter (filled filter_alt)
+                   group by       → .o_searchview_facet_label.o_facet_groupby + #o-stacks
+                   favorite       → .o_searchview_facet_label.o_facet_favorite + #o-star
+                   field search   → <small>Customer</small> (bold field name) instead of the icon
+                 Several values: <small class="o_facet_value">A</small><em class="o_facet_values_sep">or</em><small class="o_facet_value">B</small>
+            <div class="o_searchview_facet">
+              <div class="o_searchview_facet_label"><svg class="o_icon"><use href="#o-filter"/></svg></div>
+              <div class="o_facet_values">
+                <small class="o_facet_value">My Orders</small>
+                <button class="o_facet_remove" title="Remove"><svg class="o_icon"><use href="#o-close-small"/></svg></button>
+              </div>
+            </div>
+            <div class="o_searchview_facet">
+              <div class="o_searchview_facet_label o_facet_groupby"><svg class="o_icon"><use href="#o-stacks"/></svg></div>
+              <div class="o_facet_values">
+                <small class="o_facet_value">Salesperson</small>
+                <button class="o_facet_remove" title="Remove"><svg class="o_icon"><use href="#o-close-small"/></svg></button>
+              </div>
+            </div>
+            -->
+            <input type="text" class="o_searchview_input focus" placeholder="Search..." data-mock-toggle="searchmenu"/>
+          </div>
+        </div>
+        <button class="o_searchview_dropdown_toggler btn btn-outline-secondary" title="Toggle Search Panel" data-mock-toggle="searchmenu"></button>
 
-      <!-- VIEW-TYPE: FORM — smart buttons. -->
-      <div class="o-form-buttonbox oe_button_box">
-        <!-- SLOT: smart buttons (form only) -->
-        <button class="oe_stat_button">
-          <svg class="o_stat_icon o_icon"><use href="#o-list"/></svg>
-          <span class="o_stat_info"><span class="o_stat_text">Deliveries</span><span class="o_stat_value">3</span></span>
-        </button>
-      </div>
-
-      <!-- VIEW-TYPE: LIST / KANBAN / GRID / REPORTING — search bar with
-           facets + trailing dropdown caret (opens Filters / Group By /
-           Favorites menu).
-           - Magnifier on the left.
-           - `.o_searchview_input_container` wraps the facet chips +
-             input so they wrap naturally as facets accumulate.
-           - `.o_searchview_caret` is the trailing chevron-down that
-             opens the search bar's filter dropdown. Always include it
-             — real Odoo's `<SearchBarMenu>` is always present.
-           Drop the whole `.o_searchview` block on form views — a form's
-           locator is its breadcrumb + pager, not a search bar. -->
-      <div class="o_searchview">
-        <svg class="o_icon"><use href="#o-search"/></svg>
-        <span class="o_searchview_input_container">
-          <!-- SLOT: facet chips. Each facet is a SOLID brand-primary
-               pill with white text + a white remove-X (close icon).
-               Drop the whole chip when no facet is active.
-               Example facet markup (commented):
-            <span class="o_searchview_facet">
-              <span class="o_searchview_facet_label">
-                <svg class="o_icon o_icon_xs"><use href="#o-filter"/></svg>
-              </span>
-              <span class="o_facet_value">My Tasks</span>
-              <span class="o_searchview_facet_remove">
-                <svg class="o_icon o_icon_xs"><use href="#o-times"/></svg>
-              </span>
-            </span>
-          -->
-          <input class="o_searchview_input" placeholder="Search..." type="text"/>
-        </span>
-        <span class="o_searchview_caret">
-          <svg class="o_icon"><use href="#o-caret-down"/></svg>
-        </span>
+        <!-- Search menu: one popover centred under the search. Three columns,
+             each with a coloured FILLED title glyph. `.selected` = weight 500
+             + teal check (CSS, no markup). Accordion items (date filters /
+             date group-bys / Save search) carry .o_accordion_toggle (▾).
+             Ends with Custom Filter... / Custom Group / Save search. Drop
+             data-mock-toggleable to show it statically. -->
+        <div class="o-dropdown--menu dropdown-menu o_search_bar_menu" data-mock-toggleable="searchmenu">
+          <div class="o_dropdown_container o_filter_menu">
+            <div class="fs-5"><svg class="o_dropdown_title_icon o_icon text-primary"><use href="#o-filter"/></svg><h5 class="o_dropdown_title">Filters</h5></div>
+            <span class="dropdown-item o_menu_item">My Orders</span>
+            <div class="dropdown-divider"></div>
+            <span class="dropdown-item o_menu_item">To Deliver</span>
+            <span class="dropdown-item o_menu_item selected">To Invoice</span>
+            <div class="dropdown-divider"></div>
+            <div class="o_accordion"><button class="dropdown-item o_menu_item o_accordion_toggle">Order Date</button></div>
+            <div class="dropdown-divider"></div>
+            <span class="dropdown-item o_menu_item o_add_custom_filter">Custom Filter...</span>
+          </div>
+          <div class="o_dropdown_container o_group_by_menu">
+            <div class="fs-5"><svg class="o_dropdown_title_icon o_icon text-action"><use href="#o-stacks"/></svg><h5 class="o_dropdown_title">Group By</h5></div>
+            <span class="dropdown-item o_menu_item">Salesperson</span>
+            <span class="dropdown-item o_menu_item">Customer</span>
+            <div class="o_accordion"><button class="dropdown-item o_menu_item o_accordion_toggle">Order Date</button></div>
+            <div class="dropdown-divider"></div>
+            <span class="dropdown-item o_menu_item o_add_custom_group_menu">Custom Group</span>
+          </div>
+          <div class="o_dropdown_container o_favorite_menu">
+            <div class="fs-5"><svg class="o_dropdown_title_icon o_icon text-favourite"><use href="#o-star"/></svg><h5 class="o_dropdown_title">Favorites</h5></div>
+            <div class="o_accordion"><button class="dropdown-item o_menu_item o_accordion_toggle o_add_favorite">Save search</button></div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- CELL 3 — navigation: pager + view switcher. -->
     <div class="o_control_panel_navigation">
-
-      <!-- VIEW-TYPE: FORM + LIST + KANBAN + GRID (drop on reporting).
-           Counter format varies by view:
-             form  → "27 / 81"      (current record / total)
-             list/kanban/grid → "1-80 / 80"  (visible range / total) -->
-      <div class="o_cp_pager">
-        <span class="o_pager_counter">1-80 / 80</span>
-        <span class="o_pager_arrow"><svg class="o_icon"><use href="#o-chevron-left"/></svg></span>
-        <span class="o_pager_arrow"><svg class="o_icon"><use href="#o-chevron-right"/></svg></span>
+      <!-- Pager (drop on reporting). Single page → add `disabled` to BOTH buttons. -->
+      <div class="o_cp_pager" role="search">
+        <nav class="o_pager" aria-label="Pager">
+          <span class="o_pager_counter"><span class="o_pager_value">1-80</span><span> / </span><span class="o_pager_limit">132</span></span>
+          <span class="btn-group">
+            <button class="btn btn-secondary o_pager_previous" aria-label="Previous"><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+            <button class="btn btn-secondary o_pager_next" aria-label="Next"><svg class="o_icon"><use href="#o-chevron-right"/></svg></button>
+          </span>
+        </nav>
       </div>
-
-      <!-- VIEW-TYPE: LIST / KANBAN / GRID / REPORTING (drop on form views —
-           a form view doesn't switch surfaces; it's already viewing one
-           specific record). Odoo 19 enterprise apps expose 5-7 view modes
-           per action; include every mode the action defines, DROP the
-           ones not relevant.
-
-           Use the `o-view-*` glyphs (NOT `o-list` / `o-th-large`) —
-           those are the FontAwesome shapes from the pre-19 chrome. The
-           Odoo-19 switcher uses `oi-view-*` font glyphs; the `o-view-*`
-           sprite ids in this catalog approximate those shapes. -->
-      <div class="o_cp_switch_buttons">
-        <span class="o_switch_view active" title="Kanban"><svg class="o_icon"><use href="#o-view-kanban"/></svg></span>
-        <span class="o_switch_view" title="List"><svg class="o_icon"><use href="#o-view-list"/></svg></span>
-        <span class="o_switch_view" title="Calendar"><svg class="o_icon"><use href="#o-view-calendar"/></svg></span>
-        <span class="o_switch_view" title="Pivot"><svg class="o_icon"><use href="#o-view-pivot"/></svg></span>
-        <span class="o_switch_view" title="Graph"><svg class="o_icon"><use href="#o-view-graph"/></svg></span>
-        <span class="o_switch_view" title="Map"><svg class="o_icon"><use href="#o-view-map"/></svg></span>
-        <span class="o_switch_view" title="Activity"><svg class="o_icon"><use href="#o-view-activity"/></svg></span>
-        <!-- Enterprise-only view modes — uncomment whichever the action exposes:
-          <span class="o_switch_view" title="Gantt"><svg class="o_icon"><use href="#o-view-gantt"/></svg></span>
-          <span class="o_switch_view" title="Cohort"><svg class="o_icon"><use href="#o-view-cohort"/></svg></span>
-          <span class="o_switch_view" title="Hierarchy"><svg class="o_icon"><use href="#o-view-hierarchy"/></svg></span>
-          <span class="o_switch_view" title="Grid"><svg class="o_icon"><use href="#o-view-grid"/></svg></span>
+      <!-- View switcher: the action's views IN ITS ORDER, exactly one .active. -->
+      <nav class="o_cp_switch_buttons btn-group o_switcher">
+        <button class="btn btn-secondary o_switch_view o_list active" title="List"><svg class="o_icon"><use href="#o-view-list"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_kanban" title="Kanban"><svg class="o_icon"><use href="#o-view-kanban"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_calendar" title="Calendar"><svg class="o_icon"><use href="#o-view-calendar"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_pivot" title="Pivot"><svg class="o_icon"><use href="#o-view-pivot"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_graph" title="Graph"><svg class="o_icon"><use href="#o-view-graph"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_activity" title="Activity"><svg class="o_icon"><use href="#o-view-activity"/></svg></button>
+        <!-- Other view types — include only those the action exposes:
+          <button class="btn btn-secondary o_switch_view o_map" title="Map"><svg class="o_icon"><use href="#o-view-map"/></svg></button>
+          <button class="btn btn-secondary o_switch_view o_gantt" title="Gantt"><svg class="o_icon"><use href="#o-view-gantt"/></svg></button>
+          <button class="btn btn-secondary o_switch_view o_cohort" title="Cohort"><svg class="o_icon"><use href="#o-view-cohort"/></svg></button>
+          <button class="btn btn-secondary o_switch_view o_hierarchy" title="Hierarchy"><svg class="o_icon"><use href="#o-view-hierarchy"/></svg></button>
+          <button class="btn btn-secondary o_switch_view o_grid" title="Grid"><svg class="o_icon"><use href="#o-view-grid"/></svg></button>
         -->
+      </nav>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================ FORM ================================ -->
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-outline-primary o_form_button_create">New</button></div>
+
+      <!-- Multi level: line 1 = ONLY the direct parent as a 13px teal link;
+           line 2 = the 14px record name + ⋮. Three or more levels: older
+           ancestors collapse into a ⋯ button BEFORE the parent:
+             <li class="breadcrumb-item"><button class="btn btn-light btn-sm" title="Show path"><svg class="o_icon"><use href="#o-ellipsis-h"/></svg></button></li>
+           (a "/" divider is drawn between the two items by CSS). -->
+      <div class="o_breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item o_back_button"><a href="#"><!-- SLOT: parent action -->Sales Orders</a></li>
+        </ol>
+        <div>
+          <div class="o_last_breadcrumb_item active"><span><!-- SLOT: record name -->S00004</span></div>
+          <div class="o_control_panel_breadcrumbs_actions">
+            <div class="o_cp_action_menus">
+              <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Save / discard indicator: rendered on EVERY editable form
+           (form_status_indicator.xml). Clean record = its buttons div carries
+           `invisible` (hidden, but it still takes its 69px, which matters when
+           a long title fills the cell); dirty or new record = drop `invisible`.
+           Omit it only on a form the user cannot edit. -->
+      <div class="o_form_status_indicator">
+        <div class="o_form_status_indicator_buttons invisible">
+          <button class="o_form_button_save btn btn-light" title="Save manually"><svg class="o_icon o_icon_fw"><use href="#o-save"/></svg></button>
+          <button class="o_form_button_cancel btn btn-light" title="Discard all changes"><svg class="o_icon o_icon_fw"><use href="#o-times"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CELL 2 — smart buttons, centred. No smart buttons → leave this div
+         LITERALLY empty (no whitespace / comment) or delete it. -->
+    <div class="o_control_panel_actions">
+      <div class="o-form-buttonbox oe_button_box">
+        <!-- SLOT: smart buttons (form only) -->
+        <!-- Icon = the button's own v20 glyph (the view's icon=, OUTLINE
+             unless the view adds oi-filled) at 21px (1.5em), e.g.
+             Delivery #o-truck (local_shipping) · Invoices #o-edit-square ·
+             Payments #o-payments · Time Off / Timesheets #o-view-calendar
+             (calendar_today) · Payslips #o-attach-money · History (employee
+             versions) #o-contact-page · people #o-group-o · products
+             #o-package · generic list #o-bars (menu). A button whose label
+             is not a stat_text field (History) writes the label bare:
+             <span class="o_stat_info">History<span class="o_stat_value">1</span></span>. -->
+        <button class="oe_stat_button">
+          <svg class="o_stat_icon o_icon"><use href="#o-truck"/></svg>
+          <span class="o_stat_info"><span class="o_stat_text">Deliveries</span><span class="o_stat_value">3</span></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="o_control_panel_navigation">
+      <div class="o_cp_pager" role="search">
+        <nav class="o_pager" aria-label="Pager">
+          <span class="o_pager_counter"><span class="o_pager_value">27</span><span> / </span><span class="o_pager_limit">81</span></span>
+          <span class="btn-group">
+            <button class="btn btn-secondary o_pager_previous" aria-label="Previous"><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+            <button class="btn btn-secondary o_pager_next" aria-label="Next"><svg class="o_icon"><use href="#o-chevron-right"/></svg></button>
+          </span>
+        </nav>
       </div>
     </div>
 
   </div>
 </div>
+
+<!-- ============================ OPTIONAL STATES ============================
+  RECORDS SELECTED (list / kanban): the search bar is REPLACED; the ⋮ next to
+  the title is NOT rendered (leave .o_control_panel_breadcrumbs_actions empty);
+  pager + switcher stay. Header buttons = the list's non-"always" buttons.
+    <div class="o_breadcrumb"><div class="o_last_breadcrumb_item active"><span>Employees</span></div><div class="o_control_panel_breadcrumbs_actions"></div></div>
+    …
+    <div class="o_control_panel_actions">
+      <div class="o_selection_container">
+        <div class="o_selection_box list-group">
+          <span class="list-group-item active"><b>1</b> selected<button class="o_unselect_all btn btn-link" title="Unselect All"><svg class="o_icon"><use href="#o-close-small"/></svg></button></span>
+        </div>
+        <button class="btn btn-secondary">Launch Plan</button>
+        <div class="o_cp_action_menus">
+          <button class="btn btn-secondary"><svg class="o_icon"><use href="#o-print"/></svg><span class="o_dropdown_title">Print</span></button>
+          <button class="btn btn-secondary"><svg class="o_icon"><use href="#o-cog"/></svg><span class="o_dropdown_title">Actions</span></button>
+        </div>
+      </div>
+    </div>
+
+  DATE FILTER FACET (a date filter such as Order Date ▸ Today is active): the
+  label square becomes two joined plum period arrows.
+    <div class="o_searchview_facet">
+      <button class="o_date_nav_btn o_searchview_facet_label btn btn-primary" title="Previous period"><svg class="o_icon"><use href="#o-chevron-backward"/></svg></button>
+      <button class="o_date_nav_btn btn btn-primary" title="Next period"><svg class="o_icon"><use href="#o-chevron-forward"/></svg></button>
+      <div class="o_facet_values"><small class="o_facet_value">Order Date: Oct 6</small><button class="o_facet_remove" title="Remove"><svg class="o_icon"><use href="#o-close-small"/></svg></button></div>
+    </div>
+
+  EMBEDDED ACTIONS (actions with embedded views, e.g. Project tasks): a tune
+  toggle in the navigation cell between pager and switcher (.active while the
+  row shows) …
+    <button class="btn btn-secondary active" name="embedded_actions" title="View related documents"><svg class="o_icon"><use href="#o-settings-adjust"/></svg></button>
+  … and the row as FIRST child of .o_control_panel, before .o_control_panel_main:
+    <div class="o_embedded_actions"><button class="btn btn-secondary active">Tasks</button><button class="btn btn-secondary">Milestones</button><button class="btn btn-secondary"><svg class="o_icon"><use href="#o-settings-adjust"/></svg></button></div>
+
+  ⋮ MENU OPEN: add `show` to the ⋮ button (teal-ringed tile).
+
+  TEAM SWITCHER (CRM pipeline, crm_breadcrumbs.xml): REPLACES .o_breadcrumb —
+  a 16.8px regular "All Teams ▾" button (or the selected team), and the ⋮
+  actions become its direct sibling in .o_control_panel_breadcrumbs:
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons">…New · Generate ▾…</div>
+      <button class="o_cp_team_switcher btn btn-link"><span>All Teams</span><svg class="o_icon o_caret"><use href="#o-caret-down"/></svg></button>
+      <div class="o_control_panel_breadcrumbs_actions"><div class="o_cp_action_menus"><button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div></div>
+    </div>
+-->

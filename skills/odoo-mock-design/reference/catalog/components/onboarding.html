@@ -1,49 +1,57 @@
 <!--
-  onboarding.html — App setup onboarding banner.
-  Source: addons/onboarding/views/onboarding_views.xml
-          addons/onboarding/static/src/scss/
+  onboarding.html — Odoo 20 in-card setup checklist (account.Onboarding,
+  view widget "account_onboarding").
+  Source: odoo/addons/account/static/src/components/onboarding/onboarding.{xml,js}
+          enterprise/account_reports/views/account_journal_dashboard_view.xml:52-57
+          odoo/addons/account/models/account_journal_dashboard.py:873-900
+          odoo/addons/account/data/onboarding_data.xml:31-53 + 78-85 (steps)
 
-  Apps like Accounting / Sales / CRM / Recruitment open their dashboard
-  with a horizontal banner of setup steps. Each step is a card with a
-  progress check-mark + title + one-line description. Clicking a step
-  opens the relevant config wizard.
+  Odoo 20 has NO horizontal onboarding banner. The onboarding module still
+  ships the onboarding.onboarding_panel QWeb template (.o_onboarding_main,
+  step images, "Let's do it" buttons), but nothing mounts it: no view carries
+  banner_route and no controller serves it (v19 and v20 alike). Never mock a
+  strip of setup-step cards above a view or under the control panel.
 
-  State classes on `.o_onboarding_step`:
-    .o_onboarding_step                  — not done (gray ○)
-    .o_onboarding_step_done             — done    (green ✓)
-    .o_onboarding_step_just_done        — just completed (green ✓ + glow)
+  Real v20 first-run guidance is
+    1. the empty-state helper over an empty view (components/no_content.html);
+    2. THIS checklist: a vertical list of step links INSIDE a dashboard kanban
+       card. Real use: Accounting ▸ Dashboard, "Tax Returns" journal card
+       (account_reports), shown to Accounting administrators
+       (account.group_account_manager) while that journal has no posted
+       entries. Real steps, in order: "Set Periods" (tooltip "Define your
+       fiscal years & tax returns periodicity.") and "Review Chart of
+       Accounts" (tooltip "Set up your chart of accounts and record initial
+       balances."). Clicking a step opens its configuration action.
 
-  Drop the whole `.o_onboarding_container` directly under the control panel
-  on the dashboard screen. Hide when the user has dismissed it (close ×) or
-  when all steps are done.
+  Placement (real DOM): the card's left column, in its own .row under the
+  card's primary button —
+    <div id="dashboard_return_left" class="col mb-3 mb-sm-0">
+      <div class="row"><div><button class="btn btn-warning">Tax Returns</button></div></div>
+      <div class="row"> …this fragment… </div>
+    </div>
+  In a mock without that grid, put the fragment straight after the button
+  row in the card body; it adds no padding of its own.
+
+  Step = div.col-auto.my-1: a 15.4px filled icon (fs-5, 8px gap) + a 13px
+  teal link carrying the step title.
+    not done   #o-circle        .text-300      light-gray dot (#dee2e6)
+    done       #o-check-circle  .text-success  green (#008818)
+  A done step stays a normal teal link (no strike-through, no muting). The
+  step description is ONLY the link's title tooltip — never print it under
+  the title. No numbering, progress bar, step images, close ×, "Let's do it"
+  buttons or completion banner.
+  (The dashed "Setup Your Invoice Layout" tile in the Accounting dashboard's
+  KPI row is a different surface — account_dashboard_kpis — not this one.)
 -->
-<div class="o_onboarding_container">
-  <div class="o_onboarding_step o_onboarding_step_done">
-    <div class="o_onboarding_step_marker">
-      <svg class="o_icon"><use href="#o-check"/></svg>
+<div class="o_widget o_widget_account_onboarding">
+  <div>
+    <!-- done step -->
+    <div class="col-auto my-1">
+      <svg class="o_icon me-2 fs-5 text-success"><use href="#o-check-circle"/></svg><a href="#" title="Define your fiscal years &amp; tax returns periodicity."><!-- SLOT: step title, e.g. Set Periods --></a>
     </div>
-    <div class="o_onboarding_step_body">
-      <div class="o_onboarding_step_title"><!-- SLOT: e.g. Company Data --></div>
-      <div class="o_onboarding_step_description"><!-- SLOT: e.g. Logo, address, currency --></div>
-    </div>
-  </div>
-  <div class="o_onboarding_step o_onboarding_step_just_done">
-    <div class="o_onboarding_step_marker">
-      <svg class="o_icon"><use href="#o-check"/></svg>
-    </div>
-    <div class="o_onboarding_step_body">
-      <div class="o_onboarding_step_title"><!-- SLOT: e.g. Chart of Accounts --></div>
-      <div class="o_onboarding_step_description"><!-- SLOT: e.g. Pick a template --></div>
+    <!-- not-done step -->
+    <div class="col-auto my-1">
+      <svg class="o_icon me-2 fs-5 text-300"><use href="#o-circle"/></svg><a href="#" title="Set up your chart of accounts and record initial balances."><!-- SLOT: step title, e.g. Review Chart of Accounts --></a>
     </div>
   </div>
-  <div class="o_onboarding_step">
-    <div class="o_onboarding_step_marker">3</div>
-    <div class="o_onboarding_step_body">
-      <div class="o_onboarding_step_title"><!-- SLOT: e.g. Invoice Layout --></div>
-      <div class="o_onboarding_step_description"><!-- SLOT: e.g. Header, colors, footer --></div>
-    </div>
-  </div>
-  <span class="o_onboarding_step_close" title="Dismiss">
-    <svg class="o_icon"><use href="#o-times"/></svg>
-  </span>
 </div>

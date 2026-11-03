@@ -1,13 +1,13 @@
 ---
 name: odoo-write-specifications
-description: Produce a professionally formatted Odoo functional specification as a .docx file for hand-off to a development team. Interviews business and technical stakeholders one question at a time and **drafts the document to disk incrementally** as each section's input lands — no plan mode, no end-of-interview cliff. After the interview, runs a 14-anchor parallel quality review against the docx draft; user accepts/rejects findings; final docx lands at <repo_root>/specifications/. The spec serves both audiences — business stakeholders sign off on the workflow shape; the technical consultant picks it up as the input to implementation.
-when_to_use: Use this skill when the user wants a written Odoo functional specification (typically pre-development, often pre-contract) — NOT when they want code built. The next step after this skill is hand-off to the technical consultant, who implements against the same scope.
+description: Produce a professionally formatted Odoo functional specification as a .docx file for hand-off to a development team. Interviews business and technical stakeholders one question at a time and **drafts the document to disk incrementally** as each section's input lands — no plan mode, no end-of-interview cliff. After the interview, runs a 14-anchor parallel quality review against the docx draft; user accepts/rejects findings; final docx lands at <repo_root>/specifications/. The spec serves both audiences — business stakeholders sign off on the workflow shape; developers pick it up as the input to odoo-plan-development.
+when_to_use: Use this skill when the user wants a written Odoo functional specification (typically pre-development, often pre-contract) — NOT when they want code built. The next step after this skill is odoo-plan-development against the same scope.
 allowed-tools: Read, Edit, Write, Bash, Grep, Glob, Agent, Skill, AskUserQuestion, ToolSearch, TodoWrite
 ---
 
 # Specification Development
 
-Turn a business request into a `.docx` functional specification suitable for hand-off to a development team. The audience is **both business and technical** — procurement officers and finance managers read the same document the technical consultant later uses as the input to implementation. Skill-specific discipline below; cross-cutting principles live in [`skills/_shared/principles.md`](../_shared/principles.md) and apply here too.
+Turn a business request into a `.docx` functional specification suitable for hand-off to a development team. The audience is **both business and technical** — procurement officers and finance managers read the same document the developers later use as the input to `odoo-plan-development`. Skill-specific discipline below; cross-cutting principles live in [`skills/_shared/principles.md`](../_shared/principles.md) and apply here too.
 
 This skill is **documentation-only**. It produces a Word document, not deployable code. No `instances/` to scaffold, no `createdb`, no `odoo-bin` calls.
 
@@ -23,9 +23,9 @@ This skill is **documentation-only**. It produces a Word document, not deployabl
 
 See the P11 exemption note in [`../_shared/principles.md`](../_shared/principles.md) for the shared-principle carve-out.
 
-**Architecture detection (principle #13) is also skipped.** This skill produces a `.docx`. The host architecture doesn't affect the artifact's shape. The spec *content* may reference target architecture (`Odoo.sh` vs Local) inside Section 2, but that's authored by the user during the interview — never detected by the skill.
+**Architecture detection (principle #13) is also skipped.** This skill produces a `.docx`. The host architecture doesn't affect the artifact's shape. The spec *content* may reference target architecture (`Odoo.sh` vs Local) in the Business Case, but that's authored by the user during the interview — never detected by the skill.
 
-**Do not open with "what do you want to do?"** — the skill's first question is always Q1 (Task code).
+**Do not open with "what do you want to do?"** — the skill's first question is always Q1 (Task code). The only thing allowed before Q1 is the **build-venv choice** from § Pre-Flight: Tooling (one `AskUserQuestion`, skipped when there is exactly one venv and it already has `python-docx`).
 
 ### How incremental drafting works
 
@@ -35,10 +35,10 @@ The flow on invocation runs **six questions in logical order — identify, brief
 |---|----------|------|---|
 | Q1 | Task code | **Free-text — NOT `AskUserQuestion`.** Plain prose ask, free-text reply. See § Free-text carve-outs below. | Identification — locks part 1 of the docx filename. Asked first because everything downstream filenames off it. |
 | Q2 | Client name | **Free-text — NOT `AskUserQuestion`.** Plain prose ask, free-text reply. See § Free-text carve-outs below. | Identification — locks part 2 of the docx filename. |
-| Q3 | Odoo version | `AskUserQuestion`, version-list (Recommended from active venv + 1–2 alternatives) | Framing — single-line Section 1. |
-| Q4 | Type of development | `AskUserQuestion`, multi-select (New App / Extension / Enhancement / Migration) | Framing — informs Section 4 wording (reuse-vs-net-new). |
+| Q3 | Odoo version | `AskUserQuestion`, the versions installed under `versions/` (newest Recommended) + Online / other | Framing — the single-line Odoo Version section. Also pins the source every standard-Odoo claim is checked against (§ Source grounding). |
+| Q4 | Type of development | `AskUserQuestion`, multi-select (New App / Extension / Enhancement / Migration) | Framing — informs the Apps Impacted wording (reuse-vs-net-new). |
 | Q5 | **Business need brief** | **Free-text — NOT `AskUserQuestion`. See § Free-text carve-outs below.** | The "what's the problem, who has it, why it matters" — the substance of the whole spec. The user types a paragraph; the skill parses it into Business Case row entries AND derives the slug. Asked after framing because the slug auto-derives from the brief and locks the spec folder. |
-| Q6 | Workflows (count bucket, then names) | `AskUserQuestion`, buckets 1 / 2–3 / 4–5 / 6+, then list | Enumeration — drives Section 5 table + the per-workflow deep-dive. |
+| Q6 | Workflows (count bucket, then names) | `AskUserQuestion`, buckets 1 / 2–3 / 4–5 / 6+, then list | Enumeration — drives the Functional Layout table + the per-workflow deep-dive. |
 
 After every answered question, the builder re-runs and writes the corresponding section into the on-disk docx. The user can open the file in Word/Pages between answers and watch it grow.
 
@@ -46,7 +46,7 @@ After every answered question, the builder re-runs and writes the corresponding 
 
 After Q6 lands:
 
-7. **Critical Brief Evaluation** (see § Critical Brief Evaluation below). Pause and critique Q5+Q6 against principle #12 and the Consultant checklist — surface scope-sanity, standard-Odoo-overlap, value-clarity, and complexity-vs-value concerns **one ask at a time, every ask through `AskUserQuestion`** (no bundling — see § Interview discipline). Revisions land back in Q5 / Q6 / Section 4 (Apps Impacted) before the per-workflow deep-dive starts.
+7. **Critical Brief Evaluation** (see § Critical Brief Evaluation below). Pause and critique Q5+Q6 against principle #12 and the Consultant checklist — surface scope-sanity, standard-Odoo-overlap, value-clarity, and complexity-vs-value concerns **one ask at a time, every ask through `AskUserQuestion`** (no bundling — see § Interview discipline). Revisions land back in Q5 / Q6 / Apps Impacted before the per-workflow deep-dive starts.
 8. **Per-workflow role deep-dive.** For each workflow in the (possibly revised) Q6, the role checklists drive a focused interview. Each role question answered → corresponding subsection populated → builder re-runs → docx on disk reflects the new content immediately. **Every role question is a single `AskUserQuestion` call.** Never bundle two sub-questions into one ask.
 9. **Post-interview anchor pass** (see § Post-Interview Anchor Pass below). Quality review, not a gate.
 10. **Final lint + visual review.** The user opens the docx, scans, declares done.
@@ -60,7 +60,7 @@ Produce, in this order:
 
 - **`specifications/` directory** at the repo root — created by the Write tool on first run if it doesn't already exist.
 - **One folder per spec** at `<repo_root>/specifications/<task-code> - <client-name> - <3-word-functionality>/`. Each spec is self-contained inside its own folder. Spaces in folder name are allowed and expected; slashes / colons / asterisks are rejected by the filename safety check.
-- **The Word file** lives at the **root of the spec folder**: `<repo_root>/specifications/<task-code> - <client-name> - <3-word-functionality>/<task-code> - <client-name> - <3-word-functionality>.docx`. Opening the spec folder in Finder / Explorer shows the docx and a single `_reference/` subfolder — nothing else clutters the view.
+- **The Word file** lives at the **root of the spec folder**: `<repo_root>/specifications/<task-code> - <client-name> - <3-word-functionality>/<task-code> - <client-name> - <3-word-functionality>.docx`. Opening the spec folder in Finder / Explorer shows the docx and a single `_reference/` subfolder (plus `mocks/` when the finish-line mock offer was accepted) — nothing else clutters the view.
 - **Python builder + supporting files** live under `<spec-folder>/_reference/`:
   - `_build_<task-code>.py` — the python-docx builder with the SPEC_DATA dict for this task. Source of truth per principle #1; the docx is regenerated from it on every iteration. Hand-edits to the docx vanish on next regen.
   - `odoo-logo.png` — **copy the skill's [`reference/assets/odoo-logo.png`](reference/assets/odoo-logo.png) into `_reference/` when you move the builder in.** The builder embeds it in the running header and on the cover (Odoo template styling); it looks for the logo as a sibling first, then falls back to the skill's `assets/`. If it's genuinely absent the build still succeeds, just without the logo (graceful degradation).
@@ -70,8 +70,8 @@ Produce, in this order:
 - **Interactive interview** — one `AskUserQuestion` turn at a time per principle #10, with 2–4 options drawn from the relevant role checklist + implicit Other (Q1, Q2, and Q5 are the free-text exceptions — see § Free-text carve-outs). After **every** answered question post-Q5, the builder re-runs and the docx is updated on disk. The user sees the document grow live.
 - **Post-interview anchor pass** — fires the full 14-anchor set in parallel against the on-disk docx (per § Post-Interview Anchor Pass below). Findings come back as severity-graded suggestions; the user accepts or rejects each blocker; the skill applies approved patches and re-runs affected anchors.
 - **Stage 1 lint** + **Stage 3 visual review** as the final exit checks (see § Validation below).
-- **Optional `mocks/` subfolder** — if the user accepts the finish-line offer to visualise the screens, `odoo-mock-design` writes a self-contained interactive HTML mock to `<spec-folder>/mocks/` (see § Offer mock screens (finish line)). The docx remains the primary deliverable; the mock is a companion. Absence of `mocks/` never fails the contract.
-- **Optional `dev_handoff` key in SPEC_DATA** — a top-level key inside the builder's SPEC_DATA dict carries structured context for the technical consultant who implements the spec (P12 inferences, lifecycle/contention decisions, per-workflow validation surface, process-skip markers, integration surface, dataset scale, standard-Odoo overlap decisions). **The builder ignores this key**, so nothing renders to the docx — the docx stays clean for stakeholders while the technical consultant reads the structure directly from `_reference/_build_<task-code>.py`. Absence of `dev_handoff` never fails the contract; see § Dev-Only Hand-off to the Technical Consultant.
+- **Optional `mocks/` subfolder** — if the user accepts the finish-line offer to visualise the screens, `odoo-mock-design` writes an interactive HTML mock to `<spec-folder>/mocks/`: the deliverable is one self-contained file, `<spec-folder>/mocks/<spec-folder-name> - mock.html`, bundled from the editable working package in `<spec-folder>/mocks/_reference/` (`index.html` + `assets/`) after the mock's final checks pass (see § Offer mock screens (finish line)). The docx remains the primary deliverable; the mock is a companion. Absence of `mocks/` never fails the contract.
+- **Optional `dev_handoff` key in SPEC_DATA** — a top-level key inside the builder's SPEC_DATA dict carries structured context for the downstream `odoo-plan-development` skill (P12 inferences, lifecycle/contention decisions, per-workflow validation surface, process-skip markers, integration surface, dataset scale, standard-Odoo overlap decisions). **The builder ignores this key**, so nothing renders to the docx — the docx stays clean for stakeholders while plan-dev consumes the structure directly from `_reference/_build_<task-code>.py`. Absence of `dev_handoff` never fails the contract; see § Dev-Only Hand-off to odoo-plan-development.
 
 A docx that's missing any of the **5 numbered top-level sections** (or the Table of Contents front-matter page), lives outside its per-spec folder, has placeholder strings (`TODO`, `TBD`, `Lorem ipsum`), or fails the filename convention does NOT satisfy the contract.
 
@@ -88,7 +88,7 @@ A docx that's missing any of the **5 numbered top-level sections** (or the Table
 ## Reference Material (Read Before Building)
 
 - [`skills/_shared/principles.md`](../_shared/principles.md) — cross-cutting discipline. Read first.
-- [`reference/content_outline.md`](reference/content_outline.md) — cover + Table of Contents + 6 numbered top-level sections × 10 per-workflow subsections, canonical structure including the numbering scheme. Stage 1 lint reads this as the source of truth.
+- [`reference/content_outline.md`](reference/content_outline.md) — cover + Table of Contents + 5 numbered top-level sections × 11 per-workflow subsections, canonical structure including each subsection's required table shape. The builder and the Stage 1 lint enforce it.
 - [`reports/industry_standards_audit.md`](reports/industry_standards_audit.md) — point-in-time audit of the skill against IEEE 830 / 29148 / BABOK / Volere / Agile / Odoo conventions. Tiered improvement backlog + concrete sample renderings based on Pilot01. Snapshot reference, NOT canonical structure — consult before proposing structural changes; re-audit when the docx outline shifts materially.
 - [`reference/docx_styling.md`](reference/docx_styling.md) — fonts, palette, spacing, table styles. The 7 C's of communication enforced at the visual layer.
 - [`reference/samples/reference_pattern.md`](reference/samples/reference_pattern.md) — annotated walk-through of a real-world reference spec. The shape and depth to emit; never copy verbatim.
@@ -96,21 +96,25 @@ A docx that's missing any of the **5 numbered top-level sections** (or the Table
 
 ## Pre-Flight: Tooling
 
-`python-docx` is always required. `Pillow` is required only when a workflow opts into a BPMN diagram. `python-docx` is declared in this skill's [`requirements.txt`](requirements.txt), which the repo bootstrap installs (`find <corpus_dir> -name requirements.txt -exec pip install -r {} \;`) — so on a bootstrapped container its check below should pass; the check stays in place for hand-run / bare-venv invocations. `Pillow` is not declared there because Odoo already pins it.
+`python-docx` is always required. `Pillow` is required only when a workflow opts into a BPMN diagram.
 
-**`python-docx`** — check at skill entry, using the container's own Python. There is no `instances/` tree and no version folder on Odoo.sh (principle #13).
+**`python-docx` — build-venv choice (explicit, at skill entry, before Q1).** This skill is documentation-only, so the venv only *runs the builder*. It does **not** decide the spec's target Odoo version (that is Q3). Choosing which venv runs the builder is still the user's call. **Never silently fall back to an older venv** because the newest one is missing `python-docx`. List every stack's venv and its tooling status:
 
 ```bash
-python3 -c "import docx" 2>&1
+for v in $(ls -d versions/v*/odoo/.venv 2>/dev/null | sort -V); do
+  printf "%s: " "$v"; "$v/bin/python" -c "import docx, PIL; print('docx+PIL ok')" 2>&1 | tail -1
+done
 ```
 
-**If the import fails, do NOT try to install it.** `pip install` is denied by the Guard Hook — dependency changes are the technical consultant's job, and on Odoo.sh they are declarative. Stop and tell the user:
+Then:
 
-> *"`python-docx` isn't available on this branch. It's declared in the Project Repo's `requirements.txt` and installed by the platform at build time — this isn't something I can install from here. Ask the technical consultant to add `python-docx` to `requirements.txt` and rebuild the branch, then re-run this skill."*
+- **Exactly one venv, and it has `python-docx`** → use it silently; no ask.
+- **Otherwise** → one `AskUserQuestion` (header `Build venv`), with one option per venv. List the **newest venv first as (Recommended)**. If a venv is missing `python-docx`, label its option "Install into v<N>" and say in the description that choosing it runs the install (P4: it mutates the venv; choosing the option is the confirmation). Put venvs that are already ready below, labelled "Use v<N> as-is".
+- Set `$VENV` to the chosen venv and reuse it for every venv command in this skill.
 
-The builder fails fast with `ModuleNotFoundError` if invoked without it — no silent fallback to plain-text output. Halting here costs seconds; discovering it after a 40-minute interview costs the interview (user story 24).
+**Install via `"$VENV/bin/python" -m pip install python-docx`, never `"$VENV/bin/pip"`.** The `pip` launcher's shebang hard-codes the venv's original path. A venv that has been moved (e.g. `v20/` → `versions/v20/`) fails with `bad interpreter`, while `python -m pip` keeps working. The builder fails fast with `ModuleNotFoundError` if it is invoked without `python-docx`. There is no silent fallback to plain-text output.
 
-**`Pillow`** — ships in Odoo's own `requirements.txt`, so it is present on every Odoo.sh build. Check happens at the **Diagram-choice checkpoint** (after Q6, see § Diagram-choice checkpoint) — not at skill entry, because BPMN need is content-dependent. The checkpoint runs the import-test and demotes BPMN choices to `flow_strip` if it is missing; it never offers to install. The builder also raises `ImportError` defensively at use-site as a safety net.
+**`Pillow`** — Pillow ships with Odoo's `requirements.txt`, so it's already present on any Odoo dev venv and on Odoo.sh. Bare-Python-venv invocations are the only realistic miss. Check happens at the **Diagram-choice checkpoint** (after Q6, see § Diagram-choice checkpoint) — not at skill entry, because BPMN need is content-dependent. The checkpoint runs the import-test, prompts to install via `AskUserQuestion` per P4 if missing, or demotes BPMN choices to `flow_strip` on decline. The builder also raises `ImportError` defensively at use-site as a safety net.
 
 ## Fixed Questions (Ask In This Order)
 
@@ -122,6 +126,7 @@ The builder fails fast with `ModuleNotFoundError` if invoked without it — no s
 2. **Interview mode by default — `AskUserQuestion` for every question.** Every question goes through the `AskUserQuestion` tool with 2–4 concrete options drawn from the relevant checklist, plus implicit Other for free-text. Plain-text questions in user-facing prose are violations, regardless of how rhetorical they feel. **EXCEPTIONS**: Q1 (task code), Q2 (client name), and Q5 (business need brief) are the only standing free-text questions in the entire skill — see § Free-text carve-outs below. No other exceptions exist; if you are tempted to ask a free-text follow-up outside these three, you are violating this rule.
 3. **Free-text opt-in is per-question, on user signal only.** "Let me write a paragraph" opts out for ONE question; resume `AskUserQuestion` for the next. The opt-out doesn't propagate.
 4. **Reflect briefly between asks — never combine reflection with the next question.** 1–2 sentences summarising the previous answer, then a NEW `AskUserQuestion` call for the next ask. The reflection and the next ask are separate turns.
+5. **Options fit the decision.** When more than one option can hold at once, set `multiSelect: true`. When a policy question's right answer can differ by company or situation — or the brief says "option to" — include a "Make it a setting (default: <recommended>)" option. That is configurability the stakeholder asked for, not the speculative kind P1 rules out. Options that name an existing Odoo element follow § Source grounding.
 
 The drift this invariant prevents: bundling appears at *transitions* — moving from one section to the next, or after a long reflection block, where the model is tempted to "just also confirm one more thing while I'm here." Don't. Make the next ask its own turn.
 
@@ -146,9 +151,19 @@ The skill then parses the reply into three Business Case dimensions (problem / a
 
 ### Necessity filter (P12) per question
 
-Before asking each question: is the answer inferable from the invocation, an on-disk artifact, or a read-only pre-flight? Would the answer materially change the spec? If either gate fails, skip and append the inference to `dev_handoff.assumptions` in SPEC_DATA (see § Dev-Only Hand-off to the Technical Consultant) — `{question, inferred, source}`. The docx stays clean; the inferences travel onward structurally rather than as a docx appendix. If the user wants to see the running set during the interview, point them at `_reference/_build_<task-code>.py`.
+Before asking each question: is the answer inferable from the invocation, an on-disk artifact, or a read-only pre-flight? Would the answer materially change the spec? If either gate fails, skip and append the inference to `dev_handoff.assumptions` in SPEC_DATA (see § Dev-Only Hand-off to odoo-plan-development) — `{question, inferred, source}`. The docx stays clean; the inferences travel to plan-dev structurally rather than as a docx appendix. If the user wants to see the running set during the interview, point them at `_reference/_build_<task-code>.py`.
 
 Tie cases (two interpretations roughly equally plausible) surface alternatives + ask per P12's tie-case rule — never silently pick.
+
+### Source grounding (P9) — every claim about standard Odoo
+
+A spec describes changes on top of standard Odoo, so it constantly names what is already there: menus, tabs, buttons, settings, groups, status values, standard messages, what a standard action does. Write those from the **target version's source**, never from memory or another version. Memory is how a spec ends up routing users through a button the target version doesn't have.
+
+- **Pin the source after Q3.** Set `$SRC` to `versions/v<major>` for the chosen version and run `python3 skills/_shared/scripts/_check_odoo_source.py --probe --root-prefix $SRC`; pass `--root-prefix $SRC` on every later call. If the probe fails, say once that standard-Odoo references can't be verified for that version, record `dev_handoff.process_log.source_unverified = "<YYYY-MM-DD>"`, and describe those references by their business effect instead of by element names.
+- **Check before you name.** Before an interview option, a table cell or a message names an existing element or behaviour, confirm it in `$SRC`: the view XML for screens, tabs and buttons — including the states a button shows in (`invisible`) and who sees it (`groups`); the security XML for group names; the model for status values and for what a method actually does (every branch the spec relies on); the settings view for setting labels. A method existing doesn't mean a button calls it, and a button existing doesn't mean it shows in every state. [`odoo-mock-design/reference/field_placement.md`](../odoo-mock-design/reference/field_placement.md) § Discovery recipe shows how to read a screen from its views, inheritance included.
+- **Record what you checked.** Append each claim the spec relies on to `dev_handoff.source_facts` as `"<claim> — <path>:<line>"`. Plan-dev reuses these instead of re-verifying.
+- **Can't confirm it → don't name it.** Describe the business effect or ask; never fill the gap from memory.
+- **Sweep before the anchor pass.** Re-read SPEC_DATA for references to existing Odoo elements that have no `source_facts` entry, and verify or reword each. Whenever a claim is refuted — by this sweep, an anchor, or a downstream mock — grep SPEC_DATA for the term and its synonyms and fix **every** occurrence, not just the row that was flagged.
 
 ### Q1 — Q2: Identification
 
@@ -158,9 +173,9 @@ Tie cases (two interpretations roughly equally plausible) surface alternatives +
 
 ### Q3 — Q4: Framing
 
-**Q3. Odoo version.** `AskUserQuestion`. Options: the version implied by the active venv's `release.py` as the first (Recommended) option, plus 1–2 plausible alternatives (17 / 18 / Online). Renders as the single-line Section 1 of the docx (just the version number, no paragraph).
+**Q3. Odoo version.** `AskUserQuestion`. Options: one per Odoo version installed in the workspace (each `versions/v*/odoo/odoo/release.py`), newest first as (Recommended), then "Odoo Online / another version". The build venv chosen at entry does not decide this. Renders as the single-line Odoo Version section (just the version number, no paragraph). Then pin the source for that version (§ Source grounding).
 
-**Q4. Type of development.** `AskUserQuestion`. Options: New App / Extension of standard Odoo / Enhancement to existing custom / Migration. Section 4 of the docx expands the chosen category into the reuse-vs-net-new wording; multiple categories may apply (`multiSelect: true`).
+**Q4. Type of development.** `AskUserQuestion`. Options: New App / Extension of standard Odoo / Enhancement to existing custom / Migration. The Apps Impacted section expands the chosen category into the reuse-vs-net-new wording; multiple categories may apply (`multiSelect: true`).
 
 ### Q5: Business need brief (free-text — see carve-out above)
 
@@ -170,7 +185,7 @@ Ask shape (paste verbatim or paraphrase): *"Tell me the business need in your ow
 
 If the user's reply is ambiguous on one of the three dimensions, the skill follows up with a single targeted `AskUserQuestion` turn for that dimension only — never bundle. Example: brief gives strong problem + affected-role signal but no "why it matters" → one `AskUserQuestion` ask for why-it-matters, with options drawn from [consultant.md](../_shared/role_checklists/consultant.md). Other dimensions stay derived from the brief.
 
-**Optional `out_of_scope` row.** If the user volunteers a scope boundary in the Q5 brief (or the Critical Brief Evaluation Check 1 narrows scope and the user explicitly states what fell out), the skill writes that as a fourth `business_case.out_of_scope` row in SPEC_DATA. The builder renders it as a fourth row in the §2 Business Case table (`["Out of scope", <statement>]`); when the field is absent the §2 table stays at three rows. Never invent an out-of-scope row — only write it when the user explicitly bounded scope.
+**Optional `out_of_scope` row.** If the user volunteers a scope boundary in the Q5 brief (or the Critical Brief Evaluation Check 1 narrows scope and the user explicitly states what fell out), the skill writes that as a fourth `business_case.out_of_scope` row in SPEC_DATA. The builder renders it as a fourth row in the Business Case table (`["Out of scope", <statement>]`); when the field is absent the table stays at three rows. Never invent an out-of-scope row — only write it when the user explicitly bounded scope.
 
 ### Slug derivation (auto, post-Q5 — no question is asked)
 
@@ -195,7 +210,7 @@ The reflection between Q5 and Q6 surfaces the derived slug inline: *"Locking the
 
 ### Q6: Workflow enumeration
 
-**Q6. How many distinct business workflows does this development cover?** `AskUserQuestion`. Options: 1 / 2–3 / 4–5 / 6+ — choose the bucket, then list the names (one ask per turn — the bucket pick and the name list are two separate `AskUserQuestion` calls). The reference pattern has five; most specs land between 1 and 8. Each named workflow becomes a row in the Section 5 workflows table AND a sub-section under Section 6 (Per-Workflow Detail). The Section 5 summary for each workflow is **10–12 words**; no block diagram.
+**Q6. How many distinct business workflows does this development cover?** `AskUserQuestion`. Options: 1 / 2–3 / 4–5 / 6+ — choose the bucket, then list the names (one ask per turn — the bucket pick and the name list are two separate `AskUserQuestion` calls). The reference pattern has five; most specs land between 1 and 8. Each named workflow becomes a row in the Functional Layout table AND a sub-section under Per-Workflow Detail. Its Functional Layout summary is **10–12 words**; no block diagram.
 
 > **When the skill is *proposing* the workflow decomposition** (the delegated-brief case — the user said "you draft it"), the rigid count-then-names two-step is awkward: you already know the candidate workflows. Collapse it into a **single scope-shaped `AskUserQuestion`** whose options are concrete workflow-set choices (e.g. "Report only (1 WF)" / "Report + expected-date field (2 WF)" / "Report + field + config (3 WF)"), each describing exactly what's in scope. That one ask settles both count and names, and doubles as Critical-Brief-Evaluation Check 1 (scope sanity).
 
@@ -207,7 +222,7 @@ The skill's job is not transcription. After Q6 lands the workflow list, **pause 
 
 The skill runs four checks against the Q5 brief + Q4 + Q6's accumulated answers; surface only the ones where the answer trips a concrete trigger. If all four come back clean, skip this section silently. **Honest passes happen** — a single tightly-scoped workflow against a focused brief is the most common clean-pass case. Do not manufacture concerns to justify running the section; an empty critique on a clean brief is the right outcome.
 
-Each ask is **one `AskUserQuestion` turn** per the interview invariant (§ Interview discipline) — never bundle critiques. "We have a scope-sanity concern and also a standard-Odoo-overlap concern" is two asks, in two turns, with reflection on the first answer landing before the second ask is posed. The user can accept the concern (which may revise Q5 or Q6 in place), explain why the concern doesn't apply (which gets noted on the relevant per-workflow Success Criteria subsection), or override (which is acknowledged inline in Section 3's "Apps Impacted" reuse-vs-net-new wording — no separate appendix).
+Each ask is **one `AskUserQuestion` turn** per the interview invariant (§ Interview discipline) — never bundle critiques. "We have a scope-sanity concern and also a standard-Odoo-overlap concern" is two asks, in two turns, with reflection on the first answer landing before the second ask is posed. The user can accept the concern (which may revise Q5 or Q6 in place), explain why the concern doesn't apply (which gets noted on the relevant per-workflow Success Criteria subsection), or override (which is acknowledged inline in the Apps Impacted reuse-vs-net-new wording — no separate appendix).
 
 ### Check 1 — Scope sanity
 
@@ -219,7 +234,7 @@ Force a choice. "Both" is not an answer. The spec scope is what's in Q6 at the e
 
 ### Check 2 — Standard-Odoo overlap
 
-**Trigger**: a workflow's described functionality already exists in standard Odoo. **Run `python3 skills/_shared/scripts/_check_odoo_source.py --models <every standard model named in Q5/Q6 / overlap candidates>` once before this check fires** — its output is the source of truth for module ownership / edition / existence. `exists=false` halts the check (ask the user to clarify the model name); `dev_handoff.overlap_decisions[].module` MUST be the script's resolved module, never inferred from memory. Examples to recognise:
+**Trigger**: a workflow's described functionality already exists in standard Odoo. **Run `python3 skills/_shared/scripts/_check_odoo_source.py --root-prefix $SRC --models <every standard model named in Q5/Q6 / overlap candidates>` once before this check fires** — its output is the source of truth for module ownership / edition / existence. `exists=false` halts the check (ask the user to clarify the model name); `dev_handoff.overlap_decisions[].module` MUST be the script's resolved module, never inferred from memory. Examples to recognise:
 
 - "credit hold / credit limit" → `res.partner.credit_limit` + the standard credit-control flow already cover the common case.
 - "lot / serial tracking" → `stock.lot` + `stock.group_production_lot` already cover this once the feature group is on.
@@ -227,8 +242,9 @@ Force a choice. "Both" is not an answer. The spec scope is what's in Q6 at the e
 - "approval workflow" → `studio.approval.rule` / `web_studio` covers the standard approval pattern.
 - "expense reimbursement" → `hr_expense` covers it.
 - "subscription billing" → `sale_subscription` covers it.
+- a gate or warning on a standard action → look first for an existing mechanism in the module that owns the action (a warning that can block, an approval rule, a lock date) before proposing a new one; record reuse / extend / reject in `overlap_decisions`.
 
-**Ask**: "Workflow X overlaps with standard Odoo's `<module>`. Options: (a) **use standard Odoo as-is**, with a one-line 'configuration only' note in Section 4; (b) **extend the standard module** with a small custom addon — usually the right answer; (c) **build custom from scratch** — only if you can name a concrete reason standard Odoo doesn't fit. Which?"
+**Ask**: "Workflow X overlaps with standard Odoo's `<module>`. Options: (a) **use standard Odoo as-is**, with a one-line 'configuration only' note in Apps Impacted; (b) **extend the standard module** with a small custom addon — usually the right answer; (c) **build custom from scratch** — only if you can name a concrete reason standard Odoo doesn't fit. Which?"
 
 The Consultant checklist's pitfall reminder applies here: usually a "Just like X but tailored for us" framing means the standard module would fit with configuration. Push back unless the user surfaces a genuine fit gap.
 
@@ -248,21 +264,21 @@ The Consultant checklist's pitfall reminder applies here: usually a "Just like X
 
 Checks 1–4 are trigger-and-example driven — they fire when a named pattern matches. This one is different: it is a **reasoning pass**, not a lookup, and it is the check that catches the gaps no example in this file names. The recurring failure is not "the skill lacked an example" — it is "the skill never reasoned forward from what the feature logically *entails*." Two flavours, both caught by thinking through consequences rather than matching a pattern:
 
-**(a) Domain-invariant consequences.** Name the platform objects the feature touches, recall each object's **hard invariants** (the facts that are *always* true of it in Odoo), and for every invariant the brief is silent on, raise a question. The invariant forces the question — you don't wait for the user to volunteer it.
+**(a) Domain-invariant consequences.** Name the platform objects the feature touches, take each object's states, available actions and **hard invariants** (the facts that are *always* true of it in Odoo) from `$SRC` rather than memory (§ Source grounding), and for every invariant the brief is silent on, raise a question. The invariant forces the question — you don't wait for the user to volunteer it.
 
 - The method, not the list: `feature touches object X → X has invariant I → does the brief answer what I implies? → if not, ask.`
-- Illustrative invariants (**NOT exhaustive** — derive the ones *your* feature actually touches; do not treat this as a checklist to match): stock / lots / quants are **location- and warehouse-scoped** (any lot / serial / availability feature must answer "scoped to which warehouse / location?"); monetary amounts are **currency- and company-scoped**; quantities must **reconcile** (the parts sum to the whole); dates have **ordering** (start ≤ end); a record's **company** constrains the companies of every record it points at; tracked products are **lot-or-serial**, never both.
+- Illustrative invariants (**NOT exhaustive** — derive the ones *your* feature actually touches; do not treat this as a checklist to match): stock / lots / quants are **location- and warehouse-scoped** (any lot / serial / availability feature must answer "scoped to which warehouse / location?"); monetary amounts are **currency- and company-scoped**; quantities must **reconcile** (the parts sum to the whole); dates have **ordering** (start ≤ end); a record's **company** constrains the companies of every record it points at; tracked products are **lot-or-serial**, never both; **versioned / effective-dated** records (contracts, employee versions, price lists) — a rule must say which version it reads.
 - The tell that you skipped this: the *user* surfaces a scoping or consequence question you should have asked ("shouldn't this consider warehouse?"). When that happens, the fix is to add the **invariant class** to your reasoning, not just patch in that one example.
 
 **(b) Action-guard completeness.** For **every state-changing action** the workflow introduces or relies on (Confirm, Validate, Post, Approve, Assign, Reserve, …), ask: *what happens when its precondition is not met?* Each gated action needs its unmet-precondition path written into **Business Rules & Validations** and surfaced as a negative-path user story — never left implicit. Enumerate the actions first, then walk each one's failure case; "the happy path works" is not coverage.
 
-- The method: `list every state-changing action → state each one's precondition → write the error / guard path for when that precondition fails.`
+- The method: `list every state-changing action → state each one's precondition → write the guard path for when it fails: the exact message the user sees, and where it shows.`
 - The tell that you skipped this: a Business Rule exists for the *success* condition but there is no rule or message for the action firing while that condition is unmet (e.g. a rule says "all units must be allocated to confirm" but nothing says what the user sees when they press **Confirm** on an unallocated line).
 - Like Check 4, (b) often can't be fully walked until the deep-dive has enumerated the actions — re-run it as user stories accumulate.
 
 **(c) Lifecycle-inverse & contention completeness.** For **every commit / lock / reservation** the workflow introduces (reserve a lot, lock a field after confirmation, claim a unit), reason forward to its *whole* lifecycle — the brief almost always gives the forward action and is silent on the rest. (principle #15 + #16)
 
-- The method: `for each commit/lock/reserve → what RELEASES it (cancel, unreserve)? what RESTORES it (stock becomes available again)? what does the TERMINAL state (cancel / expire / done) do to it? can ANOTHER document claim the same unit — and what frees a stale claim?`
+- The method: `for each commit/lock/reserve → what RELEASES it (cancel, unreserve) — in every state the record can be in while the commitment exists (states and the actions each allows, from $SRC)? what RESTORES it (stock becomes available again)? what does the TERMINAL state (cancel / expire / done) do to it? can ANOTHER document claim the same unit — and what frees a stale claim?`
 - Each answer lands in an **existing** subsection — inverse behaviours in **Automated Behaviours**, lock and contention rules in **Business Rules & Validations** — never a new section; `N/A — <specific reason>` when the workflow commits / locks / reserves nothing.
 - The tell that you skipped this: the spec says "on confirm the chosen lots are reserved" but never says what *cancelling* does to that reservation, or whether two quotations can reserve the same serial.
 
@@ -275,13 +291,13 @@ The critical evaluation **amends Q5 and Q6 in place**. The docx reflects the pos
 What lands where:
 
 - **Q6 (revised)** — workflow list may shrink or grow; the per-workflow detail follows the final list.
-- **Q5 (revised)** — business need brief may tighten to reflect what was kept in scope; the Business Case table (Section 2) and the per-workflow Success Criteria subsections rebuild from the revised brief.
-- **Section 4 (Apps Impacted)** — natural home for "we use standard X for this; we extend Y for that". The wording must make explicit what's reused vs net-new (e.g., "Sales — standard Odoo flow, no changes" vs "Sales — extended to support serial-selection at the SO line").
-- **User overrides on Check 2** (chose custom despite standard-Odoo overlap) are folded into the Section 4 "Apps Impacted" wording rather than a separate appendix — e.g., `Sales — extended despite overlap with standard credit-hold flow; reason: <user-supplied>`. The Open Nits appendix was removed per the conciseness pass.
+- **Q5 (revised)** — business need brief may tighten to reflect what was kept in scope; the Business Case table and the per-workflow Success Criteria subsections rebuild from the revised brief.
+- **Apps Impacted** — natural home for "we use standard X for this; we extend Y for that". The wording must make explicit what's reused vs net-new (e.g., "Sales — standard Odoo flow, no changes" vs "Sales — extended to support serial-selection at the SO line").
+- **User overrides on Check 2** (chose custom despite standard-Odoo overlap) are folded into the Apps Impacted wording rather than a separate appendix — e.g., `Sales — extended despite overlap with standard credit-hold flow; reason: <user-supplied>`. The Open Nits appendix was removed per the conciseness pass.
 
 ### When to skip
 
-- **User explicitly asks**: `--skip-critique`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.critique_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to the Technical Consultant) so the implementer knows the critique wasn't run on its inputs. The docx stays clean — no top-of-document SKIPPED banner. Mirrors the anchor-pass skip convention.
+- **User explicitly asks**: `--skip-critique`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.critique_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to odoo-plan-development) so plan-dev knows the critique wasn't run on its inputs. The docx stays clean — no top-of-document SKIPPED banner. Mirrors the anchor-pass skip convention.
 - **Iteration on an already-critiqued spec** (re-running on the same task code with unchanged Q5/Q6) — the critique was done the first time; skip silently. If Q5 or Q6 changed since the first pass, re-run.
 
 ### What this is NOT
@@ -299,11 +315,13 @@ Surface the per-workflow Process Flow diagram choices in a single inventory befo
 - **flow_strip** if 1 actor and ≥3 sequential steps with no branching
 - **none** otherwise (1 actor, ≤2 steps, or non-sequential / stateless)
 
-**Pillow pre-flight** — only if the computed inventory includes ≥1 BPMN. Pillow ships in Odoo's own `requirements.txt`, so it is present on every Odoo.sh build; a miss here is unexpected.
+**Pillow pre-flight + install gate** — only if the computed inventory includes ≥1 BPMN. Pillow ships with Odoo's `requirements.txt`, so present on any Odoo dev venv / Odoo.sh; the missing-Pillow case is the bare-Python-venv invocation.
 
-1. Run `python3 -c "import PIL" 2>&1`.
+1. Run `"$VENV/bin/python" -c "import PIL" 2>&1` (`$VENV` resolved at skill entry — see the python-docx pre-flight).
 2. **If import succeeds**: proceed to the accept-or-override ask.
-3. **If import fails**: demote all BPMN entries in the inventory to `flow_strip` and call out the demotion in the narration. Do **not** offer to install it — `pip install` is denied by the Guard Hook. Mention once that the technical consultant can restore BPMN by adding Pillow to the branch's `requirements.txt`.
+3. **If import fails**: `AskUserQuestion` per P4 (pip install mutates the venv) with two options:
+   - **Install Pillow now** — run `"$VENV/bin/python" -m pip install Pillow` via Bash, then proceed with the original inventory.
+   - **Skip Pillow** — demote all BPMN entries in the inventory to `flow_strip` (call out the demotion in the narration); proceed with the demoted inventory.
 
 The `ImportError` in `render_bpmn_image` (build-time) is the defensive safety net for skill-bypass paths — it should not fire when this checkpoint is honoured.
 
@@ -337,6 +355,8 @@ The first eight roles each own at least one subsection (see output mapping table
 
 **Pre-ask gate (drift guard).** Before posting any `AskUserQuestion` in this section, you must be able to name aloud (a) which role checklist file the question is sourced from and (b) the specific "Key Questions to Ask" line it paraphrases. If you cannot, **stop, open the checklist, re-anchor.** What you would have asked is docx-shape-driven, not role-driven, and the spec will end up describing the table you wanted to fill rather than the system you are spec'ing.
 
+**Before leaving the ux_ui role, run two traces.** (1) Every value a Screens row, a success criterion or a message says the user sees maps to a field — in New Fields, an earlier workflow, or a named standard field. (2) Every view a Screens row describes on a new model is listed in that model's Views Required. Fix a gap in the subsection that owns it; a display with no field behind it is a missing field, not a wording problem.
+
 ### Output mapping — where each role's answers land
 
 The table below is the **output mapping**, not the interview index. Read it as `role → subsections it feeds`: when you finish walking a role checklist, its answers land in the docx subsections shown. Walking the table top-to-bottom (subsection-by-subsection) is the documented anti-pattern — see § How to run the walk above.
@@ -366,7 +386,7 @@ Walk these three roles **last** in the per-workflow walk so their nudges layer o
 **Tone enforcement.** Six style principles apply to every subsection (see [`reference/content_outline.md`](reference/content_outline.md) § Style principles). Read these BEFORE writing any cell — they shape the prose, not just review it.
 
 1. **Business language first, technical identifiers parenthetical.** Lead with the user-facing concept ("Sales Order line"); drop the technical name in parens only when the dev audience genuinely needs the anchor, and only once per concept per section. Avoid `_inherit`, `_compute`, `xpath`, `@api.depends`, `post_init_hook`, `record rule`, `ACL`, `domain` in body prose — soften to business equivalents.
-2. **Describe what changes, not what stays.** Only **new** content per workflow. If a workflow extends an existing concept, name the concept once in business terms and describe the additions. Don't enumerate inherited fields, existing menus, existing automations, or existing access rights.
+2. **Describe what changes, not what stays.** Only **new** content per workflow. If a workflow extends an existing concept, name the concept once in business terms and describe the additions. Don't enumerate inherited fields, existing menus, existing automations, or existing access rights. An existing screen whose content, buttons or behaviour the feature changes **is** a change: it gets its own Screens row, marked `(existing)` (content_outline.md § Style principles 2).
 3. **The docx's primary focus is the customization required.** Every subsection that DOES have new content should make the new development as explicit as possible — not bury it in narrative. Tables before prose. Standard Odoo behaviour is implied unless it's being modified.
 4. **Specificity over abstraction.** Prefer concrete Odoo-mapped phrasing over consulting / business jargon. If a phrase doesn't map to a concrete Odoo concept, behaviour, or visible change, replace it with one that does. Three sub-rules:
    - **Concrete over abstract.** ❌ "approval governance" → ✅ "approval workflow on Internal Transfers". ❌ "in-transit modelling" → ✅ "transit-location modelling between warehouses". ❌ "capacity control" → ✅ "per-van load cap". ❌ "working-capital drag" → ✅ "working capital tied up in unsold stock". ❌ "reconciliation gaps" → ✅ "books diverge from physical stock".
@@ -377,7 +397,7 @@ Walk these three roles **last** in the per-workflow walk so their nudges layer o
    - **Capitalisation convention.** Title-case for named roles / groups / Odoo features when referring to the named entity: *Store Keeper, Sales Agent, Accountant, Supervisor, Approvals app, Internal Transfer*. Lowercase for adjectival qualifiers in prose: *sender Store Keeper, receiver Accountant* (sender / receiver are adjectives, not part of the role name).
 6. **Cross-workflow references restate the condition.** When workflow N references workflow M's behaviour, restate the trigger or condition in full rather than referencing an internal label. ❌ *"Studio approval cycle does not attach (Workflow 1 skip-rule a)"* → ✅ *"Studio approval cycle does not attach (destination warehouse's Resupply From is empty)"*. Internal labels (*"step 7"*, *"skip-rule a"*, *"rule 3"*) are invisible from outside that workflow — restate the condition each time.
 
-The interview questions still pull from the role checklists (which are written for a technical audience), but the **answers landing in the docx are translated to business language** before they're written and pass these six rules. Stage 1 lint catches the worst technical-jargon leaks and the post-interview anchor pass surfaces tone drift.
+The interview questions still pull from the role checklists (which are written for the technical audience of `odoo-plan-development`), but the **answers landing in the docx are translated to business language** before they're written and pass these six rules. Stage 1 lint catches the worst technical-jargon leaks and the post-interview anchor pass surfaces tone drift.
 
 **Interview discipline (same as Fixed Questions — invariant)** — every per-workflow question is a single `AskUserQuestion` turn with 2–4 options drawn from the role checklist file you are currently walking. One atomic ask per turn. **This is the highest-drift section of the entire skill**: 11 role checklists × N workflows means a long sequence of role asks, and bundling temptation compounds with fatigue. Pause and re-read the § Interview discipline invariant before opening each role checklist if you feel tempted to combine. Never ask "what fields does the user see, and which are required?" — that's two asks across two turns.
 
@@ -403,13 +423,13 @@ Default: ask 2–4 questions per **applicable role checklist** per workflow, max
 
 A workflow may opt into a BPMN-style swimlane diagram for its Process Flow subsection by populating a `bpmn_diagram` block in its SPEC_DATA entry. The builder's `render_bpmn_image` helper rasterises the lanes to a PNG via Pillow; `make_diagram_heading` emits the diagram's `title` + `subtitle` as **real docx text** above the image (so they stay at true point size — a wide swimlane scaled to the column would otherwise shrink the caption to a few points), and `make_bpmn_diagram` embeds the PNG at its readable native width capped to the content column (`_diagram_width`). If the block is absent, the workflow falls back to a `flow_strip` (modern block diagram, see below) or to nothing if neither is set.
 
-The renderer is tuned to read like a human drew it in a proper BPMN tool, not an auto-layout engine: **solid plum role sidebars** with white role names, **alternating lane tints**, lane dividers and an outer pool frame for clear role separation; **orthogonal (90°) connectors** that leave and enter shapes at their side-centres with right-angle elbows through an inter-lane channel; nodes **clamped inside their own lane** (an error-end event never floats across a swimlane boundary); and label/shape sizes chosen so type stays legible on the page. Keep diagrams to roughly **≤6 columns** where you can — a portrait A4 figure scaled to the content column gets small per-column space, so a long flow reads better split across two workflows or simplified.
+The renderer is tuned to read like a human drew it in a proper BPMN tool, not an auto-layout engine: **solid plum role sidebars** with white role names, **alternating lane tints**, lane dividers and an outer pool frame for clear role separation; **orthogonal (90°) connectors** that leave and enter shapes at their side-centres, keep the flow horizontal and use the fewest bends (see § Edge auto-routing); nodes **clamped inside their own lane** (an error-end event never floats across a swimlane boundary); and label/shape sizes chosen so type stays legible on the page. Keep diagrams to roughly **≤6 columns** where you can — a portrait A4 figure scaled to the content column gets small per-column space, so a long flow reads better split across two workflows or simplified.
 
 **When to choose BPMN over flow_strip.** Use the BPMN diagram when the workflow has either (a) **≥2 actors** (multiple swimlanes — e.g. a Sales Rep + the Sales Order system + a Warehouse user), or (b) a **non-linear flow** (decision gateway, error branch, parallel paths). Use the `flow_strip` for purely sequential single-actor workflows with ≥3 steps.
 
 **Flow strip (modern block diagram).** When a workflow specifies `flow_strip` as a list of step labels, the builder renders a modern PIL-based PNG: rounded plum-outlined pills with an accent top-stripe, numbered step badges, and clean plum arrows between them — visually consistent with the BPMN diagram language. `render_flow_strip_image` + `make_flow_strip_diagram` produce and embed it (also at readable native width). The legacy table-based `make_flow_strip()` renderer remains as the **fallback path** only (when Pillow is unavailable) — white-fill cells with a plum border, numbered `1. … 2. …` prefixes, and floating `→` connectors between pills. The graceful degradation reads as a refinement of the same flow language, not a different aesthetic.
 
-**Pillow dependency.** Both BPMN AND the modern flow_strip use Pillow. `render_bpmn_image` raises `ImportError` if Pillow is missing (defensive — should not fire when the Diagram-choice checkpoint is honoured). `flow_strip` degrades gracefully to the legacy table renderer if Pillow is missing — the docx still builds. Pillow ships in Odoo's own `requirements.txt`, so it is present on every Odoo.sh build; a miss is unexpected and is handled by demotion, never by installing (`pip install` is denied by the Guard Hook).
+**Pillow dependency.** Both BPMN AND the modern flow_strip use Pillow. `render_bpmn_image` raises `ImportError` if Pillow is missing (defensive — should not fire when the Diagram-choice checkpoint is honoured). `flow_strip` degrades gracefully to the legacy table renderer if Pillow is missing — the docx still builds. Install with `"$VENV/bin/python" -m pip install Pillow` (the venv resolved at skill entry). Pillow ships with Odoo's `requirements.txt`, so it's already present in any Odoo dev venv and on Odoo.sh; the missing-Pillow case is the bare-venv scenario only.
 
 ### Schema
 
@@ -478,11 +498,13 @@ If the natural label is a state, it usually belongs on an `end_event` (terminal 
 
 ### Edge auto-routing (orthogonal / 90° elbows)
 
-The renderer routes every connector with right angles, picking the path automatically from the source and target positions — **no manual coordinates required**. Lines exit and enter at shape **side-centres** (never an arbitrary corner) and turn at 90°:
+The renderer routes every connector with right angles, picking the path automatically from the source and target positions — **no manual coordinates required**. Lines exit and enter at shape **side-centres** (never an arbitrary corner), turn at 90°, and **prefer horizontal connection points with the fewest bends** so the flow reads left-to-right:
 
 - **Same lane, forward (col increases)** → straight horizontal (source right-centre → target left-centre); a Z-elbow if the two sit at different heights.
 - **Same lane, backward** → mirror of the above (e.g. a gateway's "No" branch to an error-end placed one column back).
-- **Cross-lane** → exit the facing edge (bottom going down / top going up), stub into the lane margin, then run the long vertical leg in a **column gutter** — the node-free band halfway between two column centres, half a column to the source-side of the target column — and stub into the target. Routing the riser through the gutter (not down the source or target column) means it can never pierce an intermediate node that happens to share a column the edge passes through (e.g. a second task stacked in the same column in another lane).
+- **Cross-lane, different columns** → keep the flow horizontal: exit the source's facing **side** (right when moving forward), make the single vertical run in the **column gutter** (the node-free band halfway between two column centres — before the target, or after the source if that side is obstructed), and enter the target's facing side. A Z with at most two bends — never a bottom/top stub-gutter-stub.
+- **Gateway branch to another lane** → leave the diamond's top/bottom vertex and turn once into the target's side (BPMN L-shape), so it never shares the side exit used by the same-lane branch.
+- **Cross-lane fallback** (same column, or the Z-route would cross another shape) → exit the facing edge (bottom going down / top going up), stub into the lane margin, run the vertical leg in a column gutter, and stub into the target.
 - **Same lane + same column** (stacked via `y_offset_in_lane`) → a short vertical connector.
 
 Lines are drawn **before** the shapes so their ends tuck under the node outlines. **Edge labels are drawn in a final pass, on top of every shape and shape-label**, so a `"Yes"`/`"No"`/branch label is never buried under a node or another label. Each edge may carry an optional `label` placed on its first visible run (the first segment long enough to clear the exit stub, so the label sits on a readable length rather than crammed against the source shape) with a white halo, and an optional `label_colour` (`"success"` paints green, `"warn"` paints orange, omitted defaults to ink). The connector line itself is always plum; only the label takes the colour.
@@ -493,15 +515,19 @@ The builder writes the rendered PNG to `<spec-folder>/_reference/<task-code>-wf<
 
 ## Post-Interview Anchor Pass (quality review, not a gate)
 
-After the linear per-workflow walkthrough completes — the docx is already fully drafted on disk at this point — fire the full 14-anchor set in parallel. **Anchor target: hand each anchor the absolute path to `_reference/_build_<task-code>.py` — its `SPEC_DATA` dict is the readable source of truth.** Do NOT point anchors at the `.docx`: it is a binary zip the Read/Grep-only anchors cannot parse, and the builder emits no JSON intermediate. (Tell each anchor explicitly that the `.docx` is the rendered form and `SPEC_DATA` is what to audit.) This is a **quality review**, not a destructive-action gate: the docx exists, the user can already open it, and the anchors surface drift between what the role checklists demand and what landed in the document.
+After the linear per-workflow walkthrough completes — the docx is already fully drafted on disk at this point — fire the full 14-anchor set in parallel. **Anchor target: hand each anchor the absolute path to `_reference/_build_<task-code>.py` — its `SPEC_DATA` dict is the readable source of truth.** Do NOT point anchors at the `.docx`: it is a binary zip the Read/Grep-only anchors cannot parse, and the builder emits no JSON intermediate. (Tell each anchor explicitly that the `.docx` is the rendered form and `SPEC_DATA` is what to audit.)
+
+**Spec-mode brief — include it in every anchor prompt.** The anchors are written for plan-dev plan files, so each one needs: the builder path and that SPEC_DATA is the dict near the end of the file (read it in full); the target Odoo version and its source root `$SRC`, with the instruction to check every claim about standard Odoo — menus, tabs, buttons and the states they show in, settings, groups, standard messages and behaviour — against that source and to flag any such claim that has no `dev_handoff.source_facts` entry; and that plan-only rules (P11 plan mode, the plan Output Contract) don't apply.
+
+This is a **quality review**, not a destructive-action gate: the docx exists, the user can already open it, and the anchors surface drift between what the role checklists demand and what landed in the document.
 
 ### Invocation
 
-**ALL 14 Agent calls go in ONE message, foreground only.** The single-batched-message rule survives even though we're no longer using it as a plan-mode gate — running anchors sequentially or in separate messages defeats the parallel-perspective benefit. See [`../_shared/anchor_pass.md`](../_shared/anchor_pass.md) for the procedural mechanics (anchor invocation, reconciliation, tag namespace); only the anchor *target* (here, the `_build_<task-code>.py` SPEC_DATA — see § Invocation note above), what the anchors audit *against*, and what happens after differ:
+**ALL 14 Agent calls go in ONE message, foreground only.** (Write-specs runs 14 anchors — plan-dev runs 15, the extra one being `scaffolding-anchor`. Scaffolding correctness is plan-dev-specific and doesn't apply to a docx artifact.) The single-batched-message rule survives even though we're no longer using it as a plan-mode gate — running anchors sequentially or in separate messages defeats the parallel-perspective benefit. See [`../odoo-plan-development/SKILL.md` § Pre-ExitPlanMode Anchor Pass](../odoo-plan-development/SKILL.md) for the procedural mechanics (anchor invocation, tag namespace); only the anchor *target* (here, the `_build_<task-code>.py` SPEC_DATA — see § Invocation note above; plan-dev anchors read the markdown plan file directly), what the anchors audit *against*, and what happens after differ:
 
 - `principles-anchor` — vs `_shared/principles.md` (16 numbered principles)
-- `plan-structure-anchor` — audits the docx's 5 numbered top-level sections (+ Cover + TOC front matter) + 11 per-workflow subsections against [`reference/content_outline.md`](reference/content_outline.md), which is this skill's Output Contract
-- `troubleshooting-anchor` — vs [`../_shared/troubleshooting.md`](../_shared/troubleshooting.md) (catches the spec re-deriving a known workaround instead of citing the entry)
+- `plan-structure-anchor` — adapted: audits the docx's 5 numbered top-level sections (+ Cover + TOC front matter) + 11 per-workflow subsections against [`reference/content_outline.md`](reference/content_outline.md), not odoo-plan-development's Output Contract
+- `troubleshooting-anchor` — vs `../odoo-plan-development/reference/troubleshooting.md` (catches the spec re-deriving a known workaround instead of citing the entry)
 - `business-analyst-anchor` … `ux-ui-anchor` (×11) — vs the matching role checklist, audited against the docx's per-workflow subsection that the role owns
 
 ### Reconciliation (no gate — user decides)
@@ -509,24 +535,24 @@ After the linear per-workflow walkthrough completes — the docx is already full
 After all 14 reports return:
 
 1. **Verify completeness** — all 14 `auditor` fields present in the returned JSON. Re-call any anchor that errored, before reconciling.
-2. **Collect, dedupe, bucket** findings by `tags` and `severity`. Same tag namespace as every Anchor Pass: `principle:<n>`, `structure:<aspect>`, `role:<slug>`, `checklist:<artifact>`, `drift:<pattern>`.
+2. **Collect, dedupe, bucket** findings by `tags` and `severity`. Same tag namespace as odoo-plan-development: `principle:<n>`, `structure:<aspect>`, `role:<slug>`, `checklist:<artifact>`, `drift:<pattern>`.
 3. **Present blockers to the user one at a time** per the interview invariant (§ Interview discipline), each with a single-question `AskUserQuestion` patch-accept-reject ask. Never bundle two blockers into one ask, even if they're in the same section. The docx is already on disk so the user can open it, see the flagged section, and decide.
    - **Bundling self-test.** If your drafted `AskUserQuestion` body contains "Blocker 1" / "Blocker 2", the phrase ` and also `, or two `?`s, **that's bundling — split into two turns.** Same-section blockers are still two turns; section affinity is not a bundling licence.
-4. **Apply approved patches** to the builder's `SPEC_DATA` (not the docx directly — P1), re-run the builder, the docx updates. Re-run any anchors whose domain a patch touched.
-   - **Route by audience, not by severity.** A finding patches the **docx body** only if it changes something a business stakeholder reads — a workflow step, a business rule, a success criterion, an app-impact statement. A finding that is **implementation discipline** — constant-time secret compare, cron `limit=`/give-up terminal, expression index, sudo narrowness, timeout on an outbound call — lands in `dev_handoff` (the matching `assumptions[]` / `*_notes` slot), NOT the docx. The integration/security/devops anchors legitimately raise many of the latter against a business spec; routing them to `dev_handoff` keeps the docx clean while the discipline still reaches the technical consultant. When unsure which a finding is, ask: "would a procurement officer reading the spec act on this?" — if no, it's `dev_handoff`.
+4. **Apply approved patches** to the builder's `SPEC_DATA` (not the docx directly — P1), re-run the builder, the docx updates. Re-run any anchors whose domain a patch touched. A finding that refutes a platform fact is fixed everywhere it appears (§ Source grounding).
+   - **Route by audience, not by severity.** A finding patches the **docx body** only if it changes something a business stakeholder reads — a workflow step, a business rule, a success criterion, an app-impact statement. A finding that is **implementation discipline** — constant-time secret compare, cron `limit=`/give-up terminal, expression index, sudo narrowness, timeout on an outbound call — lands in `dev_handoff` (the matching `assumptions[]` / `*_notes` slot), NOT the docx. The integration/security/devops anchors legitimately raise many of the latter against a business spec; routing them to `dev_handoff` keeps the docx clean while the discipline still reaches plan-dev. When unsure which a finding is, ask: "would a procurement officer reading the spec act on this?" — if no, it's `dev_handoff`.
 5. **Nit-severity findings are NOT appended to the docx.** The Open Nits appendix was removed per the conciseness pass. If a nit is worth keeping for the dev team, fold it into the relevant per-workflow subsection inline (e.g., as a row note in the Business Rules & Validations table). Otherwise drop it.
 6. **No `ExitPlanMode`.** When the user accepts the docx as-is, the docx on disk is the deliverable. Before the final "Done", make the finish-line mock offer (§ Offer mock screens (finish line)); then say "Done — open `<path>`" and stop.
 
 ### When to skip
 
-- User explicitly asks: `--skip-audit`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.anchor_pass_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to the Technical Consultant) so the implementer knows the docx wasn't self-vetted on role-checklist drift. The docx stays clean — no top-of-document SKIPPED banner.
+- User explicitly asks: `--skip-audit`, "fast-mode", or equivalent. Record under `dev_handoff.process_log.anchor_pass_skipped = '<YYYY-MM-DD>'` in SPEC_DATA (see § Dev-Only Hand-off to odoo-plan-development) so plan-dev knows the docx wasn't self-vetted on role-checklist drift. The docx stays clean — no top-of-document SKIPPED banner.
 - Iteration on an already-anchored docx where the only change is a typo or styling tweak — anchors are for spec *decisions*, not formatting fixes.
 
-## Dev-Only Hand-off to the Technical Consultant
+## Dev-Only Hand-off to odoo-plan-development
 
-The interview generates context that's valuable for the downstream developer skill but would clutter the docx for business stakeholders. The builder reserves a top-level `dev_handoff` key in SPEC_DATA for exactly this: **anything inside `dev_handoff` is read by the technical consultant (who opens `_reference/_build_<task-code>.py` directly) but is NOT rendered to the docx.** The docx stays clean; the structured hand-off survives.
+The interview generates context that's valuable for the downstream developer skill but would clutter the docx for business stakeholders. The builder reserves a top-level `dev_handoff` key in SPEC_DATA for exactly this: **anything inside `dev_handoff` is read by `odoo-plan-development` (which loads `_reference/_build_<task-code>.py` directly per its own SKILL.md § Reference Material) but is NOT rendered to the docx.** The docx stays clean; the structured hand-off survives.
 
-The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec folder; each field below records a decision already made during the interview, so it need not be re-litigated. Every field is **optional** — a spec that omits `dev_handoff` entirely still satisfies the contract.
+`odoo-plan-development` runs `SPEC_DATA.get("dev_handoff", {})` when ingesting a spec folder and uses each field below to P12-skip its own interview questions (citing the `dev_handoff` source in its Assumptions section, per its P12 rule). Every field is **optional** — a spec that omits `dev_handoff` entirely still satisfies the contract; plan-dev defaults gracefully when a field is absent.
 
 ### Fields
 
@@ -535,7 +561,7 @@ The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec
     # P12 inferences the spec interview chose to make rather than ask.
     # Each entry pairs the question with the inferred answer and the
     # source it came from (a brief excerpt, a workflow subsection, an
-    # earlier role answer). the technical consultant reads these instead of re-asking the
+    # earlier role answer). plan-dev cites these when it P12-skips the
     # same question on its side.
     "assumptions": [
         {"question": "dataset scale",
@@ -548,6 +574,7 @@ The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec
     # on <date>' top-of-docx markers earlier drafts of this skill wrote.
     "process_log": {
         "critique_skipped": "2026-06-14",          # ISO date, or omit
+        "source_unverified": "2026-06-14",         # target-version source absent — see § Source grounding
         "anchor_pass_skipped": "2026-06-14",       # ISO date, or omit
         "critique_outcomes": [                      # one-liners per Check that fired
             "Check 2: Sale Subscriptions overlap considered; user chose extend, reason: per-distributor cycle not in standard.",
@@ -556,7 +583,7 @@ The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec
 
     # P16 completeness decisions per workflow. The spec body captures
     # these as Business Rules / Automated Behaviours rows; this is the
-    # structured mirror the technical consultant needs for the lifecycle &
+    # structured mirror plan-dev needs to skip its lifecycle &
     # contention asks. Key each entry by the workflow's snake_case slug
     # (derived from its `name`), or by 1-indexed position ("wf1", "wf2").
     # Omit a workflow's entry entirely if it commits/locks/reserves
@@ -574,11 +601,11 @@ The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec
                 "frees_stale_via": "warehouse refresh on quote expiry",
             },
             "availability_frame": "warehouse-scoped",
-            # Where this workflow's behaviour lives, so the implementer knows up
+            # Where this workflow's behaviour lives, so plan-dev knows up
             # front which automated tier can prove it (and which can't):
             #   "backend"      — pure server/ORM; Stage 1/2/3 + tests cover it.
             #   "owl-frontend" — POS button/popup, custom OWL widget; INVISIBLE
-            #                    to every automated stage. The implementer must split
+            #                    to every automated stage. plan-dev must split
             #                    the logic into guarded server methods (testable)
             #                    + a thin frontend, and budget a manual UI
             #                    checklist + server-method shell smoke (Stage 3c).
@@ -588,34 +615,41 @@ The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec
         },
     },
 
-    # Implementation input. Often invisible in prose. Keep
-    # structured so the devops-role gate ("external surface?")
+    # Q5d-equivalent for plan-dev. Often invisible in prose. Keep
+    # structured so plan-dev's devops-role gate ("external surface?")
     # is answerable without re-reading the whole spec.
     "integration_surface": ["none"],
     # Valid entries: "none", "inbound webhook", "outbound API call",
     # "file import/export", "email triggers". List form so multiple
     # touchpoints can coexist.
 
-    # Performance-role engagement gate. The implementer engages
+    # Performance-role engagement gate for plan-dev. Plan-dev engages
     # Performance on >10k or cron present — make the signal explicit
     # instead of inferred from "feels routine."
     "dataset_scale": "<10k",            # "<10k" / "10k-100k" / ">100k"
     "crons_introduced": 0,              # count; 0 → Performance role can stay quiet
 
-    # Critical Brief Evaluation Check 2 outcomes structured. The §4
+    # Critical Brief Evaluation Check 2 outcomes structured. The
     # Apps Impacted prose covers this for stakeholders; the structured
-    # form lets the implementer assess complexity-vs-reuse without re-eliciting
+    # form lets plan-dev assess complexity-vs-reuse without re-eliciting
     # the standard-module overlap list.
     "overlap_decisions": [
         {"workflow": "wf1", "module": "stock", "choice": "extend",
          "reason": "lot reservation gate at SO line is not in standard quote-to-delivery."},
     ],
 
+    # Standard-Odoo claims the spec relies on, each with the target-version
+    # source location that confirms (or refutes) it — see § Source grounding.
+    # plan-dev reuses these instead of re-verifying.
+    "source_facts": [
+        "Payslip Cancel shows only in Draft and Validated — hr_payroll/views/hr_payslip_views.xml:62",
+    ],
+
     # Free-form role-discipline notes routed here from the anchor pass
     # (see § Reconciliation step 4 "Route by audience"). These are the
     # implementation-discipline findings that would clutter the docx but
-    # the matching role gate should see. Each is a list of short
-    # strings; omit any slot that's empty. The implementer reads them as
+    # plan-dev's matching role gate should see. Each is a list of short
+    # strings; omit any slot that's empty. plan-dev reads them as
     # advisory build obligations, not interview answers.
     "security_notes": [
         "webhook secret stored in ir.config_parameter, system-group read only.",
@@ -636,19 +670,19 @@ The technical consultant reads `SPEC_DATA["dev_handoff"]` when picking up a spec
 - **Never render `dev_handoff` content in the docx.** If a stakeholder needs to see one of these facts, lift the specific finding into the matching docx subsection (e.g. an availability-frame decision becomes a Business Rule row). Don't echo the whole `dev_handoff` block — that's the same docx-clutter this carve-out exists to prevent.
 - **Don't mirror.** If a fact is already captured as a Business Rule row, an Automated Behaviours row, or in the New Models / New Fields table, do NOT also stamp it into `dev_handoff.completeness`. The structured form is for facts the docx CAN'T cleanly carry (the lifecycle inverse never written, the dataset-scale assumption no row captures), not a redundant shadow of everything.
 - **Lint silence is intentional.** Stage 1 lint walks the rendered docx; it does not validate `dev_handoff` shape. The builder treats unknown SPEC_DATA keys as no-ops. The principle here is "extra context is cheap; wrong docx content is expensive" — keep the validation gate on what reaches stakeholders.
-- **Append, don't rewrite.** During the interview, when a question gets P12-skipped or a critique check fires, *append* the new entry to the relevant `dev_handoff` field rather than rewriting the structure. The accumulated list is the audit trail the technical consultant consumes.
+- **Append, don't rewrite.** During the interview, when a question gets P12-skipped or a critique check fires, *append* the new entry to the relevant `dev_handoff` field rather than rewriting the structure. The accumulated list is the audit trail plan-dev consumes.
 
 ## Validation (three stages, reshaped for documentation)
 
-The three-stage validation pattern (shared principle #2) adapts to a documentation artifact:
+The three-stage validation pattern from `odoo-plan-development` and `odoo-spreadsheet-report` adapts to a documentation artifact:
 
 ### Stage 1 — Static docx lint ([`reference/scripts/_lint_spec.py`](reference/scripts/_lint_spec.py))
 
-Pure-Python walk of the docx (via `python-docx`; the Stage-1 lint can parse the binary, unlike the Read-only anchors). No Odoo runtime needed. Validates:
+Pure-Python walk of the docx (via `python-docx`; the Stage-1 lint can parse the binary, unlike the Read-only anchors). No Odoo runtime needed. (The builder already refused to render a subsection with no content and no N/A reason, a vague N/A reason, or a table header that differs from its canonical shape.) Validates:
 
 - **Filename** matches `<task-code> - <client-name> - <3-word-func>.docx`. Rejects path separators, colons, asterisks, pipes.
 - **All 5 numbered top-level sections** (+ Cover + Table of Contents front matter) present per `reference/content_outline.md`.
-- **Every workflow listed in Q6** has a sub-section under Section 5 with all 11 table-based subsections present OR explicitly marked `N/A — <specific reason>` (vague reasons like "not applicable" / "not specified" are rejected — see § Per-Workflow Role-Based Deep Dive Strict-N/A discipline).
+- **Every workflow listed in Q6** has a sub-section under Per-Workflow Detail with all 11 table-based subsections present OR explicitly marked `N/A — <specific reason>` (vague reasons like "not applicable" / "not specified" are rejected — see § Per-Workflow Role-Based Deep Dive Strict-N/A discipline).
 - **No placeholder strings** anywhere in body text: `TODO`, `TBD`, `<fill in>`, `Lorem ipsum`, `XXX`, `[client]`, `[task]`.
 - **Cover-page metadata block complete**: Prepared by, Role, Client, Companion to (optional), Scope, Date, Version. An additional optional `metadata.consultancy` is read by the builder for the footer's "Confidential — `<client>` / by `<consultancy>`" line; when absent the builder derives it from the `role` string (e.g. "Functional Consultant, Odoo" → "Odoo"). Stage 1 lint does not require it.
 - **7 C's surface-level checks**: no paragraph > 4 lines; no casual-hedging strings (`I think`, `probably`, `obviously`, `maybe`, `sort of`).
@@ -689,18 +723,27 @@ the dev team reads alongside the spec.
    (Recommended)** / **No, the docx is enough**.
    - **Skip the ask entirely when the invocation already committed to mocks** —
      e.g. the user pre-declared a pipeline ("write-specs → mock-design →
-     implementation") or asked for mocks up front. Re-asking is pure ceremony; proceed
+     plan-dev") or asked for mocks up front. Re-asking is pure ceremony; proceed
      straight to step 3 and note that you're doing so.
 2. **If No** — say "Done — open `<path>`" and stop. Nothing else changes.
 3. **If Yes** — invoke `odoo-mock-design` via the **Skill tool**, in the main
    thread, passing the **absolute spec-folder path**. That skill detects
    Workflow 1 (a spec-folder path was handed in), reads this spec's structured
    `SPEC_DATA` from `_reference/_build_<task-code>.py` (no re-interview), and
-   writes a self-contained interactive mock to `<spec-folder>/mocks/`. It runs
-   its own self-containment lint + two-anchor (`mock-coverage`, `mock-fidelity`)
-   gate before finishing.
-4. When `odoo-mock-design` returns, report both artifacts: "Done — open
-   `<docx path>` (spec) and `<spec-folder>/mocks/index.html` (interactive mock)."
+   builds the mock as a working package in `<spec-folder>/mocks/_reference/`.
+   It runs its own self-containment lint + two-anchor (`mock-coverage`,
+   `mock-fidelity`) gate on that package, then bundles it into the single
+   self-contained file `<spec-folder>/mocks/<spec-folder-name> - mock.html`.
+4. **Fold the mock's spec departures back.** `odoo-mock-design` lists any place
+   the mock had to depart from the spec — a spec claim the target Odoo source
+   contradicts, or a user-visible text or screen the spec left undefined — under
+   `## Spec departures` in `<spec-folder>/mocks/_reference/README.md`. When there
+   are any, ask once (`AskUserQuestion`): **Fold them into the spec
+   (Recommended)** / **Review each** / **Keep the spec as is**. Patch SPEC_DATA
+   (every occurrence — § Source grounding), rebuild, re-run Stage 1. The spec
+   stays the source of truth; plan-dev reads it, not the mock.
+5. Report both artifacts: "Done — open `<docx path>` (spec) and
+   `<spec-folder>/mocks/<spec-folder-name> - mock.html` (interactive mock)."
 
 This is the only hand-off `odoo-write-specifications` makes. It never re-interviews the
 user for the mock — the spec already holds everything the mock needs. (Invoking
@@ -714,16 +757,17 @@ The docx is itself the documentation. There is no separate `doc/` folder per spe
 ## Production-readiness checklist (before declaring done)
 
 - [ ] **Plan mode was NOT entered** — this skill is exempt from P11 per the incremental-drafting carve-out in `_shared/principles.md`. If a transcript shows an `EnterPlanMode` call, something else triggered it (e.g. the user pressed Shift+Tab); that's fine, but the skill itself never calls it.
-- [ ] Per-spec folder exists at `<repo>/specifications/<task-code> - <client> - <func>/`. Opening it shows exactly two entries: the `.docx` and `_reference/`. No `_draft.docx`, no stale builder at the `specifications/` root.
+- [ ] Per-spec folder exists at `<repo>/specifications/<task-code> - <client> - <func>/`. Opening it shows the `.docx` and `_reference/` (plus `mocks/` when the mock offer was accepted). No `_draft.docx`, no stale builder at the `specifications/` root.
 - [ ] Builder script lives at `<repo>/specifications/<task-code> - <client> - <func>/_reference/_build_<task-code>.py` and is idempotent (running it twice produces byte-identical docx).
 - [ ] Docx lives at `<repo>/specifications/<task-code> - <client> - <func>/<task-code> - <client> - <func>.docx`.
 - [ ] Stage 1 lint exits 0 (all 5 numbered top-level sections present; 11 per-workflow subsections complete or marked with specific `N/A — <reason>`; no placeholders; no casual hedging; no vague N/A reasons; filename matches convention).
 - [ ] Stage 2 anchor pass completed (all 14 anchor `auditor` fields present in returned JSON; blockers presented to user and resolved; nits either folded inline into the relevant subsection or dropped — no Open Nits appendix).
 - [ ] Stage 3 visual review done by the user — they opened the docx and confirmed layout is clean.
 - [ ] Cover-page metadata block complete.
+- [ ] **Standard-Odoo claims grounded** — the source was pinned after Q3 and every existing menu, tab, button, setting, group, status or standard behaviour the spec names has a `dev_handoff.source_facts` entry, or the spec records `process_log.source_unverified` (§ Source grounding).
 - [ ] **No appendices** — Glossary, Acknowledgement, and Open Nits are explicitly removed (see `content_outline.md` § Explicitly NOT present).
-- [ ] Every workflow under Section 5 has all 11 table-based subsections (present or explicitly `N/A — <specific reason>`).
-- [ ] **Finish-line mock offer made** — before the final "Done", the user was asked once (single `AskUserQuestion`) whether to generate interactive mocks; if accepted, `odoo-mock-design` ran against the spec folder and `<spec-folder>/mocks/` exists. (Declined is a valid outcome; the offer itself is the checklist item.)
+- [ ] Every workflow under Per-Workflow Detail has all 11 table-based subsections (present or explicitly `N/A — <specific reason>`).
+- [ ] **Finish-line mock offer made** — before the final "Done", the user was asked once (single `AskUserQuestion`) whether to generate interactive mocks; if accepted, `odoo-mock-design` ran against the spec folder and `<spec-folder>/mocks/` holds the bundled `<spec-folder-name> - mock.html` plus its `_reference/` working package. (Declined is a valid outcome; the offer itself is the checklist item.)
 
 ## Iteration Etiquette
 
@@ -732,5 +776,7 @@ Per principle #8. Skill-specific notes:
 - When the user reports the docx renders wrong, fix the **builder's `SPEC_DATA`** (not the docx directly). Hand-edits to the docx vanish on next regen — P1.
 - When a stakeholder pushes back on content mid-interview, update the affected section's `SPEC_DATA` entry, re-run the builder, the docx on disk refreshes immediately. The user can confirm the fix in Word before you ask the next question.
 - After every fix, re-run Stage 1 lint. Even one-sentence changes can break a structural rule (placeholder snuck in, section heading typo'd).
+- **The spec stays the source of truth.** When a later artifact — the mock, plan-dev, a reviewer — shows the spec is wrong or silent, fix SPEC_DATA and rebuild rather than letting the correction live only downstream.
+- **Rendering fixes go in [`reference/scripts/_build_spec.py`](reference/scripts/_build_spec.py).** Each spec's builder carries its own copy of the helpers, so an existing spec picks a fix up only when everything above its `# SPEC_DATA —` banner is re-copied from that file.
 - **Match existing style** (principle #8). When editing an existing spec, mirror its tone and section depth — don't re-write to a different voice.
-- Tell the user **what specifically changed** in concrete terms after a fix — they need a reason to reopen the file. "Updated §8.3 Models to add `dms.parts.staging.order`" beats "fixed the parts thing".
+- Tell the user **what specifically changed** in concrete terms after a fix — they need a reason to reopen the file. "Updated §5.2.3 New Models to add the Parts Staging Order model" beats "fixed the parts thing".

@@ -68,6 +68,9 @@
     // Hide ALL screens (across workflows), then activate just the one.
     screens.forEach(function (s) { s.classList.remove("is-active"); });
     list[current].classList.add("is-active");
+    // A fully custom screen (.mock-custom on the .mock-screen) shows the
+    // corner "Custom" banner instead of per-element highlights.
+    document.body.classList.toggle("mock-screen-custom", list[current].classList.contains("mock-custom"));
     updateBar();
     closeAllCallouts();
     closeModals();
@@ -142,12 +145,13 @@
    *
    * SINGLE SOURCE OF TRUTH for the Next-button label set.
    *
-   * Two other places describe these labels — keep them in sync with the
+   * Three other places describe these labels — keep them in sync with the
    * function below:
    *   - reference/catalog/components/walkthrough_bar.html (header comment)
    *   - reference/catalog_chrome.md § Multi-workflow chrome / walkthrough.js
    *     mechanics table
-   * If the labels change here, update those two files in the same commit.
+   *   - reference/cover_discipline.md § 5 (Next-button label set)
+   * If the labels change here, update those three files in the same commit.
    */
   function nextButtonLabel(currentScreen) {
     // Cover entry. In multi-workflow mode, NAME the destination so the
@@ -582,35 +586,113 @@
     window.addEventListener("resize", function () { if (floatAnchor) positionFloat(floatAnchor); });
   }
 
-  /* Annotations toggle rendered as a chip (label + value + caret), same
-     pattern as the variant chips above. Two values: Show / Hide; default
-     Show. Selecting Hide adds `mock-annotations-off` to <body> (which
-     hides all pinned markers + the floating tooltip via annotations.css);
-     selecting Show removes the class. Re-renders on each pick so the chip
-     value reflects the live state. */
-  function renderAnnotationsChip() {
+  /* Overlay toggles rendered as chips (label + value + caret), same pattern
+     as the variant chips above. Each has two values, Show / Hide, default
+     Show:
+       Annotations — Hide adds `mock-annotations-off` to <body> (hides the
+                     pinned markers + the floating tooltip).
+       Custom      — Hide adds `mock-custom-off` to <body> (hides the pink
+                     custom-element highlights + the corner Custom banner).
+                     Rendered only when the package marks something custom;
+                     the row then splits in two, like two variant chips.
+     Re-renders on each pick so the chip values reflect the live state. */
+  function hasCustomElements() {
+    return !!document.querySelector(".mock-custom:not(.mock-custom-example)");
+  }
+
+  function renderOverlayChips() {
     var host = document.querySelector(".mock-wt-toggle");
     if (!host) return;
-    var current = document.body.classList.contains("mock-annotations-off") ? "hide" : "show";
-    var axis = {
-      key: "_annotations",
-      label: "Annotations",
-      options: [["show", "Show"], ["hide", "Hide"]],
-    };
     host.innerHTML = "";
-    var chip = buildChip(axis, current, function (val) {
+    host.appendChild(overlayChip("_annotations", "Annotations", "mock-annotations-off", hideFloat));
+    if (hasCustomElements()) {
+      host.appendChild(overlayChip("_custom", "Custom", "mock-custom-off"));
+    }
+  }
+
+  function overlayChip(key, label, offClass, onHide) {
+    var current = document.body.classList.contains(offClass) ? "hide" : "show";
+    var axis = { key: key, label: label, options: [["show", "Show"], ["hide", "Hide"]] };
+    return buildChip(axis, current, function (val) {
       var off = (val === "hide");
-      document.body.classList.toggle("mock-annotations-off", off);
-      if (off) hideFloat();
-      renderAnnotationsChip();
+      document.body.classList.toggle(offClass, off);
+      if (off && onHide) onHide();
+      renderOverlayChips();
     });
-    host.appendChild(chip);
+  }
+
+  // Highlight for a custom element: one overlay child per marked element
+  // (annotations.css § Custom elements). The element becomes the overlay's
+  // containing block only when it is static, so existing positioning stays.
+  // A ResizeObserver re-fits the overlay whenever the element is shown (its
+  // screen, tab, variant or menu opens) or its size changes.
+  function wireCustomHighlights() {
+    var observer = window.ResizeObserver ? new ResizeObserver(function (entries) {
+      entries.forEach(function (entry) { fitCustomOverlay(entry.target); });
+    }) : null;
+    qsa(".mock-custom:not(.mock-screen)").forEach(function (el) {
+      if (el.querySelector(":scope > .mock-custom-overlay")) return;
+      if (window.getComputedStyle(el).position === "static") el.style.position = "relative";
+      var overlay = document.createElement("span");
+      overlay.className = "mock-custom-overlay";
+      overlay.setAttribute("aria-hidden", "true");
+      el.appendChild(overlay);
+      if (observer) observer.observe(el);
+    });
+  }
+
+  // Size the overlay to what the element paints: its own box plus any in-flow
+  // child that bleeds past it (an x2many list pulled up to the tabs and out
+  // to the sheet edges by negative margins). Absolutely positioned children
+  // (dropdowns, popovers, pins) and clipped subtrees are skipped, so an open
+  // menu never stretches the highlight.
+  function fitCustomOverlay(el) {
+    var overlay = el.querySelector(":scope > .mock-custom-overlay");
+    var box = el.getBoundingClientRect();
+    if (!overlay || !box.width || !box.height) return;
+    var top = box.top, left = box.left, bottom = box.bottom, right = box.right;
+    function walk(node) {
+      for (var child = node.firstElementChild; child; child = child.nextElementSibling) {
+        if (child === overlay) continue;
+        var cs = window.getComputedStyle(child);
+        if (cs.display === "none" || cs.position === "absolute" || cs.position === "fixed") continue;
+        var r = child.getBoundingClientRect();
+        if (r.width && r.height) {
+          top = Math.min(top, r.top); left = Math.min(left, r.left);
+          bottom = Math.max(bottom, r.bottom); right = Math.max(right, r.right);
+        }
+        if (cs.overflow === "visible") walk(child);
+      }
+    }
+    if (window.getComputedStyle(el).overflow === "visible") walk(el);
+    // A child that bleeds past the element already reaches edges the page
+    // draws (the sheet, the tab bar): no ring there, it would spill over them.
+    // (A raised "?" or marker pokes out a few pixels; that is not a bleed.)
+    var bleeds = Math.max(box.top - top, box.left - left, bottom - box.bottom, right - box.right) > 4;
+    overlay.style.boxShadow = bleeds ? "none" : "";
+    // Offsets are from the element's padding box, the overlay's containing block.
+    overlay.style.top = (top - box.top - el.clientTop) + "px";
+    overlay.style.left = (left - box.left - el.clientLeft) + "px";
+    overlay.style.width = (right - left) + "px";
+    overlay.style.height = (bottom - top) + "px";
+  }
+
+  // Corner banner for a fully custom screen: one body-level element (outside
+  // every screen, so no screen overflow or transform can clip or move it),
+  // shown by CSS while the active screen carries .mock-custom.
+  function buildCustomBanner() {
+    if (!hasCustomElements() || document.querySelector(".mock-custom-banner")) return;
+    var banner = document.createElement("div");
+    banner.className = "mock-custom-banner";
+    banner.setAttribute("aria-hidden", "true");
+    banner.innerHTML = "<span>Custom</span>";
+    document.body.appendChild(banner);
   }
 
   function wireAnnotationToggle() {
     /* Back-compat: if an old-style <input id="mock-annotations-toggle"> is
        still in the page, keep wiring its change event. New mocks render the
-       chip via renderAnnotationsChip() at init time. */
+       chips via renderOverlayChips() at init time. */
     var toggle = document.getElementById("mock-annotations-toggle");
     if (toggle) {
       toggle.addEventListener("change", function () {
@@ -618,7 +700,7 @@
         if (!toggle.checked) hideFloat();
       });
     }
-    renderAnnotationsChip();
+    renderOverlayChips();
   }
 
   /* ---- Interactive elements (v2): tabs, modals, toggles, toasts -------- */
@@ -659,8 +741,12 @@
   }
 
   // Toggle (dropdown / expander): [data-mock-toggle="ID"] flips [data-mock-toggleable="ID"].
-  function toggleEl(id) {
-    var t = document.querySelector('[data-mock-toggleable="' + id + '"]');
+  // The id resolves inside the clicked element's screen first, so fragment ids
+  // (e.g. the chatter's "composer-msg") may repeat on several screens.
+  function toggleEl(id, src) {
+    var sel = '[data-mock-toggleable="' + id + '"]';
+    var scope = src && src.closest ? src.closest(".mock-screen") : null;
+    var t = (scope && scope.querySelector(sel)) || document.querySelector(sel);
     if (!t) return;
     var wasOpen = t.classList.contains("is-open");
     closeAllToggles();
@@ -746,7 +832,7 @@
       if (el.hasAttribute("data-mock-modal-close")) closeNearestModal(el);
       // Self-contained interactions (no navigation).
       if (el.hasAttribute("data-mock-tab")) return switchTab(el);
-      if (el.hasAttribute("data-mock-toggle")) return toggleEl(el.getAttribute("data-mock-toggle"));
+      if (el.hasAttribute("data-mock-toggle")) return toggleEl(el.getAttribute("data-mock-toggle"), el);
       if (el.hasAttribute("data-mock-modal-open")) return openModal(el.getAttribute("data-mock-modal-open"));
       // Navigation.
       if (el.hasAttribute("data-mock-next")) return next();
@@ -833,6 +919,8 @@
     resolveStepAxesPageNumbers();
     wireMarkers();
     wireAnnotationToggle();
+    wireCustomHighlights();
+    buildCustomBanner();
     wireActions();
     wireChipCloseOnOutsideClick();
     // Honour a #screen-ID hash on load, else start at the first screen.

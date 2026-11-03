@@ -21,9 +21,18 @@ icon-style Odoo logo (`odoo-icon.svg`, the circular "O" mark from
 Sticky gradient banner with:
 - The icon-style Odoo logo as a small kicker on the top-left
   (`.mock-cover-kicker` with `<img src="assets/odoo-icon.svg"/>` + the
-  version label).
+  version label `Odoo NN · Enterprise` / `· Community`).
 - The wordmark `assets/odoo-logo.png` as a watermark on the right
   (`.mock-cover-logo`).
+
+**Version label.** `NN` is the **spec's** Odoo major (`odoo_version` in
+`SPEC_DATA`), falling back to the catalog's calibrated version (the
+`calibrated to Odoo NN` stamp atop `catalog/odoo.css`); the edition follows
+`SKILL.md` § Edition gate. `_scaffold_mock.py` writes the version (and the
+default `· Enterprise`) — never hard-code it. The screens render the chrome of
+the version the package's `assets/odoo.css` is stamped with, so when the kicker
+differs from that stamp `_lint_mock.py` prints a non-failing `NOTE` — expected
+for a spec that targets an older version.
 
 The header uses `position: sticky` so it stays visible while the cover body
 scrolls.
@@ -36,9 +45,10 @@ CSS rule that some older mocks used; it breaks the section's grid + spacing).
 Each callout uses `<div class="mock-cover-callout">`.
 
 **Canonical wording lives in [`templates/cover_callouts.html`](templates/cover_callouts.html)
-— SINGLE SOURCE OF TRUTH.** Five callouts total in fixed reading order
-(whole mock → workflows → screen-state pivots → element notes → field
-help). Two are always emitted; three are conditional on package structure:
+— SINGLE SOURCE OF TRUTH.** Six callouts total in fixed reading order
+(whole mock → workflows → screen-state pivots → element notes → custom
+scope → field help). Two are always emitted; four are conditional on
+package structure:
 
 | Callout | Inclusion rule |
 |---|---|
@@ -46,13 +56,14 @@ help). Two are always emitted; three are conditional on package structure:
 | Multiple workflows | only when ≥ 2 `.mock-workflow` wrappers exist |
 | Variant chips | only when ≥ 1 screen carries `data-mock-variant-axes` |
 | Numbered markers | always |
+| Custom elements | only when ≥ 1 element or screen carries `mock-custom` |
 | Field help | only when ≥ 1 screen carries `o_field_help` on a custom-field label |
 
 **Author discipline:**
 - Don't paraphrase the canonical wording — copy it verbatim from
   [`templates/cover_callouts.html`](templates/cover_callouts.html).
 - Don't reorder; the order is the reading order.
-- Don't add a sixth callout for module-specific affordances — those belong
+- Don't add a seventh callout for module-specific affordances — those belong
   in a per-workflow overview's actor / narrative copy, not on the main
   cover.
 - The **Variant chips** callout's example chip uses a GENERIC placeholder
@@ -64,6 +75,11 @@ help). Two are always emitted; three are conditional on package structure:
   `mock-marker` AND `mock-marker-example` classes; its `data-note`
   describes what a marker IS, so clicking the cover example demonstrates
   the click behavior.
+- The **Custom elements** callout's examples (`mock-custom-example`, the
+  highlighted word, and `mock-custom-banner-example`, the banner sample)
+  stay visible whatever the Custom chip says. Never put a plain
+  `mock-custom` on the cover — the cover explains the mock; it is not
+  solution scope (`_lint_mock.py` CUSTOM-PLACEMENT).
 
 ### 4. Workflow narrative — two-column table
 

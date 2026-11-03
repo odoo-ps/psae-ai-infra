@@ -9,19 +9,19 @@ functionality slug is auto-derived):
         └── _build_<task-code>.py                      ← this file, customised
 
 Run the per-task copy as:
-    python3 \\
+    ./versions/v<major>/odoo/.venv/bin/python \\
         "<repo>/specifications/<task-code> - <client> - <func>/_reference/_build_<task-code>.py"
 
-The skill copies THIS file to the spec folder's `_reference/` subfolder per
-task, then customises the SPEC_DATA block at the bottom with the interview
-answers. The helpers in this module — make_cover, make_heading, make_table,
-make_flow_strip, render_bpmn_image, add_phase_marker — stay shared across all
-tasks.
+The skill copies THIS file's helpers into the spec folder's `_reference/`
+builder, then appends that task's `# SPEC_DATA —` block and a no-argument
+runner. Each spec therefore carries its own copy of the helpers: a rendering
+fix made here reaches an existing spec only when its builder's helper part
+(everything above the `# SPEC_DATA —` banner) is re-copied from this file.
 
 Hand-editing the generated docx is NOT the workflow (P1). Edit SPEC_DATA, re-run.
 
 Requires python-docx:
-    (declared in the Project Repo's requirements.txt; installed at build time)
+    ./versions/v<major>/odoo/.venv/bin/python -m pip install python-docx   # any existing versions/v*/odoo/.venv
 """
 from __future__ import annotations
 
@@ -39,9 +39,7 @@ try:
     from docx.oxml import OxmlElement
 except ImportError:
     sys.stderr.write(
-        "python-docx is not available on this build. It is declared in the "
-        "Project Repo's requirements.txt and installed by the platform — ask "
-        "the technical consultant to add it and rebuild the branch.\n"
+        f"python-docx not installed; run: {sys.executable} -m pip install python-docx\n"
     )
     sys.exit(1)
 
@@ -139,6 +137,54 @@ CANONICAL_SUBSECTIONS = [
     ("data_migration", "Data Migration"),
     ("access", "Access & Permissions"),
 ]
+
+# Required header row per table-based subsection — mirrors the "Required
+# table shape" column of reference/content_outline.md. Checked at build time
+# (`_check_header`): a drifted header silently drops a column readers rely on
+# (Screens' Kind, Business Rules' message). Matching ignores case, a trailing
+# "(…)" note and an optional leading "#" column.
+CANONICAL_HEADERS = {
+    "success_criteria": ["Criterion", "How we measure it"],
+    "user_stories_and_steps": ["#", "User Story", "Actor", "Step"],
+    "new_models": ["Purpose", "Name", "Technical Name", "Parent Menu",
+                   "Views Required", "Required Features"],
+    "new_fields": ["Model", "Field Name", "Captures", "Type",
+                   "Options/Remarks", "Location/Visibility"],
+    "navigation": ["Menu label", "Lives under", "Who sees it"],
+    "screens": ["Surface", "Kind", "What user sees or does"],
+    "automated_behaviours": ["Trigger", "Action", "Outcome"],
+    "business_rules": ["Rule", "Error message shown to user"],
+    "reports": ["Report", "What it shows", "Who reads it", "Cadence"],
+    "data_migration": ["Existing data", "What changes", "Approach"],
+    "access.new_groups": ["Group", "Reason created", "What it achieves"],
+    "access.existing_groups": ["Group", "Reason in spec", "Change"],
+}
+
+
+def _norm_header(cell: str) -> str:
+    text = str(cell).strip().lower()
+    if text.endswith(")") and " (" in text:
+        text = text[:text.rindex(" (")]
+    return " ".join(text.split())
+
+
+def _check_header(table: list, key: str, where: str) -> None:
+    """Raise when a subsection table's header row differs from its canonical
+    shape (see CANONICAL_HEADERS / content_outline.md)."""
+    expected = CANONICAL_HEADERS.get(key)
+    if not expected or not table:
+        return
+    got = [_norm_header(c) for c in table[0]]
+    want = [_norm_header(c) for c in expected]
+    if got and got[0] == "#" and want[0] != "#":
+        got = got[1:]
+    if got != want:
+        raise ValueError(
+            f"{where}: table header {table[0]!r} does not match the required "
+            f"shape {expected!r} (reference/content_outline.md § Per-workflow "
+            "subsections). Use the canonical columns; an optional leading '#' "
+            "is allowed."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -937,7 +983,7 @@ def render_flow_strip_image(steps, output_path: Path, title: str = None) -> Path
     if not _PILLOW_AVAILABLE:
         raise ImportError(
             "Pillow is required for the modern flow strip renderer; "
-            "add Pillow to the Project Repo's requirements.txt and rebuild, or use "
+            f"install with `{sys.executable} -m pip install Pillow` or use "
             "the legacy table-based `make_flow_strip()` fallback."
         )
 
@@ -961,13 +1007,50 @@ def render_flow_strip_image(steps, output_path: Path, title: str = None) -> Path
     # renderer's visual vocabulary (rounded corners, numbered badges, plum
     # palette) and the same readable-on-page sizing.
     PILL_W = 332
-    PILL_H = 138
     PILL_RADIUS = 18
     ARROW_GAP = 92        # horizontal space between adjacent pills
     LEFT_MARGIN = 44
     TOP_MARGIN = 44
     BOTTOM_MARGIN = 44
     TITLE_BLOCK_H = 56 if title else 0
+    BADGE_R = 19
+    BADGE_OFFSET = 14
+    # Space reserved at the top of each pill for the badge + top stripe.
+    BADGE_ZONE = 18 + 2 * BADGE_R + 8  # top pad + badge diameter + gap
+
+    # Fonts (px)
+    title_font = _resolve_bpmn_font(34) if title else None
+    label_font = _resolve_bpmn_font(30)
+    badge_font = _resolve_bpmn_font(26)
+
+    # Pre-measure line counts so PILL_H fits the wordiest label; centre the
+    # label below the badge instead of vertically-centre-through-the-badge.
+    # The previous fixed PILL_H = 138 + horizontal centering made long
+    # labels like TEST003's "Review buckets, expand to source, or export"
+    # either wrap into the badge or overflow above/below the pill.
+    _tmp_draw = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+
+    def _measure_lines(text, max_width):
+        words = text.split()
+        if not words:
+            return 1
+        lines, current = [], words[0]
+        for w in words[1:]:
+            trial = current + " " + w
+            if _tmp_draw.textbbox((0, 0), trial, font=label_font)[2] <= max_width:
+                current = trial
+            else:
+                lines.append(current)
+                current = w
+        lines.append(current)
+        return len(lines)
+
+    text_max_w = PILL_W - 44
+    max_lines = 1
+    for step in normalized:
+        max_lines = max(max_lines, _measure_lines(step["label"], text_max_w))
+    LINE_H = 34
+    PILL_H = max(138, BADGE_ZONE + max_lines * LINE_H + 24)
 
     W = LEFT_MARGIN + n * PILL_W + (n - 1) * ARROW_GAP + LEFT_MARGIN
     H = TOP_MARGIN + TITLE_BLOCK_H + PILL_H + BOTTOM_MARGIN
@@ -975,11 +1058,6 @@ def render_flow_strip_image(steps, output_path: Path, title: str = None) -> Path
     img = Image.new("RGB", (W, H), "white")
     draw = ImageDraw.Draw(img)
     R = _BPMN_RGB
-
-    # Fonts (px)
-    title_font = _resolve_bpmn_font(34) if title else None
-    label_font = _resolve_bpmn_font(30)
-    badge_font = _resolve_bpmn_font(26)
 
     # Optional title
     if title:
@@ -1063,11 +1141,14 @@ def render_flow_strip_image(steps, output_path: Path, title: str = None) -> Path
             str(i + 1), fill="white", font=badge_font,
         )
 
-        # Step label — centred, wrapped to fit pill width minus padding
+        # Step label — centred in the badge-free zone (below the badge),
+        # not centred through the whole pill. With adaptive PILL_H the
+        # text always fits below the badge and above the pill bottom.
+        label_cy = pill_y_top + BADGE_ZONE + (PILL_H - BADGE_ZONE) // 2 - 4
         _draw_pill_label(
-            pill_cx, pill_cy + 8, step["label"],
+            pill_cx, label_cy, step["label"],
             label_font, R["ink"],
-            max_width=PILL_W - 44,
+            max_width=text_max_w,
         )
 
         # Arrow to next pill
@@ -1188,7 +1269,7 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
     if not _PILLOW_AVAILABLE:
         raise ImportError(
             "Pillow is required for BPMN diagrams; install with "
-            "add Pillow to requirements.txt and rebuild, or remove "
+            f"`{sys.executable} -m pip install Pillow` or remove "
             "`bpmn_diagram` from the workflow's SPEC_DATA."
         )
 
@@ -1216,8 +1297,13 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
     PAD_R = 120                   # right pad (rightmost shape half + label room)
     SIDEBAR_W = 224               # solid role-band sidebar
     COL_PAD_L = 70                # sidebar edge → first column centre
-    COL_W = 250                   # column centre-to-centre (comfortable task gap)
-    TASK_W = 198
+    COL_W = 285                   # column centre-to-centre (comfortable task gap)
+    TASK_W = 230                  # description wrap = TASK_W - 28 = 202 px; the
+                                  # previous 198/170 forced long descriptions
+                                  # like D001's "Split the source amount across
+                                  # targets per the distribution basis" into
+                                  # ~11 lines of tall/thin card. 230/202 lands
+                                  # them at ~7 lines with the same font size.
     EVENT_R = 33
     GATEWAY_S = 50
 
@@ -1239,6 +1325,12 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
     _mdraw = ImageDraw.Draw(Image.new("RGB", (8, 8)))
 
     def _wrap_text(text, font, max_width):
+        # Sanitize Unicode arrow glyphs that the resolved TTF may not include
+        # (they render as tofu boxes otherwise — the "Project [] Reporting []
+        # Stage History" symptom on TEST005 wf1).
+        for u, ascii_ in (("→", " > "), ("⇒", " > "), ("▸", " > "),
+                          ("›", " > "), ("»", " > "), ("→", " > ")):
+            text = text.replace(u, ascii_)
         words = text.split()
         if not words:
             return [""]
@@ -1441,7 +1533,7 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
                 )
 
     # ----- Shape drawing primitives -----------------------------------
-    def _label_below_or_above(cx, cy, shape_half, lines, font, colour, li,
+    def _label_below_or_above(cx, cy, shape_half, label, font, colour, li,
                               prefer="below"):
         """Place an event/gateway label clear of the shape. Default prefers the
         band below the shape; pass prefer="above" for gateways, whose branch
@@ -1453,10 +1545,29 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
         a visible gap from the sidebar's right edge — at +10 a single-line
         label like "Reaches Pay step" would butt against the lane divider's
         2px-wide plum line and the eye reads it as clipped.
+
+        Horizontal bounds are **column-local**, not pool-global — so a label
+        at col=0 can't reach into col=1's task-card footprint and get
+        overwritten by the neighbor's shape rendering (the "Bookkeeper star
+        a run" / "Quotation opene" clip class observed on D001 / TEST001).
+        The label is re-wrapped to the symmetric available width around cx;
+        col=0 events near the sidebar therefore wrap to more, narrower lines
+        instead of spilling right.
         """
+        # Column-local horizontal bounds. 12 px = intra-column gap so the
+        # label doesn't kiss the neighbor column's task-card outline.
+        col_half = COL_W // 2 - 12
+        lo_x = max(sidebar_right + 22, cx - col_half)
+        hi_x = min(pool_right - 10, cx + col_half)
+        # Symmetric span around cx that fits BOTH sides — this is the true
+        # centered-width budget, always ≤ COL_W - 24.
+        avail = 2 * min(cx - lo_x, hi_x - cx)
+        wrap_w = min(COL_W - 24, max(40, avail))
+        lines = _wrap_text(label, font, wrap_w) if label else []
+        if not lines:
+            return
         line_h = _text_h(font) + 4
         need = line_h * len(lines) + 8
-        lo_x, hi_x = sidebar_right + 22, pool_right - 10
         below_top = cy + shape_half + 8
         above_top = cy - shape_half - need
         fits_below = below_top + need <= lane_bottom[li] - 4
@@ -1472,22 +1583,20 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
             _draw_centered_lines(cx, below_top, lines, font, colour,
                                  min_x=lo_x, max_x=hi_x)
 
-    def draw_start(cx, cy, label, li):
+    def draw_start(cx, cy, label, li, prefer="below"):
         draw.ellipse([(cx - EVENT_R, cy - EVENT_R), (cx + EVENT_R, cy + EVENT_R)],
                      fill="white", outline=R["accent"], width=3)
         if label:
-            _label_below_or_above(cx, cy, EVENT_R,
-                                  _wrap_text(label, end_label_font, COL_W - 24),
-                                  end_label_font, R["secondary"], li)
+            _label_below_or_above(cx, cy, EVENT_R, label, end_label_font,
+                                  R["secondary"], li, prefer=prefer)
 
-    def draw_end(cx, cy, variant, label, li):
+    def draw_end(cx, cy, variant, label, li, prefer="below"):
         colour = R["warn"] if variant == "error" else R["success"]
         draw.ellipse([(cx - EVENT_R, cy - EVENT_R), (cx + EVENT_R, cy + EVENT_R)],
                      fill="white", outline=colour, width=6)
         if label:
-            _label_below_or_above(cx, cy, EVENT_R,
-                                  _wrap_text(label, end_label_font, COL_W - 24),
-                                  end_label_font, colour, li)
+            _label_below_or_above(cx, cy, EVENT_R, label, end_label_font,
+                                  colour, li, prefer=prefer)
 
     def draw_task(cx, cy, step, action, description):
         x0, y0 = cx - TASK_W // 2, cy - TASK_H // 2
@@ -1537,8 +1646,7 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
         draw.line([(cx - m, cy + m), (cx + m, cy - m)], fill=R["accent"], width=4)
         if label:
             _label_below_or_above(cx, cy, GATEWAY_S,
-                                  _wrap_text(label.replace("\n", " "),
-                                             gateway_font, COL_W - 12),
+                                  label.replace("\n", " "),
                                   gateway_font, R["ink"], li, prefer=prefer)
 
     # ----- Orthogonal edge routing (90° elbows) -----------------------
@@ -1559,10 +1667,21 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
         }[side]
 
     def _pick_label_seg(pts):
-        """Pick the segment to hang an edge label on: the first segment long
-        enough to clear an exit stub (>= 48 px), else the longest. Keeps a
-        Yes/No label on a visible run near the branch instead of crammed onto a
-        tiny stub against the source shape."""
+        """Pick the segment to hang an edge label on. Prefer HORIZONTAL
+        segments — vertical segments on cross-lane edges cross the lane
+        divider, and a label centred vertically on such a segment ends up
+        straddling the divider line (the "Approved" strike-through observed
+        on TEST002 wf2). Falls back to any segment >= 48 px, else the
+        longest."""
+        best_h, best_h_len = None, -1
+        for i in range(len(pts) - 1):
+            (x1, y1), (x2, y2) = pts[i], pts[i + 1]
+            if abs(y2 - y1) < 5:                 # horizontal
+                seg_len = abs(x2 - x1)
+                if seg_len >= 48 and seg_len > best_h_len:
+                    best_h_len, best_h = seg_len, (pts[i], pts[i + 1])
+        if best_h is not None:
+            return best_h
         best, best_len = (pts[0], pts[1]), -1
         for i in range(len(pts) - 1):
             (x1, y1), (x2, y2) = pts[i], pts[i + 1]
@@ -1573,6 +1692,16 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
                 best_len, best = seg_len, (pts[i], pts[i + 1])
         return best
 
+    def _shape_half(kind):
+        """Shape-only half-extent (no label band) — used for edge-obstacle
+        collision checks where the edge only needs to clear the shape itself,
+        not its outside label."""
+        if kind == "task":
+            return TASK_H // 2
+        if kind == "gateway":
+            return GATEWAY_S
+        return EVENT_R
+
     def _route(src, tgt):
         """Return (polyline_points, label_segment) routed with right angles.
 
@@ -1582,7 +1711,14 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
         column (e.g. a task stacked in another lane of the same column). Short
         stubs step the line off the source/target edge into the lane margin
         before the gutter run, so the connecting horizontals clear centred
-        shapes too."""
+        shapes too.
+
+        Same-lane edges detour AROUND any intermediate shape whose column lies
+        strictly between src.col and tgt.col — otherwise a straight horizontal
+        would draw through the intermediate node (the "gw_anomaly → t_calculate
+        crosses over end_error at col 5" collision seen on D001 wf2, which
+        also caused the branch's edge label to land right on top of the
+        intermediate shape)."""
         if src["_li"] == tgt["_li"]:
             if src["col"] < tgt["col"]:
                 a, d = _anchor(src, "right"), _anchor(tgt, "left")
@@ -1595,13 +1731,106 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
                     a, d = _anchor(src, "top"), _anchor(tgt, "bottom")
                 return [a, d], (a, d)
             if abs(a[1] - d[1]) < 5:
-                return [a, d], (a, d)
+                # Straight horizontal candidate — but check for intermediate
+                # shapes in the same lane that would sit ON the line.
+                lo_col = min(src["col"], tgt["col"])
+                hi_col = max(src["col"], tgt["col"])
+                obstacles = [
+                    n for n in nodes
+                    if n["lane"] == src["lane"]
+                    and n["id"] not in (src["id"], tgt["id"])
+                    and lo_col < n["col"] < hi_col
+                ]
+                if not obstacles:
+                    return [a, d], (a, d)
+                # Dip ABOVE the obstacles by default (keeps the edge and its
+                # label clear of the lower half where task descriptions live).
+                top_extent = min(
+                    node_by_id[n["id"]]["cy"] - _shape_half(n["kind"])
+                    for n in obstacles
+                )
+                detour_y = top_extent - 12
+                # Fall through to a below-dip if there's no room above.
+                if detour_y < lane_top[src["_li"]] + 12:
+                    bot_extent = max(
+                        node_by_id[n["id"]]["cy"] + _shape_half(n["kind"])
+                        for n in obstacles
+                    )
+                    detour_y = bot_extent + 12
+                pts = [a, (a[0], detour_y), (d[0], detour_y), d]
+                return pts, _pick_label_seg(pts)
             mx = (a[0] + d[0]) // 2
             pts = [a, (mx, a[1]), (mx, d[1]), d]
             return pts, _pick_label_seg(pts)
-        # Cross-lane: stub off the source edge, cross in a node-free gutter, stub
-        # into the target. Gutter sits half a column to the source-side of the
-        # target column, where no node centre ever lands.
+        # Cross-lane, different columns: keep the flow horizontal. Leave the
+        # source's facing SIDE, make the single vertical run in a column gutter
+        # and enter the target's facing side — a Z with two bends, never the
+        # bottom/top stub-gutter-stub (four bends) that reads as tangled.
+        if src["col"] != tgt["col"]:
+            fwd = tgt["col"] > src["col"]
+            d = _anchor(tgt, "left" if fwd else "right")
+            lo_li, hi_li = sorted((src["_li"], tgt["_li"]))
+
+            def _blocked(x_lo, x_hi, y, li):
+                # Any other shape in lane `li` whose box the horizontal at `y`
+                # between x_lo..x_hi would cross.
+                for n in nodes:
+                    if n["id"] in (src["id"], tgt["id"]):
+                        continue
+                    p = node_by_id[n["id"]]
+                    if p["_li"] != li:
+                        continue
+                    hw, hh = _hw_hh(p)
+                    if (p["cx"] + hw > x_lo and p["cx"] - hw < x_hi
+                            and p["cy"] - hh <= y <= p["cy"] + hh):
+                        return True
+                return False
+
+            def _riser_blocked(x, y_lo, y_hi):
+                for n in nodes:
+                    if n["id"] in (src["id"], tgt["id"]):
+                        continue
+                    p = node_by_id[n["id"]]
+                    hw, hh = _hw_hh(p)
+                    if (p["cx"] - hw <= x <= p["cx"] + hw
+                            and p["cy"] + hh > y_lo and p["cy"] - hh < y_hi):
+                        return True
+                return False
+
+            # Gateway branch: leave the top/bottom vertex and turn once into the
+            # target (BPMN L-shape) so it never shares the side exit used by the
+            # same-lane branch.
+            if src["kind"] == "gateway":
+                a = _anchor(src, "bottom" if tgt["_li"] > src["_li"] else "top")
+                y_lo, y_hi = sorted((a[1], d[1]))
+                xs = sorted((a[0], d[0]))
+                if (not _riser_blocked(a[0], y_lo, y_hi)
+                        and not _blocked(xs[0], xs[1], d[1], tgt["_li"])):
+                    pts = [a, (a[0], d[1]), d]
+                    return pts, _pick_label_seg(pts)
+
+            a = _anchor(src, "right" if fwd else "left")
+            if abs(a[1] - d[1]) < 5:
+                return [a, d], (a, d)
+            half = COL_W // 2
+            # Prefer the gutter just before the target (horizontal runs in the
+            # source lane), else just after the source (horizontal runs in the
+            # target lane) — whichever keeps both horizontals and the riser
+            # clear of other shapes.
+            sgn = 1 if fwd else -1
+            for gx in (tgt["cx"] - sgn * half, src["cx"] + sgn * half):
+                y_lo, y_hi = sorted((a[1], d[1]))
+                if (not _blocked(*sorted((a[0], gx)), a[1], src["_li"])
+                        and not _blocked(*sorted((gx, d[0])), d[1], tgt["_li"])
+                        and not _riser_blocked(gx, y_lo, y_hi)):
+                    pts = [a, (gx, a[1]), (gx, d[1]), d]
+                    return pts, _pick_label_seg(pts)
+            # Fall through to the bottom/top gutter route below.
+
+        # Cross-lane fallback (same column, or Z-route obstructed): stub off the
+        # source edge, cross in a node-free gutter, stub into the target. Gutter
+        # sits half a column to the source-side of the target column, where no
+        # node centre ever lands.
         down = tgt["_li"] > src["_li"]
         a = _anchor(src, "bottom" if down else "top")
         d = _anchor(tgt, "top" if down else "bottom")
@@ -1675,6 +1904,39 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
                 break
         gateway_prefer[n["id"]] = "below" if has_upward else "above"
 
+    # Per-event label-side prefer: an event whose cross-lane edge attaches to
+    # the BOTTOM anchor (start_event with outgoing edge going DOWN, or
+    # end_event with incoming edge coming from a HIGHER lane index) collides
+    # with a default below-placed label — the stub-in horizontal segment sits
+    # right in the label's y-range. Flip to ABOVE in that case. (Same-lane and
+    # top-anchor cases keep the default "below".)
+    event_prefer = {}
+    for n in nodes:
+        kind = n.get("kind")
+        if kind not in ("start_event", "end_event"):
+            continue
+        src_li = node_by_id[n["id"]]["_li"]
+        uses_bottom = False
+        # Cross-lane edges between different columns now attach to the SIDE
+        # anchors (see _route), so only a same-column vertical uses the bottom.
+        here = node_by_id[n["id"]]
+        for e in edges:
+            if e.get("from") == n["id"] and kind == "start_event":
+                tgt = node_by_id.get(e["to"])
+                if tgt and tgt["_li"] > src_li and tgt["col"] == here["col"]:
+                    uses_bottom = True
+                    break
+            if e.get("to") == n["id"] and kind == "end_event":
+                src = node_by_id.get(e["from"])
+                if not src or src["_li"] <= src_li:
+                    continue
+                # A gateway's L-shaped branch rises into the event's side; other
+                # same-column sources come up into the bottom.
+                if src["col"] == here["col"]:
+                    uses_bottom = True
+                    break
+        event_prefer[n["id"]] = "above" if uses_bottom else "below"
+
     # Edge LABELS are queued and drawn in a final pass on top of everything, so
     # a branch label can never be buried under a shape or a shape's own label.
     edge_label_queue = []
@@ -1697,9 +1959,11 @@ def render_bpmn_image(diagram_data: dict, output_path: Path,
         cx, cy, li = pos["cx"], pos["cy"], pos["_li"]
         kind = n["kind"]
         if kind == "start_event":
-            draw_start(cx, cy, n.get("label"), li)
+            draw_start(cx, cy, n.get("label"), li,
+                       prefer=event_prefer.get(n["id"], "below"))
         elif kind == "end_event":
-            draw_end(cx, cy, n.get("variant"), n.get("label"), li)
+            draw_end(cx, cy, n.get("variant"), n.get("label"), li,
+                     prefer=event_prefer.get(n["id"], "below"))
         elif kind == "task":
             draw_task(cx, cy, n.get("step"), n.get("action", ""),
                       n.get("description", ""))
@@ -1850,7 +2114,7 @@ def build_spec(spec_data: dict, output_path: Path) -> None:
 
     spec_data shape (canonical — Stage 1 lint enforces the docx-visible
     parts; non-rendered keys like `dev_handoff` are passed through and
-    consumed by the technical consultant directly):
+    consumed by `odoo-plan-development` directly):
         task_code, client_name, functionality_title, odoo_version,
         subtitle (optional; defaults to "Functional Specification"),
         metadata (dict: prepared_by, role, client, companion_to (optional),
@@ -1868,8 +2132,8 @@ def build_spec(spec_data: dict, output_path: Path) -> None:
                    per-workflow blocks keyed by snake_case (see
                    `_render_workflow_subsections` for the canonical list).
         dev_handoff (optional dict — NOT rendered to the docx; consumed
-                     by the technical consultant. See SKILL.md § Dev-Only
-                     Hand-off to the Technical Consultant for the shape.
+                     by odoo-plan-development. See SKILL.md § Dev-Only
+                     Hand-off to odoo-plan-development for the shape.
                      The builder ignores this key entirely; any unknown
                      top-level key is also ignored, so dev_handoff is a
                      convention, not a schema requirement).
@@ -1982,6 +2246,25 @@ def build_spec(spec_data: dict, output_path: Path) -> None:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(output_path))
+    _pin_zip_timestamps(output_path)
+
+
+def _pin_zip_timestamps(path: Path) -> None:
+    """python-docx stamps every zip entry with the wall-clock save time, so two
+    builds of identical content differ byte-wise. Rewrite the archive with a
+    fixed entry timestamp so re-running the builder is byte-identical."""
+    import io
+    import zipfile
+    src = path.read_bytes()
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(src)) as zin, \
+            zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zout:
+        for info in zin.infolist():
+            fixed = zipfile.ZipInfo(info.filename, date_time=(1980, 1, 1, 0, 0, 0))
+            fixed.compress_type = zipfile.ZIP_DEFLATED
+            fixed.external_attr = info.external_attr
+            zout.writestr(fixed, zin.read(info.filename))
+    path.write_bytes(out.getvalue())
 
 
 # Canonical set of vague-N/A reasons. Single source of truth — the lint
@@ -2042,6 +2325,7 @@ def _render_workflow_subsections(doc: Document, subs: dict, w_idx: int) -> None:
                 )
             make_paragraph(doc, f"N/A — {reason}")
         elif sub.get("table"):
+            _check_header(sub["table"], key, f"Workflow {w_idx} '{heading}'")
             make_table(doc, sub["table"])
         elif sub.get("content"):
             make_paragraph(doc, sub["content"])
@@ -2075,6 +2359,7 @@ def _render_access_sub_tables(doc: Document, sub_tables: dict,
             )
         make_paragraph(doc, f"N/A — {reason}")
     elif isinstance(new_groups, list) and new_groups:
+        _check_header(new_groups, "access.new_groups", f"Workflow {w_idx} 'New Groups'")
         make_table(doc, new_groups)
     else:
         raise ValueError(
@@ -2093,6 +2378,8 @@ def _render_access_sub_tables(doc: Document, sub_tables: dict,
             )
         make_paragraph(doc, f"N/A — {reason}")
     elif isinstance(existing_groups, list) and existing_groups:
+        _check_header(existing_groups, "access.existing_groups",
+                      f"Workflow {w_idx} 'Existing Groups mentioned'")
         make_table(doc, existing_groups)
     else:
         raise ValueError(

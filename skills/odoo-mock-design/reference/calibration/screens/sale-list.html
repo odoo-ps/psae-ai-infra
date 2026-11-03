@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Calibration — sale-list</title>
+<link rel="stylesheet" href="../../catalog/odoo.css"><link rel="stylesheet" href="assets/odoo.css">
+</head>
+<body>
+<!-- SPRITE -->
+<div class="o_web_client">
+<header class="o_navbar">
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+    </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-sales"/></svg>
+    <span class="o_menu_brand">Sales</span>
+  </a>
+  <div class="o_menu_sections" role="menu">
+    <a class="o_nav_entry">Orders</a>
+    <a class="o_nav_entry">Products</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
+  </div>
+  <div class="o_menu_systray" role="menu">
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge">6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+      <span class="badge">17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name">YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar o_avatar_c5">M</span>
+    </button>
+  </div>
+</nav>
+</header>
+<div class="o_action_manager">
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-primary o_list_button_add">New<svg class="o_icon o_caret"><use href="#o-caret-down"/></svg></button></div>
+      <div class="o_breadcrumb">
+        <div class="o_last_breadcrumb_item active"><span>Sales Orders</span></div>
+        <div class="o_control_panel_breadcrumbs_actions">
+          <div class="o_cp_action_menus">
+            <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="o_control_panel_actions">
+      <div class="o_cp_searchview input-group rounded-pill" role="search">
+        <div class="o_searchview form-control">
+          <svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg>
+          <div class="o_searchview_input_container">
+            <div class="o_searchview_facet">
+              <div class="o_searchview_facet_label"><svg class="o_icon"><use href="#o-filter"/></svg></div>
+              <div class="o_facet_values">
+                <small class="o_facet_value">Sales Orders</small>
+                <button class="o_facet_remove" title="Remove"><svg class="o_icon"><use href="#o-close-small"/></svg></button>
+              </div>
+            </div>
+            <input type="text" class="o_searchview_input focus" placeholder="Search..."/>
+          </div>
+        </div>
+        <button class="o_searchview_dropdown_toggler btn btn-outline-secondary" title="Toggle Search Panel"></button>
+      </div>
+    </div>
+    <div class="o_control_panel_navigation">
+      <div class="o_cp_pager" role="search">
+        <nav class="o_pager" aria-label="Pager">
+          <span class="o_pager_counter"><span class="o_pager_value">1-21</span><span> / </span><span class="o_pager_limit">21</span></span>
+          <span class="btn-group">
+            <button class="btn btn-secondary o_pager_previous" aria-label="Previous" disabled><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+            <button class="btn btn-secondary o_pager_next" aria-label="Next" disabled><svg class="o_icon"><use href="#o-chevron-right"/></svg></button>
+          </span>
+        </nav>
+      </div>
+      <nav class="o_cp_switch_buttons btn-group o_switcher">
+        <button class="btn btn-secondary o_switch_view o_list active" title="List"><svg class="o_icon"><use href="#o-view-list"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_kanban" title="Kanban"><svg class="o_icon"><use href="#o-view-kanban"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_calendar" title="Calendar"><svg class="o_icon"><use href="#o-view-calendar"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_pivot" title="Pivot"><svg class="o_icon"><use href="#o-view-pivot"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_graph" title="Graph"><svg class="o_icon"><use href="#o-view-graph"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_map" title="Map"><svg class="o_icon"><use href="#o-view-map"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_activity" title="Activity"><svg class="o_icon"><use href="#o-view-activity"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</div>
+<main class="o_content">
+<div class="o_website_sale_dashboard">
+  <div class="o_dashboard_cards">
+    <button class="o_dashboard_card btn o_dashboard_card_purple" title="Orders to Deliver"><span class="o_dashboard_card_data">15</span><span class="o_dashboard_card_label">To Deliver</span></button>
+    <button class="o_dashboard_card btn o_dashboard_card_cyan" title="Orders to Invoice"><span class="o_dashboard_card_data">6</span><span class="o_dashboard_card_label">To Invoice</span></button>
+  </div>
+  <div class="o_dashboard_period">
+    <div class="o_date_filter_wrapper"><button><svg class="o_icon"><use href="#o-view-calendar"/></svg><span>Last 7 days</span><svg class="o_icon"><use href="#o-caret-down"/></svg></button></div>
+    <div class="o_cards_container">
+      <div class="o_period_card"><span class="o_period_card_title">Sales Orders</span><div class="o_period_card_values"><span class="o_period_card_value">13</span><span class="o_dashboard_card_evolution text-success">1200%</span></div></div>
+      <div class="o_period_card"><span class="o_period_card_title">Sales Revenue</span><div class="o_period_card_values"><span class="o_period_card_value">$ 382,315.50</span><span class="o_dashboard_card_evolution text-success">58358.03%</span></div></div>
+    </div>
+  </div>
+</div>
+<div class="o_list_view">
+  <table class="o_list_table o_list_table_ungrouped">
+    <thead>
+      <tr>
+        <th class="o_list_record_selector"><input type="checkbox"/></th>
+        <th class="o_list_min_th">Number</th>
+        <th class="o_list_datetime_th">Order Date</th>
+        <th class="o_list_datetime_th">Promised Delivery</th>
+        <th>Customer</th>
+        <th class="o_list_number_th o_monetary_cell">Total</th>
+        <th>Status</th>
+        <th>Invoice Status</th>
+        <th class="o_list_activity_cell">Activities</th>
+        <th class="o_list_actions_header"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00026</td>
+        <td>Oct 6, 12:30 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">A</span></span><span>Acme Corporation</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold text-info">$ 290,616.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-info">To Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00022</td>
+        <td>Oct 6, 12:30 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">A</span></span><span>Acme Corporation</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold text-info">$ 57,500.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-info">To Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00021</td>
+        <td>Oct 6, 12:30 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">A</span></span><span>Acme Corporation</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold text-info">$ 17,250.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-info">To Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00016</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 1,186.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Upsell"><svg class="o_icon text-warning"><use href="#o-check"/></svg><span class="o-mail-ListActivity-summary">Upsell</span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00014</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 1,582.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00013</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 415.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00012</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 556.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Confirm order via email"><svg class="o_icon text-success"><use href="#o-envelope"/></svg><span class="o-mail-ListActivity-summary">Confirm order via email</span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00010</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 751.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Confirm Delivery"><svg class="o_icon text-success"><use href="#o-check"/></svg><span class="o-mail-ListActivity-summary">Confirm Delivery</span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00008</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 462.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00007</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold text-info">$ 1,706.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-info">To Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Check delivery requirements"><svg class="o_icon text-success"><use href="#o-check"/></svg><span class="o-mail-ListActivity-summary">Check delivery requirements</span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00006</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">L</span></span><span>Lumber Inc</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 862.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00004</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 2,240.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Upsell"><svg class="o_icon text-success"><use href="#o-check"/></svg><span class="o-mail-ListActivity-summary">Upsell</span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00025</td>
+        <td>Oct 5, 12:30 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">A</span></span><span>Acme Corporation</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold text-info">$ 7,187.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-info">To Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00009</td>
+        <td>Sep 29, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 654.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00015</td>
+        <td>Sep 22, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 1,541.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00023</td>
+        <td>Sep 21, 12:30 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">A</span></span><span>Acme Corporation</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 25,185.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="To-Do"><svg class="o_icon text-warning"><use href="#o-check"/></svg><span class="o-mail-ListActivity-summary">To-Do</span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00011</td>
+        <td>Sep 15, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 1,096.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00017</td>
+        <td>Sep 8, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 951.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00024</td>
+        <td>Sep 7, 12:30 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c2">R</span></span><span>Ready Mat</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold text-info">$ 56,005.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-info">To Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Call to follow-up"><svg class="o_icon text-success"><use href="#o-phone"/></svg><span class="o-mail-ListActivity-summary">Call to follow-up</span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00020</td>
+        <td>Sep 6, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c4">J</span></span><span>Joel Willis</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 3,389.63</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+      <tr class="o_data_row">
+        <td class="o_list_record_selector"><input type="checkbox"/></td>
+        <td class="fw-bold">S00018</td>
+        <td>Sep 1, 12:29 PM</td>
+        <td></td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 831.00</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
+        <td><span class="badge rounded-pill text-bg-300">Nothing to Invoice</span></td>
+        <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+        <td></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td></td><td></td><td></td><td></td><td></td>
+        <td class="o_list_number">$ 471,969.13</td>
+        <td></td><td></td><td></td><td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+</main>
+</div>
+</div>
+</body>
+</html>

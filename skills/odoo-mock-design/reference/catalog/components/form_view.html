@@ -1,52 +1,144 @@
 <!--
-  form_view.html — Odoo form view (form_controller.scss / form_renderer):
-  statusbar + title + two-column groups + notebook tabs.
-  Wrap in .o_web_client > navbar + control_panel + this. To add a chatter, use
-  the .o_content_with_chatter layout (see chatter.html).
-  SMART BUTTONS (button box) render in the CONTROL PANEL — Odoo 19's
-  form_controller.xml passes the button-box into the layout's
-  `layout-actions` slot (`.o_control_panel_actions`), centered between
-  the breadcrumb (left) and the search bar (right). Do NOT place them
-  inside the form sheet. See control_panel.html for the slot.
-  Flag a CUSTOM (solution-added) field's label with a help "?" carrying its
-  attributes — <label>Lot Allocations <span class="o_field_help"
-  data-help="…" data-field="…" data-model="…" data-type="…">?</span></label>
-  (see reference/interactions.md § Custom-field help).
+  form_view.html — Odoo 20 form view (web/views/form/form_controller.scss +
+  web_enterprise/views/form/form_controller.scss): statusbar + sheet (title,
+  two-column groups, notebook).
+  Wrap in .o_web_client > navbar + control_panel + this.
+
+  LAYOUT (v20): the statusbar is the FIRST child of .o_form_sheet_bg, on the
+  page gray (no white strip, no border), with the sheet 8px below it:
+    .o_form_view > .o_form_sheet_bg > [.o_form_statusbar, .o_form_sheet]
+  With a chatter, wrap sheet_bg + chatter in .o_content_with_chatter (see
+  chatter.html) — the chatter's buttons then line up with the statusbar's.
+  Never put .o_form_statusbar directly under .o_form_view. No statusbar → the
+  sheet starts at the top of .o_form_sheet_bg.
+
+  SMART BUTTONS (button box) render in the CONTROL PANEL's centre cell
+  (`.o_control_panel_actions`, form_controller.xml control-panel-actions slot),
+  never inside the sheet. See control_panel.html for the slot.
+
+  FIELDS (.o_group > .o_inner_group > .o_field_row = label + widget):
+  - The label column is as wide as the longest label (max 150px, wraps past
+    that); values start 16px after it. Labels are 14px / 500 / dark.
+  - v20 forms are always in edit mode: an EDITABLE value is an input, so CSS
+    gives every plain .o_field_widget in an inner group a 24px box (rows 37px
+    apart, value text 1px below its label). Just write the value text.
+  - Readonly field → add o_form_label_readonly to its <label> (muted gray, as on
+    a confirmed order's Customer / Order Date) — or o_readonly_modifier on the
+    widget when the label stays dark; its value is a bare 21px line (rows 34px
+    apart). Empty readonly value → render
+    NOTHING: `<div class="o_field_widget o_field_empty"></div>` + label class
+    o_form_label_empty (never an em-dash). Empty editable value → its pale
+    placeholder: `<span class="o_input_placeholder">Immediate</span>`.
+  - Invalid (required, unset on save) → o_field_invalid on BOTH the label and
+    the widget (red label, red-tinted value with a red underline).
+  - Required fields have no visible underline at rest — just write the value.
+  - Booleans / selections use real inputs, never ●/○/☑ glyphs (see the radio
+    and toggle rows below). Add `disabled` only when the field is READONLY
+    (Odoo renders those at 50% opacity).
+  - Dates in forms are non-numeric: "Oct 6, 12:29 PM", "Jun 30", "Sep 1 → Oct 1"
+    (year omitted in the current year).
+  - Annotation markers go INSIDE the widget or the label — never as a third
+    direct child of .o_field_row (it would wrap under the label).
+  Flag a CUSTOM (solution-added) field's label with the help "?" carrying its
+  attributes, glued to the label text (NO space before it, so it wraps with
+  the last word like Odoo's <sup>):
+    <label class="o_form_label">Lot Allocations<span class="o_field_help"
+      data-help="…" data-field="…" data-model="…" data-type="…">?</span></label>
+  (see reference/interactions.md § Custom-field help), and add mock-custom to
+  its .o_field_row — or to the .o_inner_group when the solution adds the whole
+  group (§ Custom elements).
 -->
 <div class="o_form_view">
-
-  <!-- Statusbar: left buttons + right status pipeline -->
-  <div class="o_form_statusbar">
-    <div class="o_statusbar_buttons">
-      <!-- SLOT: workflow buttons, e.g. -->
-      <button class="btn btn-primary">Confirm</button>
-      <button class="btn o_btn_outline">Cancel</button>
-    </div>
-    <div class="o_statusbar_status">
-      <!-- SLOT: status stages; mark the current one o_arrow_button_current -->
-      <span class="o_arrow_button">Quotation</span>
-      <span class="o_arrow_button o_arrow_button_current">Quotation Sent</span>
-      <span class="o_arrow_button">Sales Order</span>
-    </div>
-  </div>
-
+  <!-- With a chatter: <div class="o_content_with_chatter"> wraps .o_form_sheet_bg + aside.o-mail-Chatter -->
   <div class="o_form_sheet_bg">
+
+    <!-- Statusbar (first child of sheet_bg): buttons left, status pipeline right -->
+    <div class="o_form_statusbar">
+      <div class="o_statusbar_buttons">
+        <!-- SLOT: workflow buttons. At most ONE btn-primary (the record's main
+             next step); every other button is btn-secondary. -->
+        <button class="btn btn-primary">Confirm</button>
+        <button class="btn btn-secondary">Send</button>
+        <button class="btn btn-secondary">Cancel</button>
+      </div>
+      <!-- SLOT: status pipeline — stages left → right in workflow order, the
+           current one o_arrow_button_current (+ aria-current="step").
+           READONLY `state` pipeline (sale / invoice / payslip): keep
+           o_readonly_modifier and `disabled` on every stage (others read muted).
+           CLICKABLE `stage_id` pipeline (CRM / task / helpdesk): drop
+           o_readonly_modifier and put `disabled` only on the current stage. -->
+      <div class="o_field_widget o_field_statusbar o_readonly_modifier">
+        <div class="o_statusbar_status" role="radiogroup">
+          <button class="btn btn-secondary o_arrow_button" disabled>Quotation</button>
+          <button class="btn btn-secondary o_arrow_button o_arrow_button_current" disabled aria-current="step">Quotation Sent</button>
+          <button class="btn btn-secondary o_arrow_button" disabled>Sales Order</button>
+        </div>
+      </div>
+      <!-- hr.employee: the user-status pill (field user_state, widget
+           employee_user_status) sits BETWEEN .o_statusbar_buttons and the
+           pipeline, vertically centred 8px left of it:
+        <div class="o_field_widget o_field_employee_user_status"><button class="btn btn-sm rounded-pill btn-outline-danger"><svg class="o_icon"><use href="#o-user-o"/></svg><span>Not Invited</span></button></div>
+           Other states: Invited btn-outline-warning + #o-paper-plane (send) ·
+           Confirmed btn-outline-success + #o-check-circle. (Not Invited asks for
+           person_off, which the v20 icon font lacks: it renders the plain
+           person outline, #o-user-o.) -->
+    </div>
+
     <div class="o_form_sheet">
 
-      <!-- Optional corner ribbon (locked / cancelled / done). The band text is
-           the `data-text` ATTRIBUTE — the CSS draws it via ::after. Child text
-           renders UNSTYLED (the "blank / capped ribbon" bug), so leave the
-           element empty. Add text-bg-danger for Cancelled, text-bg-success for
-           Done. The .o_form_sheet is the position:relative anchor.
-        <div class="o_widget_web_ribbon" data-text="Locked"></div> -->
+      <!-- Optional corner ribbon — FIRST child of .o_form_sheet. Default green
+           (text-bg-success: Paid / Done); text-bg-danger for Cancelled / Archived,
+           text-bg-warning / text-bg-info for other states. Text renders UPPERCASE.
+        <div class="o_widget o_widget_web_ribbon"><div class="ribbon ribbon-top-right"><span class="text-bg-danger">Cancelled</span></div></div> -->
 
       <!-- (Smart buttons live in the control panel — see control_panel.html
            o_control_panel_actions. Do NOT place a button-box here.) -->
 
-      <!-- Title -->
+      <!-- Title (h1 33.6px / black). READONLY name (S00004, a posted entry):
+           bare text at 500, as below. EDITABLE name (partner, product, lead,
+           task…): an input → 400 weight, 43.3px box:
+             <h1 class="o_form_title"><div class="o_field_widget o_field_char"><span class="o_input">Deco Addict</span></div></h1> -->
       <div class="oe_title">
-        <h1 class="o_form_title"><!-- SLOT: record title, e.g. SO0042 --></h1>
+        <h1 class="o_form_title"><!-- SLOT: record title, e.g. S00004 --></h1>
       </div>
+      <!-- EMPLOYEE HEADER (hr.employee name="employee_photo_and_info"): photo +
+           presence badge LEFT; editable name + four 50%-wide icon rows (email,
+           work phone, work mobile, tags; empty = its placeholder); optional
+           hr_payroll "Reviewed" pill RIGHT. It replaces .oe_title. The image is
+           a packaged local file (lint: no external refs). No photo → Odoo's
+           generated initial avatar at the photo size:
+           <span class="o_user_avatar o_avatar_c1" style="width:128px;height:128px;font-size:68px">A</span>
+           Presence circle colour: o_icon_employee_absent (amber), text-success
+           (present), text-muted (unknown).
+        <div class="o_employee_header">
+          <div class="o_employee_avatar">
+            <div class="o_field_widget o_field_hr_presence_status_private"><svg class="o_icon o_employee_availability o_icon_employee_absent"><use href="#o-circle"/></svg></div>
+            <div class="o_field_widget o_field_image"><img src="assets/…" width="128" height="128" alt=""></div>
+          </div>
+          <div class="o_employee_header_info">
+            <h1 class="o_employee_form_header_info"><div class="o_field_widget o_field_char o_required_modifier"><span class="o_input">Abigail Peterson</span></div></h1>
+            <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-envelope"/></svg><div class="o_field_widget o_field_email"><span class="o_input">abigail.peterson39@example.com</span></div></div>
+            <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-phone"/></svg><div class="o_field_widget o_field_phone"><span class="o_input">(555)-233-3393</span></div></div>
+            <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-smartphone"/></svg><div class="o_field_widget o_field_phone"><span class="o_input o_input_placeholder">Work Mobile</span></div></div>
+            <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-tag"/></svg><div class="o_field_widget o_field_many2many_tags"><span class="o_input o_input_placeholder">e.g. Founder, Motorized, Building B, ...</span></div></div>
+          </div>
+          <div class="o_to_review_wrapper"><div class="o_field_widget o_field_dropdown_selection_badge"><button class="btn btn-link rounded-pill btn-outline-success">Reviewed</button></div></div>
+        </div>
+        Partner / product photo instead: <div class="oe_avatar"><div class="o_field_widget o_field_image"><img src="assets/…" alt=""></div></div> (90px, floats right, before .oe_title). -->
+      <!-- MANY2ONE-AVATAR TITLE + SUMMARY TILES (hr.payslip; hr_payslip_views.xml):
+           the h1 is the employee (57.6px photo + teal name, mb-1), the pay
+           structure sits under the NAME (padding-left 66px, verbatim from the
+           arch), and the bg-100 summary tiles are right-aligned beside it.
+        <div class="d-flex align-items-start gap-5">
+          <div class="oe_title flex-grow-1">
+            <h1 class="o_form_title mb-1"><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><img src="assets/…" alt=""></span><a class="o_form_link">Mitchell Admin</a></div></div></h1>
+            <div class="d-block mb-2" style="padding-left: 66px;"><div class="o_field_widget">Regular Pay</div></div>
+          </div>
+          <div class="o_payslip_summary d-flex flex-grow-1 gap-2 justify-content-end">
+            <div class="min-w-0 bg-100 p-2 px-lg-4 border rounded text-center"><div class="mb-2 fw-bold">Worked days</div><div class="fs-2 lh-1"><div class="o_field_widget mb-1 me-1">23.00</div>days</div><div class="text-muted"><div class="o_field_widget">184h</div></div></div>
+            <div class="min-w-0 bg-100 p-2 px-lg-4 border rounded text-center"><div class="mb-2 fw-bold">Wage</div><div><div class="o_field_widget mb-1 fs-2 lh-1">$ 0.00</div></div><div class="text-muted"><div class="o_field_widget">$ 0.00</div><span class="text-muted ms-1">Net</span></div></div>
+          </div>
+        </div> -->
 
       <!-- Two-column field groups -->
       <div class="o_group">
@@ -59,43 +151,78 @@
           </div>
           <div class="o_field_row">
             <label class="o_form_label">Expiration</label>
-            <div class="o_field_widget">06/30/2026</div>
+            <div class="o_field_widget">Jun 30</div>
+          </div>
+          <!-- Status badge (widget="badge"): soft tint pill, never solid -->
+          <div class="o_field_row">
+            <label class="o_form_label">Delivery</label>
+            <div class="o_field_widget o_field_badge"><span class="badge rounded-pill text-bg-info">Not Delivered</span></div>
           </div>
         </div>
         <div class="o_inner_group">
           <!-- SLOT: right column fields -->
           <div class="o_field_row">
-            <label class="o_form_label">Salesperson</label>
-            <div class="o_field_widget">Mitchell Admin</div>
+            <label class="o_form_label o_form_label_readonly">Order Date</label>
+            <div class="o_field_widget">Oct 6, 12:29 PM</div>
           </div>
           <div class="o_field_row">
             <label class="o_form_label">Payment Terms</label>
-            <div class="o_field_widget o_field_empty">—</div>
+            <div class="o_field_widget"><span class="o_input_placeholder">Immediate</span></div>
           </div>
+          <div class="o_field_row">
+            <label class="o_form_label o_form_label_empty">Template</label>
+            <div class="o_field_widget o_field_empty"></div>
+          </div>
+          <!-- Radio (widget="radio"): real inputs; o_horizontal or o_vertical -->
+          <div class="o_field_row">
+            <label class="o_form_label">Invoicing</label>
+            <div class="o_field_widget o_field_radio">
+              <div role="radiogroup" class="o_horizontal">
+                <div class="form-check o_radio_item"><input type="radio" class="form-check-input o_radio_input" name="inv_policy" checked><label class="form-check-label o_form_label">Ordered</label></div>
+                <div class="form-check o_radio_item"><input type="radio" class="form-check-input o_radio_input" name="inv_policy"><label class="form-check-label o_form_label">Delivered</label></div>
+              </div>
+            </div>
+          </div>
+          <!-- Boolean: checkbox = `o-checkbox form-check`; widget="boolean_toggle"
+               adds form-switch (green when on). -->
+          <div class="o_field_row">
+            <label class="o_form_label">Online signature</label>
+            <div class="o_field_widget o_field_boolean_toggle"><div class="o-checkbox form-check form-switch"><input type="checkbox" class="form-check-input" checked></div></div>
+          </div>
+          <!-- Other shapes:
+               checkbox  <div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check"><input type="checkbox" class="form-check-input" checked></div></div>
+               selection_badge  <div class="o_field_widget"><span class="o_selection_badge active">Tax Excl.</span><span class="o_selection_badge">Tax Incl.</span></div>
+               many2many tags  <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_4"><div class="o_tag_badge_text">Services</div></span></div></div>
+               many2one avatar  <div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span><span>Mitchell Admin</span></div></div>
+               invalid  <label class="o_form_label o_field_invalid">Project</label><div class="o_field_widget o_field_invalid"><input class="o_input"></div> -->
         </div>
       </div>
 
       <!-- Subtotal footer (sale / purchase / invoice) — append BELOW the order-
-           lines list. Use the table markup verbatim; the CSS class
-           o_subtotal_label / o_subtotal_amount align labels left and values
-           right with tabular numbers. The o_total row is emphasized.
+           lines list (inside the notebook page; see list_view.html INLINE
+           one2many). Use the table markup verbatim: a compact block pushed
+           right, each label right next to its value (account tax_totals);
+           the first amount is bold, the Total value goes in a <span>
+           (1.3em bold, rule above the value only).
         <div class="o_subtotal_footer">
           <table>
             <tr><td class="o_subtotal_label">Untaxed Amount</td>
-                <td class="o_subtotal_amount">11,453.00</td></tr>
+                <td class="o_subtotal_amount">$ 11,453.00</td></tr>
             <tr><td class="o_subtotal_label">Taxes</td>
-                <td class="o_subtotal_amount">1,717.95</td></tr>
+                <td class="o_subtotal_amount">$ 1,717.95</td></tr>
             <tr class="o_total"><td class="o_subtotal_label">Total</td>
-                <td class="o_subtotal_amount">$ 13,170.95</td></tr>
+                <td class="o_subtotal_amount"><span>$ 13,170.95</span></td></tr>
           </table>
         </div>
         Anti-pattern: <div class="o_subtotal_row"><span>label</span><span>value</span></div>
         renders without label/value separation because the catalog CSS targets
         the table form. Always use the table block. -->
 
-      <!-- Notebook (tabs). Make tabs actually switch: pair data-mock-tab on the
+      <!-- Notebook = Enterprise boxed tabs (gray inactive, white active with a
+           plum top bar). Make tabs actually switch: pair data-mock-tab on the
            header with data-mock-tabpanel on the panel; mark the open pair
-           active / is-active-tab. walkthrough.js wires the click. -->
+           active / is-active-tab. walkthrough.js wires the click. A tab whose
+           page holds an invalid field gets o_page_invalid (red). -->
       <div class="o_notebook">
         <div class="o_notebook_headers">
           <span class="nav-link active" data-mock-tab="lines">Order Lines</span>
@@ -103,12 +230,32 @@
         </div>
         <div class="o_notebook_content">
           <div data-mock-tabpanel="lines" class="is-active-tab">
-            <!-- SLOT: open tab content. Often an editable list (see list_view.html). -->
+            <!-- SLOT: open tab content. Often an editable list (list_view.html
+                 INLINE one2many, with its "Add Line" row): as the FIRST content
+                 of a page it attaches to the tabs and runs edge to edge. -->
           </div>
           <div data-mock-tabpanel="other">
             <!-- SLOT: Other Info groups. Discover standard-field placement at
                  runtime from the odoo/ source (see reference/field_placement.md)
-                 — e.g. sale.order Salesperson & Warehouse live here, not main. -->
+                 — e.g. sale.order Salesperson & Warehouse live here, not main.
+                 Group titles are .o_horizontal_separator as the FIRST row of an
+                 inner group, written in normal case (CSS uppercases them): -->
+            <div class="o_group">
+              <div class="o_inner_group">
+                <div class="o_horizontal_separator">Sales</div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Salesperson</label>
+                  <div class="o_field_widget">Mitchell Admin</div>
+                </div>
+              </div>
+              <div class="o_inner_group">
+                <div class="o_horizontal_separator">Shipping</div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Warehouse</label>
+                  <div class="o_field_widget"><a class="o_form_link">San Francisco</a></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

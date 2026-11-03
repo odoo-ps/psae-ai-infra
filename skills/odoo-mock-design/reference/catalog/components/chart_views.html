@@ -1,144 +1,242 @@
 <!--
-  chart_views.html — labelled, on-brand placeholders for the chart/grid view
-  types (graph, pivot, calendar). A mock should land its DECISIONS on
-  form/list/kanban; use these only when a reporting step genuinely needs one.
-  NEVER embed a charting library — that breaks self-containment. These are
-  static, recognizably-Odoo placeholders built from odoo.css tokens.
-  Each goes inside .o_action_manager (navbar + control panel above it).
+  chart_views.html — Odoo 20 reporting views: GRAPH, PIVOT and the CALENDAR
+  month grid. A mock should land its DECISIONS on form/list/kanban; use these
+  only when a reporting step genuinely needs one. NEVER embed a charting
+  library — that breaks self-containment. These are static,
+  recognizably-Odoo placeholders built from odoo.css tokens. Each goes
+  inside .o_action_manager, right after the control panel (navbar + control
+  panel above it).
+
+  TOOLBAR PLACEMENT (pivot + graph — web/views/pivot/pivot_controller.xml,
+  web/views/graph/graph_controller.xml + graph_renderer.xml):
+    • The view toolbar (Measures btn-primary, Spreadsheet btn-secondary,
+      then the settings / actions groups) lives in a FREE-STANDING row
+      between the control panel and the view body, on the gray page
+      (`d-flex gap-1 mx-3 mb-3`; web_enterprise drops mt-2). Never in
+      `.o_control_panel_main_buttons` — that cell is EMPTY on a pivot /
+      graph view (no New button).
+    • The buttons are the GLOBAL .btn (33px, 6px radius, btn-secondary
+      white). Join related buttons with .btn-group; never shrink them.
+    • The Spreadsheet button (spreadsheet_edition, Enterprise, desktop
+      only) sits right after Measures: pivot `o_pivot_add_spreadsheet`,
+      graph `o_graph_insert_spreadsheet`. Separately, the control panel's
+      ⋮ menu carries a generic "Spreadsheet ▸" sub-dropdown (link this view
+      in a spreadsheet) on every list/kanban/pivot/graph view; that entry
+      is not the pivot Insert action.
+    • Measures (`o_report_measures`) reads "Measures ▾" on pivot (and
+      cohort, multi-select) but shows the ACTIVE measure's name on graph
+      (single-select), e.g. "Qty Ordered ▾".
 -->
 
-<!-- GRAPH (bar) — Odoo 19 graph view (real Odoo uses Chart.js; mock uses
-     pure CSS). Y-axis labels on the left, X-axis on the bottom, legend
-     top-right with one chip per series. Bars are inline-% heights ONLY
-     (geometry); color is per-series and comes from a small palette.
-
-     TOOLBAR PLACEMENT — same shape as pivot (see PIVOT block below):
-     graph_controller.xml does NOT set layout-buttons; graph_renderer.xml
-     line 42 renders the buttonTemplate inside the view wrapper, ABOVE
-     the canvas, in a `d-flex gap-1 mt-2 mx-3 mb-3` row. The template
-     (`web.GraphView.Buttons`) carries up to four btn-groups: Measures,
-     mode toggle (Bar/Line/Pie), Stacked/Cumulative (bar+line only), and
-     Sort asc/desc (non-pie). `.o_control_panel_main_buttons` stays
-     empty on a graph view too. -->
-
-<!-- Graph toolbar — Measures + mode toggles + sort, between control panel
-     and canvas. Render only the btn-groups that apply to the active mode
-     (e.g. Stacked is bar+line only; Sort is non-pie). -->
-<div class="o_graph_buttons">
-  <div class="btn-group" role="toolbar" aria-label="Main actions">
-    <button class="btn btn-secondary">Measures <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></button>
+<!-- ===================================================================
+     GRAPH — web.GraphRenderer: .o_graph_renderer > [toolbar row,
+     .o_graph_canvas_container]. Real Odoo draws a Chart.js canvas; the
+     mock uses CSS bars.
+     Toolbar (graph_controller.xml): left = Measures (measure NAME) +
+     Spreadsheet; right (`ms-auto d-flex gap-2`, mock helper
+     .o_graph_actions) = [Cumulative switch (line only)] Stacked switch
+     (bar + line) · .vr · sort .o_switcher [south #o-sort-desc |
+     north #o-sort-asc] · .vr · mode .o_switcher [bar_chart #o-view-graph |
+     show_chart #o-chart-line | pie_chart #o-chart-pie], `.active` on the
+     current sort / mode. Pie mode hides the switches and the sort group.
+     Canvas: white, 1px top border, 16px padding, min-height 50vh, sits
+     full-bleed under the toolbar (a white rounded card only beside a
+     search panel — see search_panel.html).
+     Chart (web/core/colors/colors.js COLORS_SM_BRIGHT, graph_renderer.js):
+       - ONE group-by → every bar #36A2EB (var(--o-graph-1)), NO legend.
+       - 2+ group-bys → one series per sub-group in order --o-graph-1..6
+         (#36A2EB #FF6384 #4BC0C0 #FF9F40 #9C6DF4 #FFCD56); keep mocks at
+         ≤ 6 series (7-12 switch to the COLORS_MD palette). Legend at the
+         BOTTOM, centred, 30×12 swatches with a 4px radius.
+       - Horizontal gridlines only, rgba(0,0,0,.1); no axis lines. Tick
+         labels 12px #111827. Bars flat, top radius 4px, ~72% of the
+         category width.
+     GEOMETRY: N y-axis labels = N-1 gridline bands. Set the band count on
+     .o_graph_bars with `--o-graph-bands` (default 7 = 8 labels) and change
+     both together. Bar heights are inline % of the plot. -->
+<div class="o_graph_renderer">
+  <div class="o_graph_buttons">
+    <div class="btn-group" role="toolbar" aria-label="Main actions">
+      <button class="btn btn-primary o_report_measures">Qty Ordered <svg class="o_icon"><use href="#o-caret-down"/></svg></button>
+    </div>
+    <div class="btn-group" role="toolbar" aria-label="Spreadsheet">
+      <button class="btn btn-secondary o_graph_insert_spreadsheet">Spreadsheet</button>
+    </div>
+    <div class="o_graph_actions" role="toolbar" aria-label="Graph actions">
+      <div class="form-check form-switch" title="Stacked">
+        <label class="form-check-label small" for="switchStacked">Stacked</label>
+        <input class="form-check-input" type="checkbox" role="switch" id="switchStacked" checked/>
+      </div>
+      <span class="vr"></span>
+      <div class="btn-group o_switcher" role="toolbar" aria-label="Sort graph">
+        <button class="btn btn-secondary o_graph_button o_sort_desc active" title="Descending"><svg class="o_icon"><use href="#o-sort-desc"/></svg></button>
+        <button class="btn btn-secondary o_graph_button o_sort_asc" title="Ascending"><svg class="o_icon"><use href="#o-sort-asc"/></svg></button>
+      </div>
+      <span class="vr"></span>
+      <div class="btn-group o_switcher" role="toolbar" aria-label="Change graph">
+        <button class="btn btn-secondary o_graph_button active" title="Bar Chart"><svg class="o_icon"><use href="#o-view-graph"/></svg></button>
+        <button class="btn btn-secondary o_graph_button" title="Line Chart"><svg class="o_icon"><use href="#o-chart-line"/></svg></button>
+        <button class="btn btn-secondary o_graph_button" title="Pie Chart"><svg class="o_icon"><use href="#o-chart-pie"/></svg></button>
+      </div>
+    </div>
   </div>
-  <div class="btn-group" role="toolbar" aria-label="Change graph">
-    <button class="btn btn-secondary o_graph_button active" title="Bar Chart"><svg class="o_icon"><use href="#o-view-graph"/></svg></button>
-    <button class="btn btn-secondary o_graph_button" title="Line Chart"><svg class="o_icon"><use href="#o-chart-line"/></svg></button>
-    <button class="btn btn-secondary o_graph_button" title="Pie Chart"><svg class="o_icon"><use href="#o-chart-pie"/></svg></button>
-  </div>
-  <div class="btn-group" role="toolbar" aria-label="Stack">
-    <button class="btn btn-secondary o_graph_button active" title="Stacked"><svg class="o_icon"><use href="#o-chart-stack"/></svg></button>
-  </div>
-  <div class="btn-group" role="toolbar" aria-label="Sort graph">
-    <button class="btn btn-secondary o_graph_button" title="Descending"><svg class="o_icon"><use href="#o-sort-desc"/></svg></button>
-    <button class="btn btn-secondary o_graph_button" title="Ascending"><svg class="o_icon"><use href="#o-sort-asc"/></svg></button>
-  </div>
-</div>
-
-<div class="o_graph_view">
-  <div class="o_graph_legend">
-    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#a8c8e8;"></span> Thomas Passot</span>
-    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#f2bdb0;"></span> John Miller</span>
-    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#b5d6c5;"></span> Henry Campbell</span>
-    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#f0d8a8;"></span> Carrie Helle</span>
-    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:#c5b9d5;"></span> Wendi Baltz</span>
-  </div>
-  <div class="o_graph_plot">
-    <ol class="o_graph_yaxis">
-      <li>6</li><li>5</li><li>4</li><li>3</li><li>2</li><li>1</li><li>0</li>
-    </ol>
-    <div class="o_graph_bars">
-      <div class="o_graph_bar" style="height:40%; background:#c5b9d5;"><span>Jan</span></div>
-      <div class="o_graph_bar" style="height:65%; background:#a8c8e8;"><span>Feb</span></div>
-      <div class="o_graph_bar" style="height:52%; background:#b5d6c5;"><span>Mar</span></div>
-      <div class="o_graph_bar" style="height:88%; background:#f2bdb0;"><span>Apr</span></div>
-      <div class="o_graph_bar" style="height:73%; background:#f0d8a8;"><span>May</span></div>
-      <div class="o_graph_bar" style="height:96%; background:#a8c8e8;"><span>Jun</span></div>
+  <div class="o_graph_canvas_container">
+    <div class="o_graph_plot">
+      <!-- 9 labels → --o-graph-bands: 8 -->
+      <ol class="o_graph_yaxis">
+        <li>400.00</li><li>350.00</li><li>300.00</li><li>250.00</li><li>200.00</li><li>150.00</li><li>100.00</li><li>50.00</li><li>0.00</li>
+      </ol>
+      <div class="o_graph_bars" style="--o-graph-bands: 8;">
+        <div class="o_graph_bar_group"><div class="o_graph_bar" style="height:94%;"></div></div>
+        <div class="o_graph_bar_group"><div class="o_graph_bar" style="height:65%;"></div></div>
+      </div>
+      <div class="o_graph_xaxis"><span>September 2026</span><span>October 2026</span></div>
     </div>
   </div>
 </div>
 
-<!-- PIVOT — cross-tab grid (real Odoo classes o_pivot / o_pivot_table).
-     Row + column headers carry square [+]/[-] expand-collapse buttons
-     (`.o_pivot_expand_btn`).
-
-     TOOLBAR PLACEMENT — source-of-truth (web/static/src/views/pivot/):
-       • pivot_controller.xml does NOT set the layout-buttons slot, so the
-         control panel's `.o_control_panel_main_buttons` cell is EMPTY for
-         a pivot view (no New button, no toolbar buttons).
-       • pivot_renderer.xml line 6 does `<t t-call="{{ props.buttonTemplate }}"/>`
-         INSIDE the renderer wrapper, ABOVE the `.o_pivot` table. The
-         buttonTemplate is `web.PivotView.Buttons` (pivot_controller.xml line 4)
-         which renders a free-standing `.o_pivot_buttons` row carrying TWO
-         btn-groups:
-           1. Main actions: <ReportViewMeasures/> (the Measures dropdown).
-           2. Pivot settings: Flip Axis (fa-exchange), Expand All
-              (fa-arrows), Download xlsx (fa-download).
-       • Insert in Spreadsheet is NOT in the pivot's toolbar — it's
-         registered in `cogMenuRegistry` by `spreadsheet_edition`
-         (assets/spreadsheet_cog_menu/spreadsheet_cog_menu.js) so it
-         renders as a nested "Spreadsheet" sub-dropdown INSIDE the
-         control panel's cog menu (`.o_cp_action_menus`), next to the
-         breadcrumb — never as a button in the pivot toolbar.
-
-     ANTI-PATTERN (mock-fidelity-anchor flags as fidelity:wrong-slot-for-view):
-       Putting Measures / Flip / Expand / Download in
-       `.o_control_panel_main_buttons`. That slot is reserved for the New
-       button on editable views; pivot is read-only and the slot stays
-       empty. -->
-
-<!-- Pivot toolbar — sits between the control panel and the table.
-     The TWO btn-groups match the controller template's two `role="toolbar"`
-     elements; keep them separate so the visual rhythm matches real Odoo. -->
-<div class="o_pivot_buttons">
-  <div class="btn-group" role="toolbar" aria-label="Main actions">
-    <button class="btn btn-secondary">Measures <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></button>
+<!-- GRAPH (stacked, 2 group-bys: Stage > Expected Closing) — canvas only;
+     same toolbar as above. Each .o_graph_bar_group stacks its segments
+     top-down (first child = top segment, gets the 4px radius). Segment
+     colour = the series token; the bottom-centred legend lists the series. -->
+<div class="o_graph_canvas_container">
+  <div class="o_graph_plot">
+    <!-- 8 labels → default 7 bands -->
+    <ol class="o_graph_yaxis">
+      <li>140.00k</li><li>120.00k</li><li>100.00k</li><li>80.00k</li><li>60.00k</li><li>40.00k</li><li>20.00k</li><li>0.00</li>
+    </ol>
+    <div class="o_graph_bars">
+      <div class="o_graph_bar_group"><div class="o_graph_bar" style="height:7%; background:var(--o-graph-2);"></div><div class="o_graph_bar" style="height:72%;"></div></div>
+      <div class="o_graph_bar_group"><div class="o_graph_bar" style="height:9%; background:var(--o-graph-4);"></div><div class="o_graph_bar" style="height:6%; background:var(--o-graph-2);"></div><div class="o_graph_bar" style="height:3%;"></div></div>
+      <div class="o_graph_bar_group"><div class="o_graph_bar" style="height:38%; background:var(--o-graph-4);"></div><div class="o_graph_bar" style="height:7%; background:var(--o-graph-3);"></div><div class="o_graph_bar" style="height:7%;"></div></div>
+      <div class="o_graph_bar_group"><div class="o_graph_bar" style="height:17%;"></div></div>
+    </div>
+    <div class="o_graph_xaxis"><span>New</span><span>Qualified</span><span>Proposition</span><span>Won</span></div>
   </div>
-  <div class="btn-group" role="toolbar" aria-label="Pivot settings">
-    <button class="btn btn-secondary o_pivot_icon_btn" title="Flip axis"><svg class="o_icon"><use href="#o-exchange"/></svg></button>
-    <button class="btn btn-secondary o_pivot_icon_btn" title="Expand all"><svg class="o_icon"><use href="#o-plus"/></svg></button>
-    <button class="btn btn-secondary o_pivot_icon_btn" title="Download xlsx"><svg class="o_icon"><use href="#o-download"/></svg></button>
+  <div class="o_graph_legend">
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:var(--o-graph-1);"></span>October 2026</span>
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:var(--o-graph-2);"></span>November 2026</span>
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:var(--o-graph-3);"></span>None</span>
+    <span class="o_graph_legend_item"><span class="o_graph_legend_dot" style="background:var(--o-graph-4);"></span>December 2026</span>
   </div>
 </div>
 
+<!-- ===================================================================
+     PIVOT — web.PivotRenderer: toolbar row + div.o_pivot.mx-3 >
+     table.table.table-sm.table-bordered (auto width, WHITE cells with 1px
+     #dee2e6 lines, straight on the gray page — no gray header band).
+     Toolbar: Measures (btn-primary, "Measures ▾") · Spreadsheet ·
+     joined [Flip axis screen_rotation_alt #o-flip-axis | Expand all
+     open_with #o-expand-all | Download xlsx #o-download].
+     Header cells (th) are NORMAL weight and start with a 14px glyph:
+       th.o_pivot_header_cell_closed  #o-add-box   (filled add_box)
+       th.o_pivot_header_cell_opened  #o-minus-box (indeterminate_check_box)
+     Never the v19 text [+]/[−] square button.
+     th.o_pivot_measure_row = muted, centred measure names (one per leaf
+     column + total column). The empty corner / total-column spacers are
+     `th.border-0.bg-100` (gray, borderless).
+     Row headers indent with inline padding-left: 5px + 30px per level.
+     Values: td.o_pivot_cell_value (right-aligned); the total row and the
+     total column cells add .fw-bold. -->
+<div class="o_pivot_buttons">
+  <div class="btn-group" role="toolbar" aria-label="Main actions">
+    <button class="btn btn-primary o_report_measures">Measures <svg class="o_icon"><use href="#o-caret-down"/></svg></button>
+  </div>
+  <div class="btn-group" role="toolbar" aria-label="Spreadsheet">
+    <button class="btn btn-secondary o_pivot_add_spreadsheet">Spreadsheet</button>
+  </div>
+  <div class="btn-group" role="toolbar" aria-label="Pivot settings">
+    <button class="btn btn-secondary o_pivot_flip_button" title="Flip axis"><svg class="o_icon"><use href="#o-flip-axis"/></svg></button>
+    <button class="btn btn-secondary o_pivot_expand_button" title="Expand all"><svg class="o_icon"><use href="#o-expand-all"/></svg></button>
+    <button class="btn btn-secondary o_pivot_download" title="Download xlsx"><svg class="o_icon"><use href="#o-download"/></svg></button>
+  </div>
+</div>
 <div class="o_pivot">
-  <table class="o_pivot_table">
+  <table class="table table-sm table-bordered">
     <thead>
       <tr>
-        <th><button class="o_pivot_expand_btn">+</button> Total</th>
-        <th class="o_list_number_th"><button class="o_pivot_expand_btn">+</button> Deco Addict</th>
-        <th class="o_list_number_th"><button class="o_pivot_expand_btn o_pivot_expand_open">−</button> Gemini Furniture</th>
-        <th class="o_list_number_th"><button class="o_pivot_expand_btn">+</button> Azure Interior</th>
+        <th class="border-0 bg-100" rowspan="3"></th>
+        <th class="o_pivot_header_cell_opened" colspan="2"><svg class="o_icon"><use href="#o-minus-box"/></svg><span>Total</span></th>
+        <th class="border-0 bg-100" rowspan="2"></th>
       </tr>
-      <tr class="o_pivot_subheader">
-        <th></th>
-        <th class="o_list_number_th">Expected Revenue</th>
-        <th class="o_list_number_th">Expected Revenue</th>
-        <th class="o_list_number_th">Expected Revenue</th>
+      <tr>
+        <th class="o_pivot_header_cell_closed"><svg class="o_icon"><use href="#o-add-box"/></svg><span>Sales</span></th>
+        <th class="o_pivot_header_cell_closed"><svg class="o_icon"><use href="#o-add-box"/></svg><span>Pre-Sales</span></th>
+      </tr>
+      <tr>
+        <th class="o_pivot_measure_row">Qty Ordered</th>
+        <th class="o_pivot_measure_row">Qty Ordered</th>
+        <th class="o_pivot_measure_row">Qty Ordered</th>
       </tr>
     </thead>
     <tbody>
-      <tr><td class="o_pivot_header"><button class="o_pivot_expand_btn">+</button> Total</td><td class="o_list_number">$ 12,450</td><td class="o_list_number">$ 24,800</td><td class="o_list_number">$ 18,300</td></tr>
-      <tr><td class="o_pivot_header"><button class="o_pivot_expand_btn">+</button> June 2026</td><td class="o_list_number">$ 6,225</td><td class="o_list_number">$ 12,400</td><td class="o_list_number">$ 9,150</td></tr>
-      <tr><td class="o_pivot_header"><button class="o_pivot_expand_btn">+</button> May 2026</td><td class="o_list_number">$ 6,225</td><td class="o_list_number">$ 12,400</td><td class="o_list_number">$ 9,150</td></tr>
+      <tr>
+        <th class="o_pivot_header_cell_opened" style="padding-left:5px;"><svg class="o_icon"><use href="#o-minus-box"/></svg><span>Total</span></th>
+        <td class="o_pivot_cell_value fw-bold">610.00</td><td class="o_pivot_cell_value fw-bold">26.00</td><td class="o_pivot_cell_value fw-bold">636.00</td>
+      </tr>
+      <tr>
+        <th class="o_pivot_header_cell_closed" style="padding-left:35px;"><svg class="o_icon"><use href="#o-add-box"/></svg><span>September 2026</span></th>
+        <td class="o_pivot_cell_value">363.00</td><td class="o_pivot_cell_value">12.00</td><td class="o_pivot_cell_value fw-bold">375.00</td>
+      </tr>
+      <tr>
+        <th class="o_pivot_header_cell_closed" style="padding-left:35px;"><svg class="o_icon"><use href="#o-add-box"/></svg><span>October 2026</span></th>
+        <td class="o_pivot_cell_value">247.00</td><td class="o_pivot_cell_value">14.00</td><td class="o_pivot_cell_value fw-bold">261.00</td>
+      </tr>
     </tbody>
   </table>
 </div>
 
-<!-- CALENDAR — month grid placeholder. -->
-<div class="o_calendar_view">
+<!-- ===================================================================
+     CALENDAR — MONTH scale (FullCalendar dayGrid). Same header row and
+     frame as calendar_week.html (toolbar shows "Month ▾"; the h5 has no
+     Week badge); use that fragment for the toolbar + side panel and swap
+     the week grid for this .o_calendar_grid.
+     Header: 12px/500 UPPERCASE day names. Cells: centred 14px day number
+     (26px round; other-month days muted; today = red #ef4444 circle with
+     white text); a muted week-number tab in each row's first cell;
+     non-working days (.o_cal_day_off) gray-tinted. Events: all-day =
+     pastel colour-class bar with dark text; a timed event = coloured dot +
+     time + title on the cell (.o_cal_event_dot); activity chips =
+     .o_cal_event.o_activity_event + #o-clock (light yellow). Weeks fill the
+     frame height (5–6 rows). -->
+<div class="o_calendar_renderer">
   <div class="o_calendar_grid">
-    <div class="o_cal_dow">Mon</div><div class="o_cal_dow">Tue</div><div class="o_cal_dow">Wed</div>
-    <div class="o_cal_dow">Thu</div><div class="o_cal_dow">Fri</div><div class="o_cal_dow">Sat</div><div class="o_cal_dow">Sun</div>
-    <div class="o_cal_day">1</div><div class="o_cal_day">2<span class="o_cal_event">SO0042</span></div>
-    <div class="o_cal_day">3</div><div class="o_cal_day">4<span class="o_cal_event">Delivery</span></div>
-    <div class="o_cal_day">5</div><div class="o_cal_day">6</div><div class="o_cal_day">7</div>
+    <div class="o_cal_dow">Sun</div><div class="o_cal_dow">Mon</div><div class="o_cal_dow">Tue</div><div class="o_cal_dow">Wed</div>
+    <div class="o_cal_dow">Thu</div><div class="o_cal_dow">Fri</div><div class="o_cal_dow">Sat</div>
+    <div class="o_cal_day o_cal_day_off o_cal_day_other"><span class="o_cal_week_number">40</span><span class="o_cal_day_num">27</span></div>
+    <div class="o_cal_day o_cal_day_other"><span class="o_cal_day_num">28</span></div>
+    <div class="o_cal_day o_cal_day_other"><span class="o_cal_day_num">29</span></div>
+    <div class="o_cal_day o_cal_day_other"><span class="o_cal_day_num">30</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">1</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">2</span><span class="o_cal_event_dot"><span class="o_cal_dot o_calendar_color_4"></span>10:00 AM SO0042 Kickoff</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_day_num">3</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_week_number">41</span><span class="o_cal_day_num">4</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">5</span><span class="o_cal_event o_calendar_color_4">Delivery — Deco Addict</span></div>
+    <div class="o_cal_day o_cal_today"><span class="o_cal_day_num">6</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">7</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">8</span><span class="o_cal_event o_calendar_color_2">Site Visit</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">9</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_day_num">10</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_week_number">42</span><span class="o_cal_day_num">11</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">12</span><span class="o_cal_event_dot"><span class="o_cal_dot o_calendar_color_4"></span>07:55 PM Pricing Discussion</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">13</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">14</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">15</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">16</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_day_num">17</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_week_number">43</span><span class="o_cal_day_num">18</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">19</span><span class="o_cal_event o_activity_event"><svg class="o_icon"><use href="#o-clock"/></svg>Examine project status</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">20</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">21</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">22</span><span class="o_cal_event o_calendar_color_4">Changes in Designing</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">23</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_day_num">24</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_week_number">44</span><span class="o_cal_day_num">25</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">26</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">27</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">28</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">29</span></div>
+    <div class="o_cal_day"><span class="o_cal_day_num">30</span></div>
+    <div class="o_cal_day o_cal_day_off"><span class="o_cal_day_num">31</span></div>
   </div>
 </div>

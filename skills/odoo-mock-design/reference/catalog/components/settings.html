@@ -1,135 +1,168 @@
 <!--
-  settings.html — Settings page (res.config.settings).
+  settings.html — Settings page (res.config.settings), Odoo 20 Enterprise.
   Ported from:
-    odoo/addons/web/static/src/webclient/settings_form_view/settings_form_view.xml
-    odoo/addons/web/static/src/webclient/settings_form_view/settings_form_view.scss
-    odoo/addons/base/static/src/views/setting_view/setting_view.scss
+    web/static/src/webclient/settings_form_view/settings_form_view.xml    (control panel slots)
+    web/static/src/webclient/settings_form_view/settings/settings_page.xml (rail + card)
+    web/static/src/webclient/settings_form_view/settings/settings_block.xml (h2 band + container)
+    web/static/src/views/form/setting/setting.xml + setting.scss          (one setting box)
+    web/static/src/webclient/settings_form_view/settings_form_view.scss
+    web_enterprise/static/src/webclient/settings_form_view/settings_form_view.scss
 
-  Real Odoo 19 settings:
-   - Left tab nav is a long list of every installed app (CRM, Sales,
-     Calendar, Website, Purchase, Inventory, Maintenance, Invoicing,
-     Project, Sign, Timesheets, Planning, Employees, Documents,
-     Attendances, Fleet, Point of Sale, …). Each entry has the app's
-     brand-colored icon. General Settings sits at the top.
-   - Right column groups settings under FULL-WIDTH gray header bands
-     (Users, Languages, Companies, Web Server, …) — NOT just bold
-     text labels. Inside each section, two-column layout: form/control
-     on the left, related info / link on the right.
-   - Save / Discard buttons sit beside the "Settings" page title at
-     the top, NOT in the control panel.
-   - The search bar lives INSIDE the control panel as `.o_cp_searchview`
-     (full-width row, wraps below the breadcrumbs via `flex-wrap`). It
-     is NOT placed inside `.o_base_settings` — that's a flex-direction:
-     row container holding exactly two children (the tab sidebar and the
-     settings content). Adding a third child breaks the row layout.
+  Real Odoo 20 DOM is .o_base_settings_view > .o_form_view_container >
+  [.o_control_panel + main.o_content > .o_form_renderer > .o_setting_container];
+  the mock keeps the control panel and .o_setting_container as direct
+  children (renders the same). Keep these class names:
+   - Control panel = the standard ONE-ROW shell (control_panel.html):
+     Save (btn-primary) + Discard (btn-secondary) in .o_control_panel_main_buttons,
+     then the "Settings" title (16.8px regular; keep the EMPTY
+     .o_control_panel_breadcrumbs_actions after it — settings has no ⋮ menu but the
+     real empty div keeps the 4px gap before "Unsaved changes"); the search is a PLAIN 6px-radius
+     .o_searchview.form-control box (no pill, no menu, 33px) centred in
+     .o_control_panel_actions, focused on load (input class `focus` → teal
+     border; drop it once another field has focus); .o_control_panel_navigation stays EMPTY (no pager,
+     no ⋮, no view switcher). The search never goes inside .o_setting_container.
+   - .o_setting_container = the gray page holding the app RAIL (.settings_tab,
+     one a.tab per installed app; a.tab.selected = current app: teal 10% tint +
+     2px teal bar) and the WHITE CARD (.settings, rounded top corners).
+   - Rail icons are the multicolour app-icons.svg symbols (svg.icon, 23px), never
+     tinted; General Settings is always first and uses #o-app-settings.
+   - Inside the card: NO app title. Each section is an <h2> gray band (full card
+     width) + a .o_settings_container laying .o_setting_box items out TWO PER ROW
+     (col-12 col-lg-6), max 992px. A block without a title is just another
+     .o_settings_container (40px gap).
+   - One .o_setting_box = .o_setting_left_pane (the checkbox of a boolean setting,
+     else empty) + .o_setting_right_pane (1px left rule): .o_form_label, optional
+     a.o_doc_link "help" icon or company icon, .text-muted help, then
+     <div class="mt16"> holding the field / radios / button / links. ALWAYS keep
+     the .mt16 div, even empty (it carries the box's bottom spacing).
+   - Booleans are CHECKBOXES (teal when checked) — never toggle switches, never a
+     label | control split row. Selections = a vertical radio list (o_field_radio)
+     or an underlined select; links = button.btn-link with the east arrow.
 -->
-<!-- Control panel: breadcrumbs row + search-bar row (search wraps to its
-     own row because `.o_cp_searchview` has `width: 100%` and the control
-     panel has `flex-wrap: wrap`). Save/Discard sit beside the breadcrumb. -->
-<div class="o_control_panel">
-  <div class="o_control_panel_main">
-    <div class="o_control_panel_breadcrumbs">
-      <div class="o_control_panel_main_buttons">
-        <button class="btn btn-primary">Save</button>
-        <button class="btn o_btn_outline">Discard</button>
+<div class="o_form_view o_base_settings_view o_field_highlight">
+  <div class="o_control_panel">
+    <div class="o_control_panel_main">
+      <div class="o_control_panel_breadcrumbs">
+        <div class="o_control_panel_main_buttons"><button class="btn btn-primary o_form_button_save">Save</button><button class="btn btn-secondary o_form_button_cancel">Discard</button></div>
+        <div class="o_breadcrumb"><div class="o_last_breadcrumb_item active"><span>Settings</span></div><div class="o_control_panel_breadcrumbs_actions"></div></div>
+        <!-- SLOT (only on a screen showing an edited, not-yet-saved form):
+             <span class="text-muted o_dirty_warning">Unsaved changes</span> -->
       </div>
-      <ol class="o_breadcrumb">
-        <li class="o_last_breadcrumb_item">Settings</li>
-      </ol>
+      <div class="o_control_panel_actions">
+        <div class="o_cp_searchview" role="search">
+          <div class="o_searchview form-control"><svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg><div class="o_searchview_input_container"><input type="text" class="o_searchview_input focus" placeholder="Search..."/></div></div>
+        </div>
+      </div>
+      <div class="o_control_panel_navigation"></div>
     </div>
   </div>
-  <div class="o_cp_searchview">
-    <div class="o_searchview form-control">
-      <svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg>
-      <span class="o_searchview_input">Search...</span>
+
+  <div class="o_setting_container">
+    <!-- App rail. Ship only the apps the deployment has installed (in the
+         instance's order); General Settings is always first. -->
+    <div class="settings_tab">
+      <a class="tab"><svg class="icon"><use href="#o-app-settings"/></svg><span class="app_name">General Settings</span></a>
+      <a class="tab selected"><svg class="icon"><use href="#o-app-crm"/></svg><span class="app_name">CRM</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-sales"/></svg><span class="app_name">Sales</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-calendar"/></svg><span class="app_name">Calendar</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-accounting"/></svg><span class="app_name">Accounting</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-project"/></svg><span class="app_name">Project</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-timesheets"/></svg><span class="app_name">Timesheets</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-hr"/></svg><span class="app_name">Employees</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-payroll"/></svg><span class="app_name">Payroll</span></a>
     </div>
-  </div>
-</div>
 
-<div class="o_form_view o_base_settings">
-  <div class="o_setting_search_panel">
-    <!-- The General Settings tab sits at top with a hexagonal "Odoo S"
-         icon in brand orange. Every other app shows its catalog brand
-         color + sprite glyph. Mocks should ship the apps the deployment
-         actually has installed — drop the rest. -->
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#d28033;"><use href="#o-app-settings"/></svg> General Settings</span>
-    <span class="settings_tab active"><svg class="o_settings_tab_icon" style="color:#1aa1cd;"><use href="#o-app-crm"/></svg> CRM</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#7c7bad;"><use href="#o-app-sales"/></svg> Sales</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#9d3c69;"><use href="#o-app-calendar"/></svg> Calendar</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#714B67;"><use href="#o-app-website"/></svg> Website</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#5c8ed7;"><use href="#o-app-purchase"/></svg> Purchase</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#f4a460;"><use href="#o-app-inventory"/></svg> Inventory</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#1aa1cd;"><use href="#o-app-accounting"/></svg> Invoicing</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#27a978;"><use href="#o-app-project"/></svg> Project</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#287f59;"><use href="#o-app-timesheets"/></svg> Timesheets</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#1d8348;"><use href="#o-app-hr"/></svg> Employees</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#3c8dbc;"><use href="#o-app-documents"/></svg> Documents</span>
-    <span class="settings_tab"><svg class="o_settings_tab_icon" style="color:#017e84;"><use href="#o-app-pos"/></svg> Point of Sale</span>
-  </div>
-
-  <div class="o_settings_container">
-    <div class="app_settings_block">
-      <!-- SLOT: top-of-page tip / hero (omit on most pages) -->
-      <h2 class="o_settings_title">CRM</h2>
-
-      <!-- Section: full-width gray band header + two-column content rows -->
-      <div class="o_setting_band">Predictive Lead Scoring</div>
-      <div class="o_setting_section">
-        <div class="o_setting_box_split">
-          <div class="o_setting_left_col">
-            <label class="o_form_label">Predictive Lead Scoring</label>
-            <div class="text-muted">Score leads based on their probability to be won, using statistical learning.</div>
+    <div class="settings">
+      <div class="app_settings_block" data-key="crm">
+        <!-- SLOT: optional <h3 class="o_setting_tip text-muted">tip</h3> under a band — omit on most pages -->
+        <h2>CRM</h2>
+        <div class="o_settings_container">
+          <!-- Boolean setting: checkbox in the left pane -->
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"><div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check d-inline-block"><input type="checkbox" class="form-check-input"/></div></div></div>
+            <div class="o_setting_right_pane">
+              <label class="o_form_label">Recurring Revenues</label>
+              <div class="text-muted">Define recurring plans and revenues on Opportunities</div>
+              <div class="mt16"></div>
+            </div>
           </div>
-          <div class="o_setting_right_col">
-            <a class="o_form_link">→ Compute Now</a>
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"><div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check d-inline-block"><input type="checkbox" class="form-check-input" checked/></div></div></div>
+            <div class="o_setting_right_pane">
+              <label class="o_form_label">Leads</label>
+              <div class="text-muted">Add a qualification step before the creation of an opportunity</div>
+              <div class="mt16"></div>
+            </div>
           </div>
         </div>
-      </div>
+        <!-- A block without a title = just another .o_settings_container -->
+        <div class="o_settings_container">
+          <!-- Non-boolean setting: empty left pane; label, help, then the
+               field / button inside .mt16 -->
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Predictive Lead Scoring</span>
+              <div class="text-muted">The success rate is computed based on <b>Stage, Country, Source, Language and Tags</b> for the leads created as of the <b>Sep 28</b>.</div>
+              <div class="mt16"><button class="btn btn-primary">Update Probabilities</button></div>
+            </div>
+          </div>
+          <!-- Documentation link after the label -->
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"><div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check d-inline-block"><input type="checkbox" class="form-check-input"/></div></div></div>
+            <div class="o_setting_right_pane">
+              <label class="o_form_label">Rule-Based Assignment</label><a class="o_doc_link" title="Documentation"><svg class="o_icon"><use href="#o-question-circle"/></svg></a>
+              <div class="text-muted">Periodically assign leads based on priorities and filters.</div>
+              <div class="mt16"></div>
+            </div>
+          </div>
+        </div>
 
-      <div class="o_setting_band">Lead Generation</div>
-      <div class="o_setting_section">
-        <div class="o_setting_box">
-          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
-          <div class="o_setting_right_pane">
-            <span class="o_form_label">Visits to Leads</span>
-            <div class="text-muted">Convert visitors of your website into leads and perform statistical analysis on visits.</div>
+        <h2>Lead Generation</h2>
+        <div class="o_settings_container">
+          <!-- Boolean + radio selection + action links -->
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"><div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check d-inline-block"><input type="checkbox" class="form-check-input" checked/></div></div></div>
+            <div class="o_setting_right_pane">
+              <label class="o_form_label">Lead Enrichment</label>
+              <div class="text-muted">Enrich your leads with company data based on their email addresses</div>
+              <div class="mt16">
+                <div class="o_field_widget o_field_radio o_light_label"><div role="radiogroup" class="o_vertical">
+                  <div class="form-check o_radio_item"><input type="radio" class="form-check-input o_radio_input" name="crm_enrich"/><label class="form-check-label o_form_label">Enrich leads on demand only</label></div>
+                  <div class="form-check o_radio_item"><input type="radio" class="form-check-input o_radio_input" name="crm_enrich" checked/><label class="form-check-label o_form_label">Enrich all leads automatically</label></div>
+                </div></div>
+                <div class="mt8"><button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Manage Service &amp; Buy Credits</span></button></div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="o_setting_box">
-          <div class="o_setting_left_pane"><label class="o_switch"></label></div>
-          <div class="o_setting_right_pane">
-            <span class="o_form_label">Lead Mining</span>
-            <div class="text-muted">Find new potential leads from a database of over 8 million companies.</div>
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"><div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check d-inline-block"><input type="checkbox" class="form-check-input"/></div></div></div>
+            <div class="o_setting_right_pane">
+              <label class="o_form_label">Visits to Leads</label>
+              <div class="text-muted">Convert visitors of your website into leads and perform data enrichment based on their IP address</div>
+              <div class="mt16"></div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div class="o_setting_band">Pipeline</div>
-      <div class="o_setting_section">
-        <div class="o_setting_box">
-          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
-          <div class="o_setting_right_pane">
-            <span class="o_form_label">Leads</span>
-            <div class="text-muted">Add a qualification step before the creation of an opportunity.</div>
-          </div>
-        </div>
-        <div class="o_setting_box">
-          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
-          <div class="o_setting_right_pane">
-            <span class="o_form_label">Recurring Revenues</span>
-            <div class="text-muted">Manage subscriptions and recurring revenues on opportunities.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="o_setting_band">Quotations &amp; Orders</div>
-      <div class="o_setting_section">
-        <div class="o_setting_box">
-          <div class="o_setting_left_pane"><label class="o_switch checked"></label></div>
-          <div class="o_setting_right_pane">
-            <span class="o_form_label">Customer Portal</span>
-            <div class="text-muted">Let customers track their quotations and orders from their portal.</div>
-          </div>
+          <!-- Other right-pane patterns (setting.xml; probe of real v20):
+               company-specific : after the label → <svg class="o_icon o_icon_lg" title="Values set here are company-specific."><use href="#o-business"/></svg>
+               inline number    : <div class="mt16">Warn me <div class="o_field_widget o_field_integer w-25"><input class="o_input" value="7"/></div> days before end of contract.</div>
+               selection        : <div class="mt16"><div class="o_field_widget o_field_selection"><div class="o_input_dropdown"><input class="o_input" value="When Confirmed"/><span class="o_dropdown_button"></span></div></div></div>
+               link row         : <div class="mt8"><button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Manage Users</span></button></div>
+               count + label    : the readonly count shrink-wraps (w-auto) and the label follows it;
+                                  ps-1 (Languages / Companies) or ps-3 (Active Users):
+                                  <div class="mt16"><div class="o_field_widget o_readonly_modifier o_field_integer w-auto ps-1 fw-bold"><span>1</span></div><span class="o_form_label"> Language </span></div>
+               address (Text)   : <div class="o_field_widget o_readonly_modifier o_field_text">8000 Marina Blvd, Suite 300
+                                  94005 - Brisbane…</div> (one line per address line, newlines kept)
+               colour rows      : 30px swatch beside a 75% label (Email Templates):
+                                  <div class="w-50 row"><span class="d-block w-75 py-2">Button Text</span><div class="o_field_widget o_field_color d-block w-25 p-0 m-0"><div class="o_field_color d-flex" style="background: rgb(255, 255, 255);"></div></div></div>
+                                  (next row adds mt-1)
+               invite users     : (web res_config_invite_users.xml, General Settings ▸ Users)
+                                  <p class="o_form_label">Invite New Users</p>
+                                  <div class="d-flex"><input class="o_user_emails o_input mt8 text-truncate" type="text" placeholder="Enter an email"/><button class="btn btn-primary o_web_settings_invite flex-shrink-0"><strong>Invite</strong></button></div>
+                                  <p class="o_form_label pt-3">Pending Invitations:</p>
+                                  <div class="d-flex flex-wrap gap-1"><button class="o_web_settings_user btn btn-outline-primary btn-sm rounded-pill">maggie.davidson@example.com</button></div>
+               custom (mock-added) setting : keep the mock-only .o_field_help "?" marker after the label,
+                                  and add mock-custom to its .o_setting_box -->
         </div>
       </div>
     </div>

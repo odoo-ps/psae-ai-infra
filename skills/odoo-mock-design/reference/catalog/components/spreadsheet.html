@@ -1,55 +1,209 @@
 <!--
-  spreadsheet.html — Odoo Spreadsheet (o-spreadsheet; real classes o-spreadsheet
-  / o-grid / o-bottom-bar / o-sheet-item). Opens inside the backend (Documents /
-  Dashboards), so render navbar + a slim breadcrumb above, then this fills the
-  action area. Static grid — do NOT wire a spreadsheet engine; it's a mock.
+  spreadsheet.html — Odoo 20 Spreadsheet EDITOR. Enterprise only
+  (documents_spreadsheet / spreadsheet_edition); Community has only the
+  read-only dashboard (dashboard.html). Ported from:
+    odoo/addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.{xml,css,js}
+    enterprise/spreadsheet_edition/static/src/bundle/components/spreadsheet_navbar/*
+    enterprise/documents_spreadsheet/static/src/bundle/actions/spreadsheet_action.{xml,scss}
+
+  FULL-SCREEN action: it brings its own navbar (SpreadsheetNavbar), so this
+  fragment IS the whole screen — never put navbar.html above it.
+
+  Navbar: Spreadsheet app icon + brand, NO menu sections, then a teal
+    breadcrumb (the app you came from: Documents / Dashboards), the file name
+    as a 16px grey input — Odoo sizes .o_sp_name with an inline max-width
+    (text width at 16px + 10px, about 8px per character), the outlined star
+    (Documents only; add "favorite_button_enabled" and use #o-star once
+    favourited) and the italic muted check + "Saved". Systray as navbar.html.
+  Menu row (#f8f9fa, one band with the navbar): File … Help on the left;
+    plain-text Share (family_history) + Filters on the right. Share is never a
+    btn-primary. Active filters: append <span class="badge rounded-pill">N</span>
+    inside .o_topbar_filter_icon.
+  ONE toolbar row: Name box (the cell address) | tool groups fixed by the v20
+    registry (no $, font family, print, link, Σ or chart button — those live in
+    the menus) | the formula composer fills the rest of the row (no separate
+    formula bar). .o-disabled = greyed tool (Undo/Redo with no history, Merge
+    cells with a single cell selected); .active = state on (Bold when the
+    active cell is bold). The composer shows the active cell's raw content; an
+    EMPTY cell shows the fx icon instead (variant in the comment below).
+  Grid: Odoo paints a <canvas>. table.o-grid-mock is MOCK-ONLY (no real class)
+    inside the real .o-grid-container > .o-group-grid > .o-grid >
+    .os-canvas-background chain; the background draws headers + gridlines.
+    Keep the header labels full width/height: letters A–N and rows 1–31 at
+    1440×900 (empty rows need only their <th>). td modifiers: .num (numbers,
+    right-aligned), .bold, .spill (long text running into EMPTY cells to its
+    right), .sel (cell of a multi-cell range), .active (anchor cell: blue 1px
+    border + autofill square). Mark the selection's column letter and row
+    number with th.hsel. Cell text is black 13px, bottom-aligned; a "header"
+    row is just bold, never filled.
+  Bottom bar: + and ≡ first, flat tabs (.o-sheet; .active = teal on white),
+    then on the right the Sum chip (only when the selection holds numbers) and
+    the data-analysis button.
+  Static — never wire a spreadsheet engine.
 -->
+<div class="o_web_client o_spreadsheet_action">
+<header class="o_navbar">
+  <nav class="o_main_navbar">
+    <a class="o_menu_toggle hasImage" title="Home menu">
+      <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+        <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+        <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+        <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+      </svg>
+      <svg class="o_menu_brand_icon"><use href="#o-app-spreadsheet"/></svg>
+      <span class="o_menu_brand">Spreadsheet</span>
+    </a>
+    <div class="d-flex align-items-center flex-fill">
+      <!-- SLOT: the app the file was opened from -->
+      <div class="btn btn-link o-sp-breadcrumb fw-normal">Documents</div>
+      <!-- SLOT: file name; max-width ≈ 8px × characters + 10px -->
+      <div class="o_sp_name d-flex flex-grow-1" style="max-width: 156px;"><input type="text" class="o_input" title="Rename" value="Sales Analysis 2026"/></div>
+      <!-- Documents only (drop for a dashboard) -->
+      <a class="o-sp-favorite" title="Toggle favorite"><svg class="o_icon o_icon_lg"><use href="#o-star-o"/></svg></a>
+      <div class="o_spreadsheet_sync_status text-muted fst-italic d-flex align-items-baseline gap-1"><svg class="o_icon"><use href="#o-check"/></svg> Saved</div>
+    </div>
+    <div class="o_menu_systray" role="menu">
+      <!-- OPTIONAL (Timesheets installed): timer, filled play_circle, red. -->
+      <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+      <!-- OPTIONAL (ai module installed): Ask AI mark, 18px. -->
+      <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+      <button class="o_systray_item" title="Messages">
+        <svg class="o_icon"><use href="#o-forum"/></svg>
+        <span class="badge">6</span>
+      </button>
+      <button class="o_systray_item" title="Activities">
+        <svg class="o_icon"><use href="#o-clock"/></svg>
+        <span class="badge">17</span>
+      </button>
+      <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+      <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+        <span class="oe_topbar_name">YourCompany</span>
+      </button>
+      <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+        <span class="o_user_avatar">M</span>
+      </button>
+    </div>
+  </nav>
+</header>
 <div class="o-spreadsheet">
-  <!-- Toolbar — formatting controls. All icons are inline SVG from
-       icons.svg (no emoji / unicode glyphs — those drift across OS/fonts). -->
-  <div class="o-topbar-toolbar">
-    <span class="o-tool" title="Undo"><svg class="o_icon"><use href="#o-undo"/></svg></span>
-    <span class="o-tool" title="Redo"><svg class="o_icon"><use href="#o-redo"/></svg></span>
-    <span class="o-tool" title="Paint format"><svg class="o_icon"><use href="#o-paint-brush"/></svg></span>
-    <span class="o-tool-sep"></span>
-    <span class="o-tool" title="Format as currency">$</span>
-    <span class="o-tool" title="Format as percent">%</span>
-    <span class="o-tool-sep"></span>
-    <span class="o-tool active" title="Bold"><strong>B</strong></span>
-    <span class="o-tool" title="Italic"><em>I</em></span>
-    <span class="o-tool" title="Fill color"><svg class="o_icon"><use href="#o-fill-bucket"/></svg></span>
-    <span class="o-tool-sep"></span>
-    <span class="o-tool" title="Borders"><svg class="o_icon"><use href="#o-borders"/></svg></span>
-    <span class="o-tool" title="Merge cells"><svg class="o_icon"><use href="#o-merge-cells"/></svg></span>
-    <span class="o-tool" title="Align"><svg class="o_icon"><use href="#o-align-left"/></svg></span>
-    <span class="o-tool" title="Wrap text"><svg class="o_icon"><use href="#o-wrap-text"/></svg></span>
-    <span class="o-tool-sep"></span>
-    <span class="o-tool" title="Insert link"><svg class="o_icon"><use href="#o-link"/></svg></span>
-    <span class="o-tool" title="Sum"><svg class="o_icon"><use href="#o-sigma"/></svg></span>
-    <span class="o-tool o-tool-cta" title="Insert chart"><svg class="o_icon"><use href="#o-view-graph"/></svg> Insert chart</span>
+  <div class="o-spreadsheet-topbar-wrapper">
+    <div class="o-spreadsheet-topbar">
+      <div class="o-topbar-top">
+        <div class="o-topbar-topleft">
+          <div class="o-topbar-menu o-hoverable-button">File</div>
+          <div class="o-topbar-menu o-hoverable-button">Edit</div>
+          <div class="o-topbar-menu o-hoverable-button">View</div>
+          <div class="o-topbar-menu o-hoverable-button">Insert</div>
+          <div class="o-topbar-menu o-hoverable-button">Format</div>
+          <div class="o-topbar-menu o-hoverable-button">Data</div>
+          <div class="o-topbar-menu o-hoverable-button">Help</div>
+        </div>
+        <div class="o-topbar-topright">
+          <div class="px-1"><div class="o-hoverable-button o_topbar_share_icon"><svg class="o-icon"><use href="#o-family-history"/></svg><span class="px-1">Share</span></div></div>
+          <div class="px-1"><div class="o_topbar_filter_icon o-hoverable-button"><svg class="o-icon"><use href="#o-global-filters"/></svg><span class="px-1">Filters</span></div></div>
+        </div>
+      </div>
+      <div class="o-topbar-responsive">
+        <div class="o-topbar-toolbar">
+          <div class="o-toolbar-tools">
+            <div class="o-named-range-selector-container">
+              <!-- SLOT: active cell (or range) address -->
+              <div class="o-named-range-selector"><div class="position-relative"><input type="text" class="w-100 os-input" value="B4"/></div><div class="o-hoverable-button"><svg class="o-icon"><use href="#o-caret-down"/></svg></div></div>
+              <div class="o-topbar-divider"></div>
+            </div>
+            <div class="tool-container" id="edit">
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button o-disabled" title="Undo"><svg class="o-icon"><use href="#o-undo"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button o-disabled" title="Redo"><svg class="o-icon"><use href="#o-redo"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Paint Format"><svg class="o-icon"><use href="#o-paint-brush"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Clear formatting"><svg class="o-icon"><use href="#o-clear-format"/></svg></span>
+              <div class="o-number-editor o-menu-item-button o-hoverable-button o-toolbar-button" title="Zoom"><input type="number" class="o-font-size o-number-input" value="100"/>%<svg class="o-icon"><use href="#o-caret-down"/></svg></div>
+              <div class="o-topbar-divider"></div>
+            </div>
+            <div class="tool-container" id="numberFormat">
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Format as percent"><span class="o-text-icon">%</span></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Decrease decimal places"><span class="o-text-icon">.0</span></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Increase decimal places"><span class="o-text-icon">.00</span></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="More formats"><svg class="o-icon"><use href="#o-number-formats"/></svg><svg class="o-icon"><use href="#o-caret-down"/></svg></span>
+              <div class="o-topbar-divider"></div>
+            </div>
+            <div class="tool-container" id="fontSize">
+              <div class="o-number-editor o-hoverable-button o-toolbar-button" title="Font Size"><input type="number" class="o-font-size o-number-input" value="10"/><svg class="o-icon"><use href="#o-caret-down"/></svg></div>
+              <div class="o-topbar-divider"></div>
+            </div>
+            <div class="tool-container" id="textStyle">
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button active" title="Bold"><svg class="o-icon"><use href="#o-bold"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Italic"><svg class="o-icon"><use href="#o-italic"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Strikethrough"><svg class="o-icon"><use href="#o-strikethrough"/></svg></span>
+              <span class="o-color-picker-button o-hoverable-button o-menu-item-button o-toolbar-button" title="Text Color"><div class="position-relative"><svg class="o-icon"><use href="#o-text-color"/></svg><div class="o-colored-border" style="border-color: #000000;"></div></div></span>
+              <div class="o-topbar-divider"></div>
+            </div>
+            <div class="tool-container" id="cellStyle">
+              <span class="o-color-picker-button o-hoverable-button o-menu-item-button o-toolbar-button" title="Fill Color"><div class="position-relative"><svg class="o-icon"><use href="#o-fill-bucket"/></svg><div class="o-colored-border" style="border-color: #ffffff;"></div></div></span>
+              <span class="o-hoverable-button o-menu-item-button o-toolbar-button" title="Borders"><svg class="o-icon"><use href="#o-borders"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button o-disabled" title="Merge cells"><svg class="o-icon"><use href="#o-merge-cells"/></svg></span>
+              <div class="o-topbar-divider"></div>
+            </div>
+            <div class="tool-container" id="alignment">
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Horizontal align"><svg class="o-icon"><use href="#o-align-left"/></svg><svg class="o-icon"><use href="#o-caret-down"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Vertical align"><svg class="o-icon"><use href="#o-align-bottom"/></svg><svg class="o-icon"><use href="#o-caret-down"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Wrapping"><svg class="o-icon"><use href="#o-wrap-overflow"/></svg><svg class="o-icon"><use href="#o-caret-down"/></svg></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Rotation"><svg class="o-icon"><use href="#o-rotate-text"/></svg><svg class="o-icon"><use href="#o-caret-down"/></svg></span>
+              <div class="o-topbar-divider"></div>
+            </div>
+            <div class="tool-container" id="misc">
+              <span class="o-table-widget o-toolbar-button o-hoverable-button o-menu-item-button"><span class="o-menu-item-button" title="Insert table"><svg class="o-icon"><use href="#o-table-paint"/></svg><svg class="o-icon"><use href="#o-caret-down"/></svg></span></span>
+              <span class="o-menu-item-button o-hoverable-button o-toolbar-button" title="Add filters"><svg class="o-icon"><use href="#o-filter"/></svg></span>
+            </div>
+          </div>
+        </div>
+        <div class="o-topbar-composer-container">
+          <!-- SLOT: the active cell's raw content. Empty cell:
+               <div class="o-composer"></div><svg class="o-icon fx-icon"><use href="#o-fx"/></svg> -->
+          <div class="o-topbar-composer o-topbar-composer-inactive"><div class="o-composer">=SUM(B2:B3)</div></div>
+        </div>
+      </div>
+    </div>
   </div>
-  <!-- Formula bar -->
-  <div class="o-formula-bar">
-    <span class="o-cell-ref">B4</span>
-    <span class="o-composer">=SUM(B2:B3)</span>
+  <div class="o-grid-container">
+    <div class="o-group-grid">
+      <div class="o-grid">
+        <div class="os-canvas-background">
+          <table class="o-grid-mock">
+            <thead><tr><th></th><th>A</th><th class="hsel">B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th><th>K</th><th>L</th><th>M</th><th>N</th></tr></thead>
+            <tbody>
+              <tr><th>1</th><td class="bold">Region</td><td class="bold">Q1</td><td class="bold">Q2</td><td class="bold">Total</td></tr>
+              <tr><th>2</th><td>North</td><td class="num">12,500</td><td class="num">14,200</td><td class="num">26,700</td></tr>
+              <tr><th>3</th><td>South</td><td class="num">9,800</td><td class="num">11,050</td><td class="num">20,850</td></tr>
+              <tr><th class="hsel">4</th><td class="bold">Total</td><td class="bold num active">22,300</td><td class="bold num">25,250</td><td class="bold num">47,550</td></tr>
+              <tr><th>5</th></tr><tr><th>6</th></tr><tr><th>7</th></tr><tr><th>8</th></tr><tr><th>9</th></tr><tr><th>10</th></tr>
+              <tr><th>11</th></tr><tr><th>12</th></tr><tr><th>13</th></tr><tr><th>14</th></tr><tr><th>15</th></tr><tr><th>16</th></tr>
+              <tr><th>17</th></tr><tr><th>18</th></tr><tr><th>19</th></tr><tr><th>20</th></tr><tr><th>21</th></tr><tr><th>22</th></tr>
+              <tr><th>23</th></tr><tr><th>24</th></tr><tr><th>25</th></tr><tr><th>26</th></tr><tr><th>27</th></tr><tr><th>28</th></tr>
+              <tr><th>29</th></tr><tr><th>30</th></tr><tr><th>31</th></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-  <!-- Grid -->
-  <div class="o-grid">
-    <table class="o-grid-table">
-      <thead><tr><th class="o-corner"></th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
-      <tbody>
-        <tr><th class="o-row-number">1</th><td class="o-cell o-cell-head">Region</td><td class="o-cell o-cell-head">Q1</td><td class="o-cell o-cell-head">Q2</td><td class="o-cell o-cell-head">Total</td></tr>
-        <tr><th class="o-row-number">2</th><td class="o-cell">North</td><td class="o-cell o-num">12,500</td><td class="o-cell o-num">14,200</td><td class="o-cell o-num">26,700</td></tr>
-        <tr><th class="o-row-number">3</th><td class="o-cell">South</td><td class="o-cell o-num">9,800</td><td class="o-cell o-num">11,050</td><td class="o-cell o-num">20,850</td></tr>
-        <tr><th class="o-row-number">4</th><td class="o-cell o-cell-total">Total</td><td class="o-cell o-num o-cell-total o-cell-selected">22,300</td><td class="o-cell o-num o-cell-total">25,250</td><td class="o-cell o-num o-cell-total">47,550</td></tr>
-        <tr><th class="o-row-number">5</th><td class="o-cell"></td><td class="o-cell"></td><td class="o-cell"></td><td class="o-cell"></td></tr>
-      </tbody>
-    </table>
+  <div class="o-spreadsheet-bottombar-wrapper">
+    <div class="o-spreadsheet-bottom-bar border-top">
+      <div class="o-sheet-item o-add-sheet" title="Add Sheet"><svg class="o-icon"><use href="#o-sheet-add"/></svg></div>
+      <div class="o-sheet-item o-list-sheets" title="List all sheets"><svg class="o-icon"><use href="#o-sheet-list"/></svg></div>
+      <div class="o-all-sheets">
+        <div class="o-sheet-list">
+          <!-- SLOT: sheet tabs; one .active -->
+          <div class="o-sheet active" title="Sales"><span class="o-sheet-name">Sales</span><span class="o-sheet-icon"><svg class="o-icon"><use href="#o-caret-down"/></svg></span></div>
+          <div class="o-sheet" title="Inventory"><span class="o-sheet-name">Inventory</span><span class="o-sheet-icon"><svg class="o-icon"><use href="#o-caret-down"/></svg></span></div>
+          <div class="o-sheet" title="Forecast"><span class="o-sheet-name">Forecast</span><span class="o-sheet-icon"><svg class="o-icon"><use href="#o-caret-down"/></svg></span></div>
+        </div>
+      </div>
+      <div class="o-bottom-bar-statistic">
+        <!-- SLOT: sum of the selected numbers -->
+        <div class="o-selection-statistic">Sum: 22,300<svg class="o-icon"><use href="#o-caret-down"/></svg></div>
+        <span class="o-data-analysis-button" title="Data analysis"><svg class="o-icon"><use href="#o-column-stats"/></svg></span>
+      </div>
+    </div>
   </div>
-  <!-- Sheet tabs -->
-  <div class="o-bottom-bar">
-    <span class="o-sheet-item active">Dashboard</span>
-    <span class="o-sheet-item">Data</span>
-    <span class="o-sheet-item o-add-sheet">+</span>
-  </div>
+</div>
 </div>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Calibration — crm-kanban</title>
+<link rel="stylesheet" href="../../catalog/odoo.css">
+<link rel="stylesheet" href="assets/odoo.css">
+</head>
+<body>
+<!-- SPRITE -->
+<div class="o_web_client">
+<header class="o_navbar">
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+    </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-crm"/></svg>
+    <span class="o_menu_brand">CRM</span>
+  </a>
+  <div class="o_menu_sections" role="menu">
+    <a class="o_nav_entry">Sales</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
+  </div>
+  <div class="o_menu_systray" role="menu">
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge">6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+      <span class="badge">17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name">YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar o_avatar_c5">M</span>
+    </button>
+  </div>
+</nav>
+</header>
+<div class="o_action_manager">
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-primary o-kanban-button-new">New</button><button class="btn btn-secondary">Generate<svg class="o_icon o_caret"><use href="#o-caret-down"/></svg></button></div>
+      <button class="o_cp_team_switcher btn btn-link"><span>All Teams</span><svg class="o_icon o_caret"><use href="#o-caret-down"/></svg></button>
+      <div class="o_control_panel_breadcrumbs_actions">
+        <div class="o_cp_action_menus">
+          <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="o_control_panel_actions">
+      <div class="o_cp_searchview input-group rounded-pill" role="search">
+        <div class="o_searchview form-control">
+          <svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg>
+          <div class="o_searchview_input_container">
+            <div class="o_searchview_facet">
+              <div class="o_searchview_facet_label"><svg class="o_icon"><use href="#o-filter"/></svg></div>
+              <div class="o_facet_values">
+                <small class="o_facet_value">My Opportunities</small>
+                <button class="o_facet_remove" title="Remove"><svg class="o_icon"><use href="#o-close-small"/></svg></button>
+              </div>
+            </div>
+            <input type="text" class="o_searchview_input focus" placeholder="Search..."/>
+          </div>
+        </div>
+        <button class="o_searchview_dropdown_toggler btn btn-outline-secondary" title="Toggle Search Panel"></button>
+      </div>
+    </div>
+    <div class="o_control_panel_navigation">
+      <nav class="o_cp_switch_buttons btn-group o_switcher">
+        <button class="btn btn-secondary o_switch_view o_kanban active" title="Kanban"><svg class="o_icon"><use href="#o-view-kanban"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_list" title="List"><svg class="o_icon"><use href="#o-view-list"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_calendar" title="Calendar"><svg class="o_icon"><use href="#o-view-calendar"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_pivot" title="Pivot"><svg class="o_icon"><use href="#o-view-pivot"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_graph" title="Graph"><svg class="o_icon"><use href="#o-view-graph"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_map" title="Map"><svg class="o_icon"><use href="#o-view-map"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_activity" title="Activity"><svg class="o_icon"><use href="#o-view-activity"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</div>
+<div class="o_kanban_view o_kanban_small_column">
+  <div class="o_kanban_renderer o_kanban_grouped">
+
+    <!-- New -->
+    <div class="o_kanban_group">
+      <div class="o_kanban_header">
+        <div class="o_kanban_header_title">
+          <div class="o_column_title"><span>New</span></div>
+          <div class="o_group_config"><button class="o_btn_circle btn btn-secondary" title="Settings"><svg class="o_icon"><use href="#o-cog"/></svg></button></div>
+          <button class="o_kanban_quick_add o_btn_circle btn btn-secondary" title="Quick add"><svg class="o_icon"><use href="#o-add-2"/></svg></button>
+        </div>
+        <div class="o_kanban_counter">
+          <div class="o_column_progress progress w-50">
+            <div class="progress-bar bg-success" style="width:50%"></div>
+            <div class="progress-bar bg-300" style="width:50%"></div>
+          </div>
+          <div class="o_animated_number"><b class="fw-medium">$ 80,000</b></div>
+        </div>
+      </div>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Devis pour 150 tapis</span>
+        <div>$ 40,000.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c4">O</span></span><span class="ms-2 text-truncate">OpenWood</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_1"><div class="o_tag_badge_text">Product</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Quote for 12 Tables</span>
+        <div>$ 40,000.00</div>
+        <div>Will McEncroe</div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_1"><div class="o_tag_badge_text">Product</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+    </div>
+
+    <!-- Qualified -->
+    <div class="o_kanban_group">
+      <div class="o_kanban_header">
+        <div class="o_kanban_header_title">
+          <div class="o_column_title"><span>Qualified</span></div>
+          <div class="o_group_config"><button class="o_btn_circle btn btn-secondary" title="Settings"><svg class="o_icon"><use href="#o-cog"/></svg></button></div>
+          <button class="o_kanban_quick_add o_btn_circle btn btn-secondary" title="Quick add"><svg class="o_icon"><use href="#o-add-2"/></svg></button>
+        </div>
+        <div class="o_kanban_counter">
+          <div class="o_column_progress progress w-50">
+            <div class="progress-bar bg-success" style="width:66.6667%"></div>
+            <div class="progress-bar bg-300" style="width:33.3333%"></div>
+          </div>
+          <div class="o_animated_number"><b class="fw-medium">$ 51,300</b></div>
+        </div>
+      </div>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Global Solutions: Furniture</span>
+        <div>$ 3,800.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">R</span></span><span class="ms-2 text-truncate">Ready Mat</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_5"><div class="o_tag_badge_text">Design</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Quote for 600 Chairs</span>
+        <div>$ 22,500.00</div>
+        <div>Erik N. French</div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_1"><div class="o_tag_badge_text">Product</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Info about services</span>
+        <div>$ 25,000.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c2">A</span></span><span class="ms-2 text-truncate">Acme Corporation</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_1"><div class="o_tag_badge_text">Product</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+    </div>
+
+    <!-- Proposition -->
+    <div class="o_kanban_group">
+      <div class="o_kanban_header">
+        <div class="o_kanban_header_title">
+          <div class="o_column_title"><span>Proposition</span></div>
+          <div class="o_group_config"><button class="o_btn_circle btn btn-secondary" title="Settings"><svg class="o_icon"><use href="#o-cog"/></svg></button></div>
+          <button class="o_kanban_quick_add o_btn_circle btn btn-secondary" title="Quick add"><svg class="o_icon"><use href="#o-add-2"/></svg></button>
+        </div>
+        <div class="o_kanban_counter">
+          <div class="o_column_progress progress w-50">
+            <div class="progress-bar bg-success" style="width:50%"></div>
+            <div class="progress-bar bg-warning" style="width:25%"></div>
+            <div class="progress-bar bg-danger" style="width:25%"></div>
+          </div>
+          <div class="badge rounded-pill text-bg-danger ms-3" title="Rotting"><b>1</b></div>
+          <div class="o_animated_number"><b class="fw-medium">$ 79,100</b></div>
+        </div>
+      </div>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Modern Open Space</span>
+        <div>$ 4,500.00</div>
+        <div>Henry Jordan</div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_4"><div class="o_tag_badge_text">Information</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-warning"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Office Design and Architecture</span>
+        <div>$ 9,000.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">R</span></span><span class="ms-2 text-truncate">Ready Mat</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_7"><div class="o_tag_badge_text">Consulting</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">5 VP Chairs</span>
+        <div>$ 5,600.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">A</span></span><span class="ms-2 text-truncate">Azure Interior</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_3"><div class="o_tag_badge_text">Services</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Email"><svg class="o_icon o_icon_lg text-danger"><use href="#o-envelope"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-danger" title="Stuck in this stage for 6 days">6d</span>
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Need 20 Desks</span>
+        <div>$ 60,000.00</div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_7"><div class="o_tag_badge_text">Consulting</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Email"><svg class="o_icon o_icon_lg text-success"><use href="#o-envelope"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+    </div>
+
+    <!-- Won -->
+    <div class="o_kanban_group">
+      <div class="o_kanban_header">
+        <div class="o_kanban_header_title">
+          <div class="o_column_title"><span>Won</span></div>
+          <div class="o_group_config"><button class="o_btn_circle btn btn-secondary" title="Settings"><svg class="o_icon"><use href="#o-cog"/></svg></button></div>
+          <button class="o_kanban_quick_add o_btn_circle btn btn-secondary" title="Quick add"><svg class="o_icon"><use href="#o-add-2"/></svg></button>
+        </div>
+        <div class="o_kanban_counter">
+          <div class="o_column_progress progress w-50">
+            <div class="progress-bar bg-success" style="width:100%"></div>
+          </div>
+          <div class="o_animated_number"><b class="fw-medium">$ 19,800</b></div>
+        </div>
+      </div>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Distributor Contract</span>
+        <div>$ 19,800.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span class="ms-2 text-truncate">Gemini Furniture</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_4"><div class="o_tag_badge_text">Information</div></span><span class="o_tag o_badge badge rounded-pill o_tag_color_8"><div class="o_tag_badge_text">Other</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+    </div>
+
+    <div class="o_column_quick_create o_quick_create_folded">
+      <div><button class="o_quick_create_button btn" title="Add column"><svg class="o_icon"><use href="#o-double-arrow-right"/></svg></button></div>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+</body>
+</html>

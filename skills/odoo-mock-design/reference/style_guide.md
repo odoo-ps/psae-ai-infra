@@ -5,67 +5,118 @@ and think "that's Odoo", without us chasing pixel-exact parity. Everything you
 need is already in `catalog/odoo.css` as CSS custom properties. **Use the
 tokens; never hard-code an off-palette color or font.**
 
+The catalog tracks ONE Odoo version — the **calibrated version** stamped on the
+first line of `catalog/odoo.css` ("calibrated to Odoo NN Enterprise"; history in
+`REFRESH.md`, sources in § Source map). Every value and rule below describes
+that version. The default edition is **Enterprise**.
+
 ## Design tokens (all in `:root` of `catalog/odoo.css`)
 
 | Token | Value | Use |
 |---|---|---|
-| `--o-brand-primary` | `#714B67` | Enterprise purple — primary buttons, active states, markers |
-| `--o-community-color` | `#71639e` | Community purple (navbar if mocking community) |
-| `--o-enterprise-action-color` | `#017e84` | Teal — secondary accent, open marker |
-| `--o-gray-100 … --o-gray-900` | `#f8f9fa … #212529` | Backgrounds, borders, muted text |
-| `--o-success / warning / danger / info` | `#28a745 / #ffac00 / #dc3545 / #17a2b8` | Status badges |
+| `--o-brand-primary` | `#714B67` | Enterprise plum — ONLY `btn-primary`, `btn-outline-primary` (form "New") and the notebook active-tab bar |
+| `--o-action` (= `--o-enterprise-action-color`) | `#017e84` | Teal — links, relational values, checked checkboxes/radios, active / selected / focus states |
+| `--o-component-active-bg` | `#e6f2f3` | Teal tint behind active / selected items (search-panel row, settings tab, current stage) |
+| `--o-main-link-color` | `#017e84` (hover `#01585c`) | Links — never underlined, not even on hover |
+| `--o-community-color` | `#71639e` | Community brand (`body.o-community`) |
+| `--o-gray-100 … --o-gray-900` | `#f8f9fa … #212529` (200 = `#e7ebed`) | Page background, borders, muted text |
+| `--o-success / warning / danger / info` | `#00a945 / #f59e0b / #ef4444 / #17a2b8` | Badge tints, alerts, activity states |
+| `--o-text-success / info / warning / danger` | `#008818 / #0180a5 / #9a6b01 / #d23f3a` | Text-on-white variants (`.text-*`) |
+| `--o-favorite` | `#f3cc00` | Priority / favorite stars |
 | `--o-font-family` | system stack | Body text (no web font — keeps packages offline) |
-| `--o-headings-font-family` | `"SF Pro Display", …` | Titles |
-| `--o-font-size-base` | `0.875rem` (14px) | Base text |
+| `--o-font-size-base` | `0.875rem` = 14px (root 16px) | Body, buttons, labels; `-sm` 13px (small text, `.btn-sm`), `-smaller` 12px (badges, tags) |
+| `--o-font-weight-bold` / `-bolder` | `500` / `700` | Backend "bold" is 500 (headings, `.fw-bold`, buttons, labels, badges); 700 only for `.fw-bolder`. Frontend (`.o_website` / `.o_portal` / `.pos`) keeps 700 |
+| `--o-font-size-h1 … h5` | 33.6 / 21 / 18.2 / 16.8 / 15.4px | h1 = record title (weight 500, black) |
 | `--o-spacer` | `16px` | Default padding/margins |
-| `--o-border-radius` | `4px` | Default corner radius |
-| `--o-statusbar-height` | `33px` | Form statusbar |
-| `--o-form-sheet-min-width` | `990px` | Form sheet max width |
+| `--o-border-radius` (`-sm` / `-lg` / `-xl` / `-pill`) | `6px` (4 / 8 / 12px / 50rem) | default (buttons, inputs, badges) / btn-sm / sheet, modal, chatter avatar / list & kanban containers / badges, tags, search bar |
+| `--o-statusbar-height` | `33px` | Statusbar = button height |
+| `--o-form-sheet-max-width` | `1400px` | Form sheet area max width |
+| `--o-navbar-height` | `46px` | Navbar |
+
+**Edition.** `body.o-community` switches the whole palette, not just the brand:
+radius 4/3/6px, semantic colors `#28a745 / #ffac00 / #dc3545`, link `#66598f`,
+gray-300 secondary-button fill, solid badges, borderless tags, a `#ccc` input
+underline, h1 28px, no button sheen, purple navbar. Never scale the root font
+(`html` stays 16px) — the catalog's px values are the calibrated version's px.
 
 ## Rules (what makes a mock read as Odoo)
 
-1. **Webclient background is gray-100, sheets/panels are white.** The form sheet
-   is a white card centred on a gray background. Don't make the whole page white.
-2. **Navbar is WHITE with dark text** in Odoo 19 **Enterprise**
-   (`navbar.variables.scss`: `$o-navbar-background: $o-white`,
-   `entry-color: $o-main-text-color`, `border-bottom: 0`) — the brand purple
-   `#714B67` is an **accent** (buttons / active states), NOT the navbar. Full
-   width, ~46px, app name + menus left, systray right. **Community** keeps the
-   purple navbar (`#71639e`, white text) — `body.o-community` restores it. Use
-   the SAME navbar markup on every screen (apps toggle + sections + systray +
-   avatar) so the header doesn't change between steps.
-3. **Control panel is white with a bottom border**, holding breadcrumbs (muted →
-   bold current) on top and actions + search + pager + switcher below.
-4. **Primary action = filled purple `btn btn-primary`.** Secondary/other actions
-   = `o_btn_outline` or `btn-secondary`. One primary per cluster.
-5. **Form statusbar:** left = workflow buttons, right = arrow-shaped status
-   pipeline with exactly one `o_arrow_button_current`.
-6. **Form fields are clean text in Odoo 19** — NO persistent dotted underline
-   (that's the pre-15 look). Empty fields use `o_field_empty` (gray italic
-   em-dash). A required *input* may carry a subtle solid bottom border via
-   `o_required_modifier`, but don't put it on a filled value — especially not on
-   a link.
-7. **Icons come from the sprite, INLINED into `index.html`**, referenced with
-   same-document `<use href="#o-id">`. Never link an external sprite
+1. **One gray canvas; only view surfaces are white.** The page is gray-100.
+   Navbar, control panel, search panel, statusbar, chatter and report toolbars
+   sit transparent on it. White = form sheet, list renderer, kanban cards, graph
+   canvas, settings card, report table. Never make the whole page white, never
+   paint a white or colored bar behind the chrome.
+2. **Navbar is transparent over the page gray** (Enterprise): no bottom border,
+   46px, every entry a 26px pill (6px radius, gray-200 hover). Left:
+   `a.o_menu_toggle.hasImage` = the current app's real icon (`#o-app-<id>`,
+   26px) + app name (16.8px, regular); the 3×3 grid appears only on hover (drop
+   icon + `hasImage` only on screens with no app context). Menu sections are
+   plain 14px text with **no carets**; an open one is `.o_nav_entry.show` + an
+   `.o-dropdown--menu`. Systray, left → right, never reordered: [timesheet
+   timer] [Ask AI] Messages · Activities (red count badges) · Studio · company
+   name (no caret) · user avatar (one initial). There is no liveness dot and no
+   close-all ×. Use the SAME navbar markup on every screen
+   (`components/navbar.html`). `body.o-community` restores the purple bar.
+3. **Control panel has no bar of its own** — page gray, no border, ONE row:
+   [New / main buttons][title + ⋮] | centred pill search | [pager][view
+   switcher]. A single-level title is 16.8px **regular**; a drill-down is two
+   lines (13px teal link to the immediate parent over the record name). The
+   action menu is **⋮** (`#o-ellipsis-v` in `o_btn_circle btn-light`) inside
+   `.o_breadcrumb` — never a cog, no favorite star. Details: § Control panel &
+   search panel; markup: `components/control_panel.html`.
+4. **One filled plum `btn btn-primary` per cluster; every other action is
+   `btn btn-secondary`** — white, `#ced4da` border, 6px radius, 33px tall
+   (statusbar, dialog footer, chatter Log note / Activity, pager). Icon-only
+   toolbar buttons are `btn btn-light`; inline actions ("Add a line") are teal
+   `btn-link`, never underlined; join pairs in `.btn-group`. Never shrink or
+   recolor buttons per view. `o_btn_outline` is a deprecated alias — write
+   `btn-secondary`.
+5. **Form statusbar** is the first child of `.o_form_sheet_bg`, on the gray (no
+   white strip, no border). Left: workflow buttons (rule 4 — at most one
+   primary). Right: ONE white, bordered, rounded `.o_statusbar_status` group
+   inside `.o_field_widget.o_field_statusbar`, stages left → right, exactly one
+   `o_arrow_button_current` (teal tint, black text). Readonly `state` pipeline:
+   every stage `disabled`, the others muted; clickable `stage_id` pipeline: only
+   the current stage disabled. Never a solid purple fill.
+6. **Form fields are clean text — no resting underline, even when required**
+   (it shows only on hover / focus). Empty readonly value → renders NOTHING
+   (`o_field_empty` + `o_form_label_empty` on the label), never an em-dash;
+   empty editable value → its pale placeholder (`o_input_placeholder`).
+   Readonly labels add `o_form_label_readonly` (muted); invalid fields get
+   `o_field_invalid` on label AND widget. Booleans, radios and selection badges
+   are real inputs (`o-checkbox form-check`, `form-check o_radio_item`;
+   `form-switch` only for `boolean_toggle`) — never ☐ / ● / ○ glyphs. Form dates
+   are non-numeric ("Oct 6, 12:29 PM", "Sep 1 → Oct 1"). The mock-only "please
+   fill this" cue is `.o_input_pending` (§ Input affordances).
+7. **Icons are the real ones, from the sprite, INLINED into `index.html`**,
+   referenced with same-document `<use href="#o-id">` inside
+   `<svg class="o_icon">`. Never link an external sprite
    (`<use href="assets/icons.svg#id">`) — external SVG `<use>` is blocked over
-   `file://`, so the icons vanish when the package is opened as a file. Need a
-   glyph that isn't there? Add it to `catalog/icons.svg` (the source) and it gets
-   inlined. Never `<img>` an external icon or load FontAwesome from a CDN.
+   `file://`, so the icons vanish when the package is opened as a file. Never
+   hand-draw a glyph, never load FontAwesome / a CDN, never `<img>` an external
+   icon, never type a Unicode stand-in (→ ⋮ + − ▾ ● ✓ ×) where Odoo renders an
+   icon. Missing glyph? Extract it (§ Sprite catalog › Adding a glyph).
 8. **No external anything.** No CDN CSS/JS/fonts/images, no `https://` asset, no
    tracking. `_lint_mock.py` enforces this and the lint is a release gate.
 9. **Realistic placeholder data, not Lorem ipsum.** Use plausible Odoo-style
    names (Deco Addict, Mitchell Admin, SO0042). The linter rejects `Lorem ipsum`,
    `TODO`, `TBD`.
-10. **Relational / URL values are teal links** (`--o-enterprise-action-color`,
-    `#017e84`) — Customer, addresses, product names, and editable/linked numeric
-    cells in lists. Use `<a class="o_form_link">` on a form and
-    `class="o_list_link"` in a list. Plain dark text for non-relational values
-    only. This is the single most recognizable Odoo color cue after the navbar.
-11. **Statusbar buttons are compact and flat** — only the primary action is
-    filled; the rest are flat text with a hover wash. **Inline tags use `o_tag`**
-    (gray pill, e.g. a tax `15%`), distinct from a colored status `badge`. For
-    sale/purchase/invoice, close the lines with an **`o_subtotal_footer`**
-    (right-aligned Untaxed / Tax / **Total**, Total emphasized).
+10. **Teal marks links and state; plum marks the primary action.** On a form,
+    relational / URL values are teal links (`<a class="o_form_link">`). **List
+    cells are plain dark text — relational columns included**; teal in a list
+    is only a many2one the view renders readonly as a link (`a.o_form_uri`) and
+    `btn-link` buttons. Active / selected / checked / focus states are teal
+    (`--o-action`, `--o-component-active-bg`) — never brand plum.
+11. **Status badge ≠ tag; avatars are squares.** A state / status is
+    `<span class="badge rounded-pill text-bg-{success|info|warning|danger|primary|secondary|300}">`
+    — a 15% tint with dark text, never solid (`300` = neutral gray). A many2many
+    value is `<span class="o_tag o_badge badge rounded-pill o_tag_color_N"><div class="o_tag_badge_text">…</div></span>`
+    — a bordered pastel pill from the 12-colour palette (0 = gray, e.g. taxes);
+    several go in `<div class="d-flex flex-wrap gap-1">`. Avatars are rounded
+    squares with ONE initial on a palette color (`.o_user_avatar.o_avatar_c0..c7`,
+    no inline style; 24px in m2o / list / kanban, 32px in chatter); keep one
+    color per person across the mock. For sale / purchase / invoice, close the
+    lines with an **`o_subtotal_footer`** (right-aligned Untaxed / Tax / Total).
 12. **Place standard fields where Odoo does — discovered at runtime** from the
     live `odoo/`/`enterprise/` source (`reference/field_placement.md`), not a
     cache. Standard fields the brief doesn't change stay in their real group/tab
@@ -94,7 +145,7 @@ tokens; never hard-code an off-palette color or font.**
     | Read-only label / value pair      | `.o_field_row`                    | `.s_website_form_field` (static value)    | `.o_portal_kv` + `.o_portal_kv_label/_value`  | `.pos-popup-row`                       |
     | Required-field mark               | `.o_required_modifier` on input   | `.s_website_form_mark` "*" inside label   | (same as website)                             | n/a (POS popups don't mark required)   |
     | Help text under a field           | `<span class="o_field_help">?` ↗ help | `.s_website_form_help`                | (use `.s_website_form_help`)                  | (use `.s_website_form_help`)           |
-    | Inline tinted callout / disclosure | `.alert` (inline banner)         | `.s_website_form_note`                    | `.o_portal_note` + `_info/_success/_warning/_danger` | `.pos-callout` + same tone modifiers |
+    | Inline tinted callout / disclosure | `.alert.alert-{info\|success\|warning\|danger}[role=alert]` (§ Form) | `.s_website_form_note`   | `.o_portal_note` + `_info/_success/_warning/_danger` | `.pos-callout` + same tone modifiers |
     | Section divider inside a form     | `.o_horizontal_separator`         | `.s_website_form_section`                 | (use `.s_website_form_section`)               | n/a                                    |
     | Action row (submit / accept)      | statusbar buttons                 | `.s_website_form_submit` row              | `.o_portal_actions`                           | `.o_dialog_footer` (POS popups)        |
     | Submit / primary CTA              | `.btn.btn-primary`                | `.btn.btn-primary.s_website_form_send`    | `.btn.btn-primary`                            | `.btn.btn-primary.btn-lg`              |
@@ -129,6 +180,13 @@ tokens; never hard-code an off-palette color or font.**
   Odoo field is.
 - The annotations toggle in the walkthrough bar hides all markers for a
   clean "screenshot" view.
+- **Custom elements** are marked with `mock-custom`, not with markers: on
+  what the solution adds or changes (a light-pink highlight), or on the
+  `.mock-screen` of a screen that is new from end to end (a small Custom
+  banner across the top-right corner). Placement table: `interactions.md`
+  § Custom elements. The **Custom** chip beside Annotations hides them.
+  Never hand-roll a custom indicator — an inline pink style, a "Custom" /
+  "New" badge, an `o_widget_web_ribbon` — the class is the only one.
 
 ### Variants vs data multiplicity (load-bearing)
 
@@ -160,7 +218,7 @@ That collapses two distinct lines into one alternated rendering and
 forces the reader to pivot a chip to see what's literally on the
 record.
 
-### Guard rendering — action-triggered Validation Error modals
+### Guard rendering — action-triggered error dialogs
 
 When a State-axis value sets up a guard condition (line is partially
 allocated; lot reserved by another transfer; etc.), the **happy state
@@ -172,25 +230,35 @@ when you load it — the modal fires only when you click the action
 button (Confirm, Validate, Post, …) that would fail. The State value
 shows the SETUP for the failure (the Unallocated badge, the partial-
 allocation indicator, etc.); the user clicks the action button to see
-the modal.
+the modal. The one exception is an **attempt** value — a variant that
+names the action itself ("Change a locked timesheet", "Set to Draft"):
+there the dialog is open by default. Full rule, and the `GUARD-LANDING`
+lint that enforces it: `interactions.md` § UserError / ValidationError
+dialog.
 
-Use Odoo's standard modal anatomy:
+Use Odoo's standard error-dialog anatomy (§ Wizards / Dialogs):
 
-- `.o_dialog.o_dialog_user_error` for **User Error** (no coloured
-  header — title says "User Error" / "Validation Error"; matches real
-  Odoo `error_dialog.scss` which has `border: none` on the header).
-- Modal body carries the rule's message in user-facing Odoo voice
-  (imperative + concrete, no spec citations).
-- Modal footer has a Close button.
+- `.o_dialog.o_dialog_user_error` (`.o_dialog_validation_error` for a
+  constraint) — a small, minimal dialog: no colored header bar, an
+  `<h4 class="modal-title">` plus the `.btn-close` X.
+- The title comes from the exception: a blocked action (UserError) reads
+  **Invalid Operation**; a constraint (ValidationError) reads
+  **Validation Error**. Never "User Error".
+- The body carries the rule's message in user-facing Odoo voice
+  (imperative + concrete, no spec citations) inside `<div role="alert"><p>`.
+- The footer has ONE left-aligned `btn btn-primary` Close.
 
 ```html
 <!-- Default-closed; opens on Confirm click at the guard state -->
 <div class="o_dialog_backdrop" data-mock-modal="confirm-blocked"
      data-mock-variant="state=unallocated">
   <div class="o_dialog o_dialog_user_error">
-    <div class="o_dialog_header"><span>Validation Error</span></div>
+    <div class="o_dialog_header">
+      <h4 class="modal-title">Invalid Operation</h4>
+      <button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button>
+    </div>
     <div class="o_dialog_body">
-      <p>Allocate lots or serials on every tracked line before confirming this quotation.</p>
+      <div role="alert"><p>Allocate lots or serials on every tracked line before confirming this quotation.</p></div>
     </div>
     <div class="o_dialog_footer">
       <button class="btn btn-primary" data-mock-modal-close>Close</button>
@@ -217,7 +285,8 @@ correct rendering is: happy state visible, error only when the user
 attempts the gated action.
 
 `mock-fidelity-anchor` flags an invented inline `.alert` / custom
-guard-banner element in place of the UserError modal.
+guard-banner element in place of the UserError modal. (`.alert` is only for
+persistent context on a form — § Form.)
 
 ### Interactive-path completeness
 
@@ -418,7 +487,8 @@ reverse relations), and standard fields the solution overrides (new
 compute, default, domain, readonly, required, or `depends`). A standard
 field used unchanged carries neither `?` nor marker. Solution-added
 fields can carry both a `?` AND a numbered marker when their behavior is
-load-bearing for the workflow.
+load-bearing for the workflow. Its row (column cells, settings box) also
+carries `mock-custom`: the `?` documents the field, the mark shows its scope.
 
 ### Cover, overview, and meta-content voice — business, never technical
 
@@ -519,7 +589,9 @@ supplies these values.*
 ### Visual classes
 
 - **`o_input_pending`** — dashed border, lighter italic placeholder
-  text, no value. Use for any input the user hasn't supplied yet.
+  text, no value. Use for any input the user hasn't supplied yet. It is a
+  MOCK-ONLY cue: real Odoo shows no field border at rest (rule 6), so
+  never imitate it with underlines or `o_required_modifier`.
   Placeholder copy hints at the input type (`"Select a lot…"`,
   `"YYYY-MM-DD"`, `"Customer name"`).
 - **`o_input_provided`** — solid value, no border. Standard rendering
@@ -550,34 +622,303 @@ state doesn't need to persist (mock honesty).
 
 ## Surface-specific structural rules
 
-These rules are LOAD-BEARING for "recognizably Odoo" fidelity. They were
-extracted from a cross-surface drift audit (see REFRESH.md 2026-06-15 entry).
-Each surface has a fragment in `catalog/components/` that demonstrates the
-correct shape; if a screen needs something that fragment doesn't show,
-extend the fragment — don't re-derive.
+These rules are LOAD-BEARING for "recognizably Odoo" fidelity. They come from
+the cross-surface drift audit and the calibration against real screens (see
+REFRESH.md 2026-06-15 and 2026-10-07 entries). Each surface has a fragment in
+`catalog/components/` that demonstrates the correct shape; if a screen needs
+something that fragment doesn't show, extend the fragment — don't re-derive.
+
+### Navbar, home menu, control panel, settings, kanban
+
+Their per-fragment rules (structure tables, systray order, title / ⋮ / search /
+facets / pager / switcher, optional control-panel states, the settings rail and
+card, kanban records / columns / layouts, pivot expanders) live in
+`catalog_chrome.md`; rules 2–4 and 11 above are the summary. Copy the fragment
+rather than re-deriving.
+
+### Search panel (`search_panel.html`)
+
+- Only where the real action's search view declares a `<searchpanel>` (see
+  `view_types.md` § search panel for the composition). Never hand-roll an
+  inline flex wrapper or inline panel styles.
+- Sections: an icon + UPPERCASE `<b>` header (write natural case). Category =
+  select-one: "All" first (`fw-bold`, no counter), exactly one `.active` row (a
+  teal-tint pill). Filter (`select=multi`) = checkbox rows. Counters are
+  right-aligned 13px, muted unless their row is active.
+- Hierarchy: every title is preceded by `.o_toggle_fold`; parents add
+  `.o_toggle_fold_with_children` (`#o-caret-right` / `#o-caret-down`); children
+  are `li.o_treeEntry` in a nested `ul.list-group`.
+- The fold toggle (`#o-left-panel-close`) is always shown; the collapsed state
+  is a 31px vertical strip (`#o-left-panel-open` + the current selection).
+
+### Form (`.o_form_view`)
+
+- Layout: `.o_form_view > [.o_content_with_chatter >] .o_form_sheet_bg >
+  [.o_form_statusbar, .o_form_sheet]` (+ `aside.o-mail-Chatter`). Never put the
+  statusbar directly under `.o_form_view`.
+- Sheet: white, 1px `#dee2e6` border, 8px radius, 24px padding, no shadow,
+  left-aligned. Title = `h1` 33.6px / 500, black.
+- Groups: the `.o_inner_group` label column is as wide as the longest label
+  (max 150px); labels 14px / 500. Annotation markers go INSIDE the widget or the
+  label, never as a third direct child of `.o_field_row`.
+- Group titles: `.o_horizontal_separator` as the first row of an
+  `.o_inner_group`, written in natural case (CSS uppercases it: 13px / 700,
+  gray-700, hairline below).
+- Notebook = boxed Enterprise tabs: inactive gray-100, active white with plum
+  text and a 3px plum top bar; the strip bleeds to the sheet edges. An x2many
+  list as a page's first content attaches to the tabs, edge to edge. A tab
+  holding an invalid field gets `o_page_invalid`.
+- Smart buttons render ONLY in the control panel's centre cell: one joined
+  group of white bordered 33px buttons, each a 21px plum icon + 12px label over
+  a 12px / 500 plum value.
+- Ribbon: `<div class="o_widget o_widget_web_ribbon"><div class="ribbon ribbon-top-right"><span class="text-bg-success">Paid</span></div></div>`
+  as the first child of `.o_form_sheet` (text renders uppercase; `text-bg-danger`
+  for Cancelled / Archived). The legacy empty `data-text` element still renders.
+- Custom-field `?`: `<span class="o_field_help" …>?</span>` glued to the label
+  text with NO space (it wraps with the last word like Odoo's `<sup>`); a
+  plain blue superscript, never `#o-question-circle` / `#o-info-circle`.
+- Image header (employee / partner / product): a `d-flex align-items-center
+  gap-3` row with the 128px photo left of `.oe_title`. Photos are packaged
+  local files; without one, an initials `.o_user_avatar` sized to the photo.
+- Alerts (persistent context only — duplicate warning, outstanding credits,
+  settings notice): `<div class="alert alert-info|success|warning|danger" role="alert">`
+  as a direct child of `.o_form_sheet_bg` between statusbar and sheet. The 3px
+  left accent and padding come from CSS — no inline borders, shadows or tints;
+  optional `#o-warning` / `#o-info-circle` icon with `.me-1`. A blocked action is
+  a dialog, not an alert (§ Guard rendering).
+- `form_controller_m3.scss` (Material-3 outlined field boxes) applies below
+  768px only — desktop mocks never imitate it.
+
+### List (`.o_list_view`)
+
+- 40px header and rows; the header row is the page-gray gradient with
+  regular-weight `#495057` labels; one rule per row. Rows are single-line —
+  keep text short or mark long-text cells `td.o_list_text`.
+- Cells are plain dark text (rule 10). Reference / number column `td.fw-bold`.
+  Row decorations go on the `<tr>` (`text-muted` / `-danger` / `-warning` /
+  `-info`, `fw-bold`), column decorations on the `<td>`. Status columns are
+  badges (rule 11). Person columns shown with `many2one_avatar*` carry the 24px
+  avatar before the name.
+- Grouped (`o_list_table_grouped`): white group rows reading `Name  N records`
+  (muted count, "1 record"), never `Name (N)`; `#o-caret-right` folded,
+  `#o-caret-down` + `o_group_open` open; per-column sums as
+  `<span class="fw-bold">` in their numeric column.
+- Footer: aggregate values only, under their numeric columns — no "Total"
+  label, no top rule.
+- Chrome: `th.o_list_actions_header` (`#o-settings-adjust`) with an empty `<td>`
+  closing every row; handle `td.o_handle_cell` (`#o-drag`); at most one sorted
+  column (`th.table-active` + arrow), unsorted columns show nothing.
+- Inline one2many: `.o_field_x2many_list > .o_list_renderer > table` (never
+  `.o_list_view` on the wrapper), a trailing `td.o_list_record_remove`
+  (`#o-trash`) and a last row `td.o_field_x2many_list_row_add` with btn-link
+  "Add a line" (sale order lines: Add Line · Add Section · Add Note · Catalog);
+  `o_subtotal_footer` below.
+- Without a search panel the list is full-bleed white; beside one it is a white
+  card with 12px top corners.
 
 ### Chatter (`o-mail-Chatter`)
 
-- The chatter has THREE structural pieces: `.o-mail-Chatter-top` (sticky
-  topbar + composer when open) + `.o-mail-Chatter-content` (scrollable
-  thread + activities). Render BOTH wrappers even on minimal chatters —
-  that's the recognizable Odoo skeleton.
-- Topbar buttons use **real Odoo class names**:
-  `.o-mail-Chatter-sendMessage`, `.o-mail-Chatter-logNote`,
-  `.o-mail-Chatter-activity`, then `.o-mail-Chatter-topbarGrow` (spacer),
-  then `.o-mail-Chatter-search` + `.o-mail-Followers` (followers button
-  with icon + `<sup class="o-mail-Followers-counter">N</sup>`).
-- **Composer** sits INSIDE `.o-mail-Chatter-top`, BELOW the topbar, **only
-  when open**. Default state: `<div class="o-mail-Composer is-collapsed"
-  data-mock-toggleable="composer-msg">`. Toggle via the topbar's Send
-  message / Log note `data-mock-toggle`.
-- **Messages are TWO-COLUMN**: `.o-mail-Message > .o-mail-Message-sidebar
-  (48px) + .o-mail-Message-core`. The sidebar carries the avatar (inside
-  `.o-mail-Message-avatarContainer` for rounded corners); the core carries
-  `.o-mail-Message-header` (author + date + notification icons) +
-  `.o-mail-Message-contentContainer > .o-mail-Message-body`.
-- Tracking-value changes (Stage: A → B) render as a `<ul class="o_mail_tracking_value">`
-  inside the message body, NOT inline text.
+- Placement: `.o_form_view > .o_content_with_chatter > [.o_form_sheet_bg >
+  .o_form_statusbar + .o_form_sheet] + aside.o-mail-Chatter` — a 530px column
+  on the page gray, no border, its topbar on the statusbar row; below 1400px it
+  stacks under the sheet.
+- Two wrappers: `.o-mail-Chatter-top` (sticky topbar + composer when open) +
+  `.o-mail-Chatter-content` (planned activities + thread). Render both even on
+  minimal chatters.
+- Topbar: `.o-mail-Chatter-topbarButtons` = Send message (`btn-primary`), Log
+  note and **Activity** (`btn-secondary`; never "Activities"), then
+  `.o-mail-Chatter-topbarGrow`, `.o-mail-Chatter-search`,
+  `.o-mail-Chatter-attachFiles`, `.o-mail-Followers > .o-mail-Followers-button`
+  (`active` + `#o-user` only when the current user follows; else `#o-user-o`).
+- Composer: `.o-mail-Chatter-composer[data-mock-toggleable="composer-msg|composer-note"]`,
+  toggled by the topbar buttons' matching `data-mock-toggle` (ids may repeat
+  across screens). Never hand-add `.active` to the topbar buttons. To show it
+  open statically, use `.o-mail-Chatter-composer.is-open` WITHOUT
+  `data-mock-toggleable`. Send message = To (recipient tag pills) + Cc [+
+  Subject only on Sales Orders / CRM leads] + "Send a message to all followers
+  and selected contacts…" + Send; Log note = `.o-mail-Composer-note`, "Log an
+  internal note…", "Log".
+- Planned activities: assignee avatar + state badge holding the type icon; due
+  label colored by state ("Due in N days:" / "Today:" / "N days overdue:");
+  summary or type name in bold ("To-Do"); "for <user>"; info icon. Tools are
+  ✓ Done and ✎ Edit only — no "Mark Done", no "Cancel".
+- Thread: `.o-mail-Thread`, each day opened by `.o-mail-DateSection` ("Today",
+  "Oct 5, 2026"), no separator lines. Message =
+  `.o-mail-Message > .o-mail-Message-core > .o-mail-Message-sidebar + <div>`
+  (header + contentContainer). Log notes, notifications and tracking are a
+  plain `.o-mail-Message-body.o-note` (no tint); messages posted with Send
+  message are bubbles (`.o-mail-Message-bubble.o-blue` others / `.o-green` you).
+- Tracking: one line per change in `.o-mail-Message-body.o-note.o_track` —
+  `Old → <b>New</b> <i>(Field)</i>`, several joined by `<br>`. Never a `<ul>`,
+  strike-through or "Field:" prefix. OdooBot = `o_avatar_odoobot` (no text).
+
+### Wizards / Dialogs (`.o_dialog`)
+
+- Pick a shape consistently across a package — don't mix:
+  - **Simplified catalog shape** (default):
+    `.o_dialog_backdrop > .o_dialog > .o_dialog_header / _body / _footer`
+  - **Real Odoo shape** (for dev-facing mocks):
+    `<div class="o_dialog"><div class="modal d-block"><div class="modal-dialog modal-dialog-centered modal-{size}"><div class="modal-content"><header class="modal-header"><main class="modal-body"><footer class="modal-footer">…`
+  Both render identically. Copy `components/dialog.html`.
+- **Size decides the design.** `.modal-sm` (460px) and `.modal-md` (620px) are
+  MINIMAL (no header / footer rules, 24px padding); no size class (= lg, 980px)
+  and `.modal-xl` (1140px) are DEFAULT (ruled header and footer). Confirmation
+  prompts, alerts and every error dialog → `modal-sm`; act_window wizards, form
+  dialogs and the "Search more…" picker → no class; `modal-md` only for
+  `dialog_size='medium'`, the command palette and POS popups; `modal-xl` only
+  for `dialog_size='extra-large'`. A prompt without `modal-sm` renders as a
+  980px ruled wizard.
+- Title = `<h4 class="modal-title">`; every dialog carries
+  `<button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button>`
+  — never a "×" glyph or `#o-times` svg.
+- **Footer: LEFT-aligned, PRIMARY first, then `btn btn-secondary`** (Discard /
+  Cancel / "No, keep it"). Never right-aligned, never reversed, never
+  `o_btn_outline`.
+- Error titles come from the exception: UserError → **Invalid Operation**,
+  ValidationError → Validation Error, AccessError → Access Error, MissingError
+  → Missing Record, other warnings → Odoo Warning. Never "User Error", never a
+  red or yellow header bar.
+- Canonical copy: Archive = "Confirmation" / "Are you sure that you want to
+  archive this record?" / [Archive][Discard]; generic = [Ok][Discard]; Delete =
+  "Bye-bye, record!" / "Are you sure you want to delete this record?" /
+  `btn-danger` [Delete] + [No, keep it].
+- Backdrop = 25% black + grayscale(50%) — the page behind stays readable; never
+  darken or blur it further.
+
+### Dropdowns, autocomplete, toasts, tooltips
+
+- Every dropdown (⋮ actions, Print ▸, selection Print / ⚙ Actions, navbar
+  sections, New ▾, search menu) is `.o-dropdown--menu.dropdown-menu` with
+  `.dropdown-item` / `.dropdown-divider` / `.dropdown-header`, placed in a
+  `.mock-anchor` next to its toggle and wired with `data-mock-toggle` /
+  `data-mock-toggleable`. Never hand-roll a menu.
+- Many2one dropdown: a light gray-100 menu under the input; the highlighted
+  row is light gray with black text (never a purple fill); the typed term is
+  purple bold; `Create "x"` / "Create and edit..." / "Search more..." are teal,
+  with no separator line.
+- Toast (`o_notification`): white card, 8px colored left bar, 1px border, 14px
+  text, × close, top-right below the navbar; one short Odoo-voice sentence
+  ("Quotation confirmed."), optional teal bold action ("Undo").
+- Tooltips are black pills (13px light text, small arrow). Custom-field help
+  shows the debug layout: a help line, then a monospace Label / Field / Model /
+  Type list.
+- Command palette: `modal-md`, search icon on the RIGHT of the input, text-only
+  rows with CONTROL + key `kbd` chips, `<hr>` between groups, footer "TIP —
+  search for /menus and @conversations".
+- Tour pointer: a plum teardrop pointing at the target (direction class on
+  `.o_tour_pointer_tip`) + a white popover with "Stop Tour". No step numbers —
+  number with `.mock-marker`.
+
+### Reporting views
+
+- Toolbars sit between the control panel and the view body (flex row, 4px
+  gap) and use the GLOBAL `.btn` — never shrink or recolor per view; join
+  related buttons in `.btn-group`. Measures is always `btn-primary` (the graph
+  shows the measure's name; pivot / cohort read "Measures"). Enterprise pivot /
+  graph add a `btn-secondary` "Spreadsheet" right after it.
+- Scale pickers are `.btn-group.o_view_scale_selector > .btn.btn-secondary.dropdown-toggle`
+  (never a pill span); prev / next is a joined `btn-group`.
+- Pivot expanders: `catalog_chrome.md` § Pivot expand affordances — never
+  literal `[+]` / `[−]` or bordered squares.
+- Graph: one group-by = one color, no legend; 2+ = `--o-graph-1..6` with a
+  bottom-centred legend (keep ≤ 6 series); horizontal gridlines only. Mode and
+  sort are `.btn-group.o_switcher` groups; Stacked / Cumulative are
+  `form-switch` toggles.
+- Calendar / gantt / map frames are white with rounded top corners on the
+  gray. Events and gantt pills are pastel with DARK text
+  (`o_calendar_color_N`, `o_gantt_color_N`) — never solid purple with white
+  text; the calendar's today is marked only by the red day circle.
+- Cohort heat map is TEAL (white text only above 50%). Activity matrix
+  (`activity_matrix.html`): 50% tinted summary cells with dark text. Timesheet
+  grid: borderless with gutters, "2h 30m", zero as "0h" at 25%. Map: pin list on
+  the RIGHT, teal un-numbered pins, a "Maps" `btn-secondary` in the control
+  panel. Hierarchy: color-band cards with a "▸ N people" `btn-secondary`.
+  Dashboards: `dashboard_sidebar.html` (search-panel nav, white figures, no tab
+  switcher).
+
+### Account Reports (`.account_report`)
+
+- The report is a client action with its OWN standard control panel:
+  `div.o_action.account_report > .o_control_panel + .o_content > div`. Never a
+  separate filter toolbar or chip row, never a PDF + XLSX pair — Print is the
+  first (`btn-primary`) bar button, other always-shown buttons follow as
+  `btn-secondary`, XLSX lives in the report's cog menu.
+- Title (16.8px regular) + the report's own cog (`#o-cog`) in
+  `.o_control_panel_breadcrumbs_actions` — the one screen where a cog sits next
+  to the title; no ⋮.
+- Filters: `div#filter_<name> > button.btn.btn-secondary.o-dropdown.dropdown-toggle`
+  (no caret) in `.o_control_panel_actions`; icons date `#o-calendar-fill`,
+  options `#o-settings-adjust`, variant / journals `#o-book`, budget
+  `#o-bar-chart`.
+- Warnings: `#warnings.warnings > .alert.alert-info.alert-dismissible.fade.show.text-center`
+  with an empty `.btn-close`.
+- Table: a centred white card — `table.table.table-borderless.table-hover`
+  (+ `.striped` when several value columns) inside
+  `.o_account_report_scroll_container > .o_account_report_scroll_content`;
+  `thead#table_header.sticky` keeps the empty `tr[data-id=column_companies_row]`;
+  period header boxes only with a comparison or several periods.
+- Rows: `tr.line_level_N` (+ `.unfolded` / `.total` / `.fw-bold`), with an
+  empty `<tr class="empty"></tr>` before every `line_level_0`. `line_level_0` =
+  gray band, bold; a childless level-0 line is the grand total; computed
+  sub-results are `line_level_1.fw-bold`. No `tfoot`, no `.wrapper` / `.content`
+  divs.
+- Cells: `td.line_name.text[.unfoldable]` starting with
+  `i.btn.btn_foldable` (`#o-caret-right` / `#o-caret-down`); amounts
+  `td.line_cell.numeric.auditable > a`, `.muted` for zero, `.text-danger` for
+  negatives. Never literal `[+]` / `[−]` / ▾.
+- Never write `o_account_reports_page` or `o_account_report_toolbar / _title /
+  _filters / _banner / _card / _period / _line*`, `o_report_filter`,
+  `o_report_pdf` — the real `o_account_report_*` classes are only
+  `_scroll_container`, `_scroll_content` and `_chatter*`.
+
+### Empty state & first-run (`no_content.html`, `onboarding.html`)
+
+- `.o_view_nocontent` is an OVERLAY centred over the whole view body — never in
+  the flow between control panel and view. Place it as the first child of
+  `.o_list_view` (the list header stays), after the last group in a grouped
+  `.o_kanban_renderer`, in `main.o_content` for pivot / graph, as the last
+  child of `.o_grid_view` for grid.
+- Copy: the first `<p>` is the title (bold, 20px) carrying the illustration
+  class + `<svg class="o_nocontent_img">` — `#o-nocontent-smiling-face` (model
+  helpers), `-neutral-face` ("nothing matches"), `-empty-folder` (default
+  helper only); later `<p>`s are the 16px hint. Use the model's real help text;
+  no CTA button unless the real helper has one (New is the CTA).
+- A list whose action has no help shows its header + 4 blank rows and no
+  helper; the default "No data to display" helper is for kanban / pivot / graph
+  / grid / cohort. Empty grouped-kanban columns keep their headers
+  (`o_kanban_no_records`, faded counter).
+- Sample data (`sample="1"` views): add `o_view_sample_data` to the view body
+  and render believable records — the CSS fades them under the helper.
+- There is no horizontal onboarding banner. First-run guidance is the
+  empty-state helper, or the in-card Accounting checklist (`onboarding.html`)
+  inside its dashboard card. Never mock a strip of setup-step cards above a
+  view.
+
+### Discuss, Spreadsheet, Studio
+
+Anatomy in `view_types.md` § App surfaces; the never-rules:
+
+- **Discuss** — no mailbox sidebar (no Inbox / Starred / History rows, no
+  CHANNELS / DIRECT MESSAGES headings, no colored DM dots); header actions are
+  white boxed `btn-secondary` buttons, no cog, never "# name · N members";
+  bubbles are blue (others) / green (you), both left-aligned; "Today" in
+  sentence case; the composer is a pill with GIF / emoji / send icons — no
+  "Send" text button, no microphone. Discuss CSS for shared mail classes stays
+  scoped under `.o-mail-DiscussContent`.
+- **Spreadsheet** — Enterprise only; a full screen with its own navbar (never
+  `navbar.html` above it). No formula-bar row (toolbar + composer share one
+  row); only the real toolbar tools (no $, font picker, print, Σ, "Insert
+  chart"); Share is plain text, never `btn-primary`; selection is BLUE, not
+  plum; `table.o-grid-mock` is a mock-only class kept inside the real
+  `.o-grid-container > .o-group-grid > .o-grid > .os-canvas-background` chain;
+  editor icons are `svg.o-icon` (18px).
+- **Studio** — no control panel; the 300px dark sidebar is on the LEFT;
+  palette tiles are WHITE chips with the exact field-type labels (never "New
+  Structure", "Separator", "Smart Button"); editor tabs exactly Views · Reports
+  · Automations · Actions · Webhooks · Security · Filter Rules; selection = 2px
+  plum outline, no pencils or tint; drop hooks only on a "dragging" screen;
+  add affordances only "Add button", an `add_box` tab and "Add Picture"; the
+  chatter goes BELOW the sheet.
 
 ### Portal (`.o_portal`)
 
@@ -593,27 +934,6 @@ extend the fragment — don't re-derive.
   `o_portal_title` — they have no catalog backing.
 - Forms inside the portal use the website-form vocabulary
   (`.s_website_form_*`) — NOT backend `.o_field_row` / `.o_form_label`.
-
-### Account Reports (`.account_report`)
-
-- Wrap the whole report body in `<div class="account_report">` so the
-  CSS variable scope applies. Inside, render `.o_account_reports_page`
-  with the toolbar + table.
-- The table is `<table class="table table-borderless table-hover">` with
-  `<thead class="sticky">` (multi-row: period name on row 1, "Balance" /
-  "Debit" / "Credit" on row 2).
-- Row state classes are the **real** Odoo names:
-  `line_level_0` (top section — gray bg + bold), `line_level_2..16`
-  (progressive indent on `.line_name .wrapper`), `total` (bold sum row),
-  `empty` (spacer between sections — no border), `unfolded` (parent is
-  expanded).
-- Cells: `<td class="line_name">` for the name (with
-  `<button class="btn_foldable">` carrying a `<use href="#o-caret-down">`
-  or `#o-caret-right` icon for fold/unfold), `<td class="line_cell numeric">`
-  (or `.line_cell.o_list_number`) for right-aligned values.
-- **Don't write** `<span class="o_pivot_expand_btn">[+]</span>` — the lint
-  flags literal `[+]` / `[−]` markers. Use real `btn_foldable` with a
-  caret icon.
 
 ### Website Forms (`.s_website_form`)
 
@@ -650,142 +970,163 @@ extend the fragment — don't re-derive.
   one. The cashier name is `<CashierName>` (hidden on mobile via `ui.isSmall`),
   not a custom panel.
 - Custom POS UI (trade-in panel, lot picker, approval prompt) is a
-  **Dialog popup OVER `.pos`** — use `.o_dialog_backdrop > .o_dialog`
-  with `btn-lg` footer buttons. Body uses `.pos-popup-row` (label/value)
-  and `.pos-popup-list`. Never drop backend `.o_field_row` /
-  `.o_list_view` form chrome into `.rightpane`.
+  **Dialog popup OVER `.pos`** — `.o_dialog_backdrop > .o_dialog.modal-md`
+  with the `.btn-close` X and `btn-lg` footer buttons. Body uses
+  `.pos-popup-row` (label/value) and `.pos-popup-list`. Never drop backend
+  `.o_field_row` / `.o_list_view` form chrome into `.rightpane`.
 - Payment screen methods grid uses `.paymentmethods-container >
   .paymentmethods > .paymentmethod` (real Odoo names; the old
   `.pos-payment` / `.pos-paymentmethod` are kept as aliases).
 
-### Wizards / Dialogs (`.o_dialog`)
-
-- Pick a shape consistently across a package — don't mix:
-  - **Simplified catalog shape** (default):
-    `.o_dialog_backdrop > .o_dialog > .o_dialog_header / _body / _footer`
-  - **Real Odoo Bootstrap shape** (for dev-facing mocks):
-    `<div class="o_dialog"><div class="modal d-block"><div class="modal-dialog modal-dialog-centered modal-{size}"><div class="modal-content"><header class="modal-header"><main class="modal-body"><footer class="modal-footer">…`
-  Both render identically.
-- Size variants are Bootstrap modifier classes on `.o_dialog` or
-  `.modal-dialog`: `.modal-sm` (360px), `.modal-md` (650px — default),
-  `.modal-lg` (980px), `.modal-xl` (1140px).
-- **Footer button DOM order is PRIMARY first, SECONDARY second**:
-    `<button class="btn btn-primary">Save</button>`      ← FIRST
-    `<button class="btn o_btn_outline">Discard</button>` ← SECOND
-  On desktop the rightmost button reads as "final"; Odoo's
-  `justify-content-md-start` arranges them left-to-right so the primary
-  ends up rightmost. Do NOT reverse the DOM order.
-- User Error / Validation Error dialog: `.o_dialog.o_dialog_user_error`
-  modifier — borderless header, larger title, right-aligned footer with
-  a single Close button.
-
 ## Sprite catalog (icons.svg + app-icons.svg)
 
-Two sprites get inline-pasted into every mock's `index.html` (external
-`<use href="file.svg#id">` dies on `file://`, see rule 7). Both live
+Both sprites are inlined into every mock's `index.html` by `_scaffold_mock.py`
+(external `<use href="file.svg#id">` dies on `file://`, see rule 7). Both live
 under `reference/catalog/`:
 
-- **icons.svg** — chrome glyphs (chevrons, cog, search, view-type
-  switcher shapes, action affordances). Most are simplified FontAwesome
-  4.7/5 paths; a few approximate Odoo's `oi-*` font (view-list,
-  view-kanban, etc.) because the catalog can't ship the binary
-  woff2/woff. The sprite's own header comment cites the source for each.
-- **app-icons.svg** — Odoo app brand glyphs (Sales, CRM, Inventory,
-  Helpdesk, …). Each `<symbol>` uses `fill="currentColor"`; the wrapper
-  `.o_app` carries an inline `style="color:#xxx"` for the brand tint.
-  Brand colors are documented in the sprite's header comment block.
+- **icons.svg** — the REAL glyphs of the calibrated version: Material Symbols
+  Outlined (weight 400) + `odoo_ui_icons` (`oi_*`), extracted from the backend
+  fonts. `viewBox="0 0 960 960" overflow="visible"`, so `<svg class="o_icon">`
+  at 1em renders like `<i class="oi">` at the same size. Each symbol's comment
+  names its `data-icon`. Exceptions: the spreadsheet ids are the o-spreadsheet
+  18×18 SVGs, the `o-studio-field-*` ids approximate Studio's raster sprite, and
+  `o-nocontent-*` are multi-color empty-state illustrations (never tint). The
+  root is `width="0" height="0" style="position:absolute;…"` — never
+  `display:none`, or the illustrations' gradients and masks stop painting.
+- **app-icons.svg** — each app's real multi-color artwork
+  (`<module>/static/description/icon.svg`). **Never tint**: no
+  `style="color:…"` on `.o_app`, settings tabs or the navbar brand. Sizes:
+  home tile 50px in a 70px card, navbar brand 26px, settings rail 23px, Ask AI
+  18px.
 
-### Available chrome glyphs (icons.svg)
+### Size, fill and carets
 
-Grouped by what they're for. Reference with `<use href="#o-name"/>`
-inside a `<svg class="o_icon">`.
+- Chrome icons render at 1em (14px). `.o_icon_lg` (1.25em = `.oi-lg`: priority
+  stars, kanban / list activity, dialog back / expand), `.o_icon_sm` (0.8em =
+  `.oi-sm`: activity badges), `.o_icon_fw` (1.2857em = `.oi-fw`); smart-button
+  icons 21px; facet icons 13px. Never shrink chrome icons to 8–12px, never
+  `.o_icon_xs` in backend chrome.
+- Filled vs outline is part of the id: `o-star` filled (priority on, Favorites)
+  / `o-star-o` outline (priority off, opacity .25); `o-user` (following) /
+  `o-user-o`; a `-fill` suffix marks the filled twin of an outline id
+  (`o-calendar-fill`, `o-warning-fill`, `o-trash-fill`, `o-dock-left-fill`).
+  `o-cog`, `o-filter`, `o-stacks`, `o-folder`, `o-group`, `o-envelope`,
+  `o-phone`, `o-pencil`, `o-info-circle`, `o-times-circle`, `o-add-box`,
+  `o-task`, `o-work` are filled; the rest are outline.
+- A dropdown caret after a label (New ▾, Generate ▾) is
+  `<svg class="o_icon o_caret"><use href="#o-caret-down"/></svg>`. Navbar
+  sections, the company name and the search bar carry NO caret.
 
-| Category            | Sprite ids                                                                                  |
-|---------------------|---------------------------------------------------------------------------------------------|
-| Navigation / chrome | `o-bars`, `o-chevron-left`, `o-chevron-right`, `o-caret-down`, `o-caret-right`, `o-arrow-left`, `o-arrow-right`, `o-ellipsis-v`, `o-times`, `o-times-circle`, `o-search`, `o-cog`, `o-bell`, `o-spinner` |
-| View switcher       | `o-view-list`, `o-view-kanban`, `o-view-calendar`, `o-view-pivot`, `o-view-graph`, `o-view-map`, `o-view-activity`, `o-view-gantt`, `o-view-cohort`, `o-view-hierarchy`, `o-view-grid` (the older FA-shape `o-list` / `o-th-large` remain only as smart-button placeholders — do NOT use them for the switcher) |
-| CRUD affordances    | `o-plus`, `o-pencil`, `o-trash`, `o-save`, `o-archive`, `o-unarchive`, `o-lock`, `o-key`    |
-| Communication       | `o-envelope`, `o-paper-plane`, `o-comment`, `o-paperclip`, `o-microphone`, `o-phone`, `o-user`, `o-user-plus`, `o-star` |
-| Status / help       | `o-check`, `o-info-circle`, `o-question-circle`, `o-warning`, `o-clock`                     |
-| Files / IO          | `o-folder`, `o-download`, `o-cloud-upload`, `o-print`, `o-external-link`, `o-launch`        |
-| Reporting toolbar   | `o-exchange` (flip axis), `o-filter`, `o-refresh`, `o-settings-adjust`, `o-tag`, `o-truck`, `o-sigma` (sum), `o-sort`, `o-sort-asc`, `o-sort-desc`, `o-chart-line`, `o-chart-pie`, `o-chart-stack` |
-| Visibility          | `o-eye`, `o-eye-slash`                                                                      |
-| E-commerce          | `o-cart`, `o-heart`                                                                         |
-| Editor / spreadsheet| `o-undo`, `o-redo`, `o-paint-brush`, `o-borders`, `o-merge-cells`, `o-align-left`, `o-wrap-text`, `o-fill-bucket`, `o-link` |
-| Brand               | `o-odoo-logo`                                                                               |
+### Element → sprite id
 
-### Available app icons (app-icons.svg)
+Reference with `<use href="#o-name"/>` inside a `<svg class="o_icon">`.
 
-Each app's recommended brand color (apply via `.o_app`'s inline
-`style="color:#xxx"`). The sprite header block carries the same table —
-this duplicates it here so the style guide stays self-contained.
+| Where | Sprite ids |
+|---|---|
+| Control panel | actions menu `o-ellipsis-v` (never `o-cog`), collapsed breadcrumb `o-ellipsis-h`, pager `o-chevron-left` / `o-chevron-right`, search `o-search`, facets `o-filter` / `o-stacks` / `o-star` (sort facets `o-arrow-upward` / `o-arrow-downward`) + remove `o-close-small`, date-facet arrows `o-chevron-backward` / `o-chevron-forward`, unsaved form `o-save` + `o-times`, embedded actions `o-settings-adjust` |
+| Search menu titles | `o-filter` (text-primary), `o-stacks` (text-action), `o-star` (text-favourite) |
+| Search panel | categories `o-folder`, filters `o-filter` (a view's `icon=` overrides, e.g. `o-business`, `o-group`), fold `o-left-panel-close` / `o-left-panel-open`, tree `o-caret-right` / `o-caret-down` |
+| View switcher | `o-view-list`, `o-view-kanban`, `o-view-calendar`, `o-view-pivot`, `o-view-graph`, `o-view-map`, `o-view-activity`, `o-view-gantt`, `o-view-cohort`, `o-view-hierarchy`, `o-view-grid` |
+| Navbar systray | timer `o-play-circle` (Attendances only: `o-circle`), Ask AI `o-app-ai` (app-icons.svg), Messages `o-forum`, Activities `o-clock`, Studio `o-studio` |
+| ⋮ actions menu | `o-print`, `o-settings-applications` (Edit Properties), `o-content-copy` (Duplicate), `o-archive` / `o-unarchive`, `o-trash` |
+| List | optional columns `o-settings-adjust`, handle `o-drag`, row delete `o-trash`, sortable `o-sort` (hover only), sorted `o-arrow-upward` / `o-arrow-downward`, group fold `o-caret-right` / `o-caret-down` |
+| Kanban | quick add `o-add-2`, column config `o-cog`, card menu `o-ellipsis-v`, add column `o-double-arrow-right`, unfold `o-caret-left` + `o-caret-right`, quick-create discard `o-trash-fill`; activity `o-clock` (none) or `o-phone` / `o-envelope` / `o-check` / `o-calendar-fill` / `o-upload` / `o-warning-fill` / `o-checklist`; meta lines `o-calendar-clock`, `o-timer`, `o-task`, `o-work`, `o-user` |
+| Form / smart buttons | Delivery `o-truck`, Invoices `o-edit-square`, Payments `o-payments`, Payslips `o-attach-money`, Time Off / Timesheets `o-view-calendar`, people `o-group-o`, products `o-package`, generic `o-bars`; alerts `o-warning` / `o-info-circle` |
+| Chatter | `o-search`, `o-paperclip`, `o-user` / `o-user-o`; composer `o-emoji`, `o-article`, `o-paperclip`, `o-expand`; activities `o-check` (Done), `o-pencil` (Edit), `o-info-circle` |
+| Pivot / graph | `o-flip-axis`, `o-expand-all`, `o-download`, headers `o-add-box` / `o-minus-box`; modes `o-view-graph` / `o-chart-line` / `o-chart-pie`, sort `o-sort-desc` / `o-sort-asc` |
+| Calendar / gantt / grid / map | calendar `o-arrow-left` / `o-arrow-right`, mini month `o-chevron-backward` / `o-chevron-forward`, side panel `o-dock-left` / `o-dock-left-fill`; gantt / grid `o-west` / `o-east`, grid add `o-add-circle`, gantt sparse `o-expand`; map `o-my-location`, `o-explore` |
+| Settings | action links `o-east`, doc links `o-question-circle`, company-specific `o-business` |
+| Account report | cog `o-cog`, filters `o-calendar-fill` / `o-settings-adjust` / `o-book` / `o-bar-chart` / `o-folder-open` / `o-description` / `o-user`, fold `o-caret-right` / `o-caret-down`, journal-item menu `o-ellipsis-v`, sortable `o-sort` |
+| Discuss | `o-hashtag` (Channels — not `o-tag`), `o-videocam`, `o-group`, `o-add-circle`, `o-gif-box`, `o-emoji`, `o-paper-plane`, `o-push-pin`, `o-reply`, `o-travel`, `o-user-plus`, `o-bell`, `o-phone` |
+| Spreadsheet (`svg.o-icon`, 18px) | `o-undo`, `o-redo`, `o-paint-brush`, `o-clear-format`, `o-number-formats`, `o-bold`, `o-italic`, `o-strikethrough`, `o-text-color`, `o-fill-bucket`, `o-borders`, `o-merge-cells`, `o-align-left`, `o-align-bottom`, `o-wrap-overflow`, `o-wrap-text`, `o-rotate-text`, `o-table-paint`, `o-filter`, `o-fx`, `o-sheet-add`, `o-sheet-list`, `o-column-stats`, `o-global-filters`, `o-family-history` |
+| Studio | `o-tv`, `o-dns`, `o-ms-undo`, `o-ms-redo`, `o-contact-mail`, `o-view-list-alt`, `o-area-chart`, `o-studio-field-*` |
+| Empty state | `o-nocontent-smiling-face`, `o-nocontent-neutral-face`, `o-nocontent-empty-folder` |
+| Other | `o-plus`, `o-times`, `o-check-circle`, `o-circle`, `o-lock`, `o-key`, `o-cloud-upload`, `o-external-link`, `o-launch`, `o-refresh`, `o-tag`, `o-cart`, `o-heart`, `o-eye` / `o-eye-slash`, `o-link`, `o-question-circle`, `o-microphone`, `o-comment`, `o-spinner`, `o-odoo-logo` (mock cover only) |
 
-| App icon              | Brand color | App icon                | Brand color |
-|-----------------------|-------------|-------------------------|-------------|
-| `o-app-crm`           | `#1aa1cd`   | `o-app-helpdesk`        | `#ec6256`   |
-| `o-app-sales`         | `#7c7bad`   | `o-app-mrp`             | `#009ba8`   |
-| `o-app-accounting`    | `#f06050`   | `o-app-marketing`       | `#c1547a`   |
-| `o-app-inventory`     | `#f4a460`   | `o-app-fsm`             | `#34a297`   |
-| `o-app-purchase`      | `#5c8ed7`   | `o-app-subscriptions`   | `#1199b3`   |
-| `o-app-project`       | `#27a978`   | `o-app-rental`          | `#ef7032`   |
-| `o-app-hr`            | `#1d8348`   | `o-app-maintenance`     | `#5e7896`   |
-| `o-app-discuss`       | `#e9b425`   | `o-app-recruitment`     | `#c084a6`   |
-| `o-app-website`       | `#714B67`   | `o-app-survey`          | `#4f8d4f`   |
-| `o-app-pos`           | `#017e84`   | `o-app-elearning`       | `#c84682`   |
-| `o-app-settings`      | `#875a7b`   | `o-app-mass-mailing`    | `#4a6ed0`   |
-| `o-app-studio`        | `#4a4a55`   | `o-app-quality`         | `#00a09b`   |
-| `o-app-calendar`      | `#9d3c69`   | `o-app-apps`            | `#4a4a55`   |
-| `o-app-contacts`      | `#1e74c5`   |                         |             |
-| `o-app-documents`     | `#3c8dbc`   |                         |             |
-| `o-app-dashboards`    | `#df7c2f`   |                         |             |
-| `o-app-timesheets`    | `#287f59`   |                         |             |
-| `o-app-fleet`         | `#666`      |                         |             |
-| `o-app-sign`          | `#714b67`   |                         |             |
+Legacy ids that still resolve but have no place in current chrome: `o-chart-stack`
+(Stacked is a switch), `o-exchange`, `o-list`, `o-th-large`, `o-sigma`.
 
-### Adding a new glyph
+### App icons (app-icons.svg)
 
-1. Append a new `<symbol id="o-name" viewBox="0 0 N N"><path d="…"/></symbol>`
-   to `icons.svg` (or `app-icons.svg` for app brand icons). Use the FA 5/6
-   `0 0 512 512` viewBox where possible — the existing paths assume it
-   and the `.o_icon { fill: currentColor }` rule handles tinting.
-2. Add a one-line HTML comment above the symbol explaining what it's for
-   and citing the upstream (FA glyph name, or `oi-*` font entry).
-3. If the glyph is for the view switcher or a place the catalog already
-   has guidance, also add a row to the table above so authors find it
-   without grepping the SVG.
-4. Re-render the catalog (`reference/scripts/_render_catalog.py`) and
-   eyeball that the glyph picks up `currentColor` in
-   `assets/_gallery.html`.
+Available `o-app-*` ids and tile order: `catalog_chrome.md` § Home menu.
+`o-app-hr` = Employees, `o-app-settings` also serves the General Settings tab,
+`o-app-ai` is the systray Ask AI mark, and `o-app-fsm` / `o-app-studio` exist
+but are not home tiles.
 
-`_lint_mock.py` enforces that every referenced `#o-…` resolves. New
-glyphs land in the inlined sprite automatically (`_scaffold_mock.py`
-copies the catalog sprite verbatim into each package); no further wiring
-is required.
+### Adding a glyph
+
+1. Find the `data-icon` name the real template uses, and grep the icons.svg
+   comments for it — if a symbol exists, use its id (never add an alias id).
+2. Extract the real outline:
+   `python reference/scripts/_extract_icons.py <name>[=o-id] [--filled]`
+   (`--list` lists names; needs `fonttools` + `brotli`). The name must exist in
+   the version's Material Symbols set (`web/icons.py`) or be an `oi_*` glyph.
+   Paste the printed `<symbol>` before the sprite's FINAL `</svg>`, keeping
+   `viewBox="0 0 960 960" overflow="visible"` and a comment naming the
+   `data-icon` and where Odoo uses it.
+3. New app: copy `<module>/static/description/icon.svg` into
+   `<symbol id="o-app-<name>" viewBox="0 0 50 50">` in `app-icons.svg`,
+   renaming any internal id.
+4. If the glyph has a fixed use, add it to the Element → sprite id table above.
+   A `<use href="#o-…">` with no matching `<symbol>` renders blank — re-render
+   the gallery (`_render_catalog.py`) to check.
 
 ## Source map (for `REFRESH.md` / version bumps)
 
-The catalog was hand-derived from Odoo 19 at these paths (all under
-`odoo/addons/web/static/src/` unless noted):
+The calibrated version's source lives under `versions/v<NN>/odoo/addons/`
+(Community) and `versions/v<NN>/enterprise/` (Enterprise). Below, `web/…` =
+`odoo/addons/web/static/src/…`, `web_enterprise/…` =
+`enterprise/web_enterprise/static/src/…`, `../<addon>/…` = another addon under
+`odoo/addons/`, and `enterprise/<addon>/…` = an Enterprise addon. The
+Enterprise overrides mirror web's paths and carry most of the visual design —
+**read both for every component**, and confirm with a live probe
+(`REFRESH.md` § How to refresh).
 
-- Tokens → `scss/primary_variables.scss`, `scss/secondary_variables.scss`
-- Navbar → `webclient/navbar/navbar.scss`, `webclient/navbar/navbar.xml`
-- Control panel → `search/control_panel/control_panel.{scss,xml}`
-- Breadcrumbs → `search/breadcrumbs/breadcrumbs.xml`
-- Form → `views/form/form_controller.scss`, `views/form/*.xml`
-- List → `views/list/list_renderer.{scss,xml}`
-- Kanban → `views/kanban/kanban_controller.scss`, `views/kanban/*.xml`
+- Tokens → `web/scss/{primary,secondary}_variables.scss`;
+  `web_enterprise/scss/{primary_variables,secondary_variables,bootstrap_overridden}.scss`
+- Buttons, badges, tags, dropdowns, notebook, switcher →
+  `web_enterprise/core/{btn,badge,tags_list,dropdown,notebook,switcher}/` (+ `web/core/…`)
+- Navbar / home menu → `web/webclient/navbar/navbar.{scss,xml}`;
+  `web_enterprise/webclient/navbar/navbar.{variables.scss,scss}`,
+  `web_enterprise/webclient/home_menu/`
+- Control panel / search → `web/search/{control_panel,search_bar,breadcrumbs}/`,
+  `web/core/pager/`; `web_enterprise/search/control_panel/control_panel.scss`
+- Search panel → `web/search/search_panel/`;
+  `web_enterprise/search/search_panel/search_panel.scss`
+- Form → `web/views/form/` (`form_controller.scss`; `form_controller_m3.scss` =
+  mobile only; `button_box/`), `web/views/fields/statusbar/`,
+  `web/views/widgets/ribbon/`; `web_enterprise/views/form/form_controller.scss`,
+  `web_enterprise/views/fields/statusbar/`, `web_enterprise/views/widgets/ribbon/`
+- List → `web/views/list/list_renderer.{scss,xml}`;
+  `web_enterprise/views/list/list_renderer.scss`
+- Kanban / card shell → `web/views/kanban/`, `web/views/card/card.scss`;
+  `web_enterprise/views/kanban/{kanban_controller.scss,kanban_header.xml,kanban_header.scss}`,
+  `web_enterprise/views/card/card.scss`
+- Reporting views → `web/views/{pivot,graph,calendar}/`,
+  `web_enterprise/views/{pivot,graph,calendar,gantt}/`; Enterprise `web_gantt`,
+  `web_grid` / `timesheet_grid`, `web_cohort`, `web_map`; Community
+  `web_hierarchy`, `spreadsheet_dashboard`
+- Settings → `web/webclient/settings_form_view/`;
+  `web_enterprise/webclient/settings_form_view/settings_form_view.scss`
+- Empty state → `web/views/action_helper.xml`, `web/views/view.scss`
+- Dialog / errors → `web/core/dialog/dialog.{xml,scss}`,
+  `web/core/confirmation_dialog/`, `web/core/errors/error_dialogs.xml`
+- Notification, autocomplete, tooltip, command palette →
+  `web/core/{notifications,autocomplete,tooltip,commands}/`; tour pointer →
+  `../web_tour/static/src/tour_pointer/`
 - Chatter → `../mail/static/src/chatter/web/chatter.xml`,
-  `../mail/static/src/core/common/message.xml`,
-  `../mail/static/src/core/common/composer.xml`
-- Dialog → `core/dialog/dialog.{xml,scss}`,
-  `core/errors/error_dialog.scss`
-- Notification → `core/notifications/notification.{xml,scss}`,
-  `core/notifications/notification.variables.scss`
-- Autocomplete → `core/autocomplete/autocomplete.scss`
+  `../mail/static/src/core/common/{message,composer,date_section}.xml`,
+  `../mail/static/src/core/web/activity.xml`
+- Discuss → `../mail/static/src/core/public_web/` (`discuss_app/`,
+  `discuss_content.*`, `messaging_menu/`, `notification_item.*`)
+- Account Report → `enterprise/account_reports/static/src/components/account_report/`
+  (`account_report.{xml,scss}`, `header/`, `line/`, `filters/`, `cog_menu/`)
+- Onboarding checklist → `../account/static/src/components/onboarding/`
+- Spreadsheet → `../spreadsheet/static/src/o_spreadsheet/`; Enterprise
+  `spreadsheet_edition`, `documents_spreadsheet`, `spreadsheet_dashboard_edition`
+- Studio → `enterprise/web_studio/static/src/client_action/`
 - Portal → `../portal/views/portal_templates.xml`,
   `../portal/static/src/scss/portal.scss`
-- Account Report → `../../../enterprise/account_reports/static/src/
-  components/account_report/account_report.{xml,scss}`
 - Website Form → `../website/views/snippets/s_website_form.xml`,
   `../website/static/src/snippets/s_website_form/000.scss`
 - POS → `../point_of_sale/static/src/app/components/navbar/navbar.{xml,scss}`,
@@ -793,17 +1134,17 @@ The catalog was hand-derived from Odoo 19 at these paths (all under
   `../point_of_sale/static/src/app/screens/product_screen/`,
   `../point_of_sale/static/src/app/screens/payment_screen/`,
   `../point_of_sale/static/src/app/components/popups/`
-- Chrome glyphs (icons.svg) → FontAwesome 4.7 free paths + selective
-  `oi-*` font shapes from `lib/odoo_ui_icons/style.css` (Odoo's UI icon
-  font; the catalog ships SVG surrogates because the woff2/woff binary
-  can't be inlined). Per-glyph FA/OI source is cited in the symbol's
-  HTML comment.
-- App icons (app-icons.svg) → simplified FA-style shapes per app, with
-  brand colors approximated from each app's
-  `static/description/icon.png` (e.g. `odoo/addons/sale/static/description/icon.png`,
-  `enterprise/helpdesk/static/description/icon.png`). For pixel-perfect
-  fidelity, swap the `<use>` for an `<img class="o_app_icon o_app_icon_image" src="…">`
-  and supply the real PNG.
+- Chrome glyphs (icons.svg) → Material Symbols
+  `web/libs/materialsymbols/material_symbols_backend.woff` (names + codepoints
+  in `odoo/addons/web/icons.py`) and `odoo_ui_icons`
+  `odoo/addons/web/static/lib/odoo_ui_icons/fonts/odoo_ui_icons_backend.woff`
+  (glyph list in `odoo/addons/web/tooling/icons/odoo_ui_icons_config.json`),
+  extracted with `reference/scripts/_extract_icons.py`.
+- App icons (app-icons.svg) → each module's `static/description/icon.svg`.
+- Calibration kit → `reference/scripts/calibrate/` (`screens.json`,
+  `capture.js`, `probe.js`, `render.js`) + one page per real screen in
+  `reference/calibration/screens/<name>.html`.
 
 Class names in the fragments are the real Odoo class names so a developer
-reading the mock recognises them.
+reading the mock recognises them; mock-only helpers are named as such in each
+fragment's header.

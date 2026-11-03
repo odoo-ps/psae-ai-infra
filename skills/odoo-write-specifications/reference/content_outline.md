@@ -1,6 +1,6 @@
 # Content Outline — `odoo-write-specifications`
 
-Canonical structure for every spec docx the skill emits. Stage 1 lint ([`scripts/_lint_spec.py`](scripts/_lint_spec.py)) reads this file as the source of truth — add a section here and the lint enforces it; remove one here and the lint stops complaining about it.
+Canonical structure for every spec docx the skill emits. Two scripts enforce it and must change in step with this file: the builder ([`scripts/_build_spec.py`](scripts/_build_spec.py) — `CANONICAL_SUBSECTIONS` for the per-workflow headings and their order, `CANONICAL_HEADERS` for each subsection's table header row, strict-N/A) refuses to build a spec that drifts, and the Stage 1 lint ([`scripts/_lint_spec.py`](scripts/_lint_spec.py)) checks the rendered docx (top-level sections, subsections present, placeholders, tone).
 
 Load on demand, only when the skill is mid-interview building the draft.
 
@@ -22,6 +22,7 @@ The audience is **both** business stakeholders and the dev team.
 - **Never list inherited fields, existing menus, existing access rights unchanged.**
 - Name an existing concept once in business terms, then describe only the additions.
 - The dividing line: if the reader needs to know about it to use the new functionality, include it. If they could find it by clicking around standard Odoo, leave it out.
+- **An existing screen the feature changes is new content.** When the feature changes what a standard screen shows, which buttons it offers, or what a standard action does (a journal entry now carries a project split; Cancel now also reverses something), that screen gets its own Screens & Interactions row and the changed behaviour is stated. Unchanged screens on the click path stay out.
 
 ### 3. Conciseness over completeness
 
@@ -115,9 +116,9 @@ The principle: if the reason can't be specific, the question wasn't asked though
 | 3 | **New Models** *(renamed from "New Data Captured")* | Table: `Purpose`, `Name`, `Technical Name`, `Parent Menu`, `Views Required`, `Required Features`. Six columns. `Views Required` = comma-separated of `List, Kanban, Form, Pivot, Calendar, Graph`. `Required Features` = comma-separated of `Chatter, Activities, Archiving, Company Specific Records, Multi-currency`. Mark `N/A — no new model introduced; this workflow extends existing <model>` if no new model is added. | solution_architect.md |
 | 4 | **New Fields & Information** | Table: `Model`, `Field Name`, `Captures`, `Type`, `Options/Remarks`, `Location/Visibility`. Six columns. `Type` carries the relation target inline for relational types (e.g. `Many2one → stock.lot`); blank/`Char`/`Integer`/`Boolean` for others. Only new fields. | solution_architect.md |
 | 5 | **Navigation & Menus** | Table: `Menu label`, `Lives under`, `Who sees it`. Only new menus. | ux_ui.md |
-| 6 | **Screens & Interactions** | Table: `Surface`, `Kind` (form / list / kanban / button / notification / status change), `What user sees or does`. **This combines what was previously Screens & Interactions plus User Touchpoints.** | ux_ui.md + business_analyst.md |
-| 7 | **Automated Behaviours** | Table: `Trigger`, `Action`, `Outcome`. Plain language; no Odoo internals. **When the workflow commits / locks / reserves a resource, the inverse behaviours belong here too** — what `cancel` / `expire` / `unreserve` triggers and its outcome (frees the units, releases a stale hold, restores the commitment when stock is re-available). The forward action and its inverse are both rows; strict-N/A applies when the workflow introduces no such resource. (principle #15) | solution_architect.md + devops.md |
-| 8 | **Business Rules & Validations** | Table: `Rule`, `Error message shown to user`. Both columns in business language. **Lock and contention rules live here when they apply**: who may no longer change a committed value after confirmation (with the message), and — if a finite resource can be claimed by more than one document — that it can't be double-committed plus what releases a stale claim. Strict-N/A when no such resource. (principle #15) | solution_architect.md + security.md |
+| 6 | **Screens & Interactions** | Table: `Surface`, `Kind` (form / list / kanban / dialog / button / notification / status change), `What user sees or does`. **This combines what was previously Screens & Interactions plus User Touchpoints.** Lists every new screen **and every existing screen the feature changes** (mark those `(existing)` in Surface — e.g. "Journal entry (existing)"). Every value a row says the user sees maps to a field in New Fields, an earlier workflow, or a named standard field. | ux_ui.md + business_analyst.md |
+| 7 | **Automated Behaviours** | Table: `Trigger`, `Action`, `Outcome`. Plain language; no Odoo internals. A notification, chatter note or email the behaviour sends quotes its exact text and says where it appears. **When the workflow commits / locks / reserves a resource, the inverse behaviours belong here too** — what `cancel` / `expire` / `unreserve` triggers and its outcome (frees the units, releases a stale hold, restores the commitment when stock is re-available). The forward action and its inverse are both rows; strict-N/A applies when the workflow introduces no such resource. (principle #15) | solution_architect.md + devops.md |
+| 8 | **Business Rules & Validations** | Table: `Rule`, `Error message shown to user`. Both columns in business language. A rule that refuses or warns quotes the **exact** message (the developer copies it verbatim) and, when it isn't an error dialog, where it shows; a rule that only shapes a result states that outcome in one clause. **Lock and contention rules live here when they apply**: who may no longer change a committed value after confirmation (with the message), and — if a finite resource can be claimed by more than one document — that it can't be double-committed plus what releases a stale claim. Strict-N/A when no such resource. (principle #15) | solution_architect.md + security.md |
 | 9 | **Reports & Analytics** | Table: `Report`, `What it shows`, `Who reads it`, `Cadence`. Only new reports. | documentation.md + solution_architect.md |
 | 10 | **Data Migration** | Table: `Existing data`, `What changes`, `Approach`. Only when existing populated data is touched. | data_migration.md |
 | 11 | **Access & Permissions** | Two sub-tables: (a) `11.{n}.1 New Groups — Group \| Reason created \| What it achieves`; (b) `11.{n}.2 Existing Groups mentioned — Group \| Reason in spec \| Change`. Three columns each. Use the strict-N/A marker on the absent sub-table when only one applies. | security.md |
@@ -130,7 +131,8 @@ The principle: if the reason can't be specific, the question wasn't asked though
 - **Technical names in parens, first mention per section only**: "On the Sales Order line (`sale.order.line`), …". Lint warns when density is heavy.
 - **Buttons**: bold, in quotes ("**Confirm**", "**Approve**").
 - **Menu paths**: arrow-separated, in quotes ("Sales → Orders → Quotations").
-- **No `xpath`, `_inherit`, `@api.depends`, `noupdate`, `post_init_hook`, `record rule`, `ACL`, `domain` in body prose** — soften to business equivalents. Use the technical word only inside the Glossary entry.
+- **No `xpath`, `_inherit`, `@api.depends`, `noupdate`, `post_init_hook`, `record rule`, `ACL`, `domain` in body prose** — soften to business equivalents.
+- **Existing Odoo elements by their real names**: menus, tabs, buttons, settings, groups and status values are named exactly as the target version's source names them (SKILL.md § Source grounding) — a name from memory or another version is a factual error, not a style choice.
 
 ---
 

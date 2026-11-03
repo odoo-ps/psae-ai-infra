@@ -1,26 +1,153 @@
 <!--
-  search_panel.html — Odoo left-hand search panel (categories/filters), used by
-  list & kanban views when a model has a category hierarchy. Place it to the
-  LEFT of the view body inside a flex row:
+  search_panel.html — Odoo 20 left search panel (web/static/src/search/
+  search_panel/search_panel.{xml,scss} + web_enterprise list_renderer.scss).
+  Use it ONLY when the real action's search view declares <searchpanel>
+  (Employees, Time Off, Allocations, Chart of Accounts, product catalog …).
+  Sales Orders, Invoices, CRM etc. have none: never invent one.
 
-    <div style="display:flex; flex:1 1 auto; min-height:0;">
-      ... paste this fragment ...
-      <div class="o_list_view"> ... </div>
-    </div>
+  COMPOSITION — this block IS the view body, directly under .o_control_panel
+  (no inline flex wrapper, no inline panel styles):
+    <main class="o_content o_component_with_search_panel">
+      .o_search_panel (220px)  ·  .o_search_panel_resize (18px gutter)  ·  view
+    </main>
+  The panel is TRANSPARENT on the gray-100 page (no white fill, no border).
+  The view beside it:
+    - list  (.o_list_view)   → white card: 1px border, no bottom border,
+                               12px top corners, 16px right margin;
+    - kanban (.o_kanban_view) → cards sit straight on the gray;
+    - graph → wrap .o_graph_buttons + .o_graph_view in
+              <div class="o_graph_renderer">; only .o_graph_view is the card.
+  The view element must FOLLOW .o_search_panel_resize (or the collapsed
+  .o_search_panel_sidebar) directly — that adjacency draws the card.
+
+  RULES
+  - The collapse toggle (#o-left-panel-close) is always the panel's first row.
+  - Section header = <b>Label</b> after a section icon; write the label in
+    natural case (CSS uppercases it). Icon = the field's own icon when the
+    view sets one (Employees: Company #o-business, Department #o-group),
+    else the default: category #o-folder (plum), filter #o-filter (amber;
+    the section gets .o_search_panel_filter instead of .o_search_panel_category).
+  - Category (select one): "All" first, ALWAYS .fw-bold (500) and never a
+    counter. Exactly ONE header .active per section (teal-tint pill, black,
+    500). Counters are right-aligned 13px, .text-muted unless the row is active.
+  - Every title is preceded by <span class="o_toggle_fold"></span>. A parent
+    adds .o_toggle_fold_with_children + #o-caret-right (folded) or
+    #o-caret-down (unfolded); the caret is muted gray (black only while the
+    active row is hovered). Unfolded children go in a nested <ul class="list-group">
+    as li.o_search_panel_category_value.o_treeEntry (tree lines are pure CSS).
+  - Filter (select multi): checkbox rows (block at the bottom). A checked row
+    gets .active on the <li> and `checked` on the input (bare black tick).
+  - Collapsed: replace .o_search_panel + .o_search_panel_resize with the
+    SIDEBAR block at the bottom; the card then starts 63px from the left.
 -->
-<aside class="o_search_panel" style="flex:0 0 220px; padding:12px; border-right:1px solid var(--o-border-color); background:var(--o-view-background-color);">
-  <!-- SLOT: category sections -->
-  <div style="font-weight:var(--o-font-weight-bold); margin-bottom:6px;">Status</div>
-  <ul style="list-style:none; padding:0; margin:0 0 16px;">
-    <li style="padding:4px 6px; border-radius:4px; background:var(--o-gray-200);">All</li>
-    <li style="padding:4px 6px;">Quotation</li>
-    <li style="padding:4px 6px;">Sales Order</li>
-    <li style="padding:4px 6px;">Cancelled</li>
-  </ul>
+<main class="o_content o_component_with_search_panel">
+  <div class="o_search_panel o_search_panel_wrap">
+    <div class="d-flex align-items-center">
+      <button class="btn btn-light btn-sm ms-auto" title="Close sidebar"><svg class="o_icon"><use href="#o-left-panel-close"/></svg></button>
+    </div>
 
-  <div style="font-weight:var(--o-font-weight-bold); margin-bottom:6px;">Salesperson</div>
-  <ul style="list-style:none; padding:0; margin:0;">
-    <li style="padding:4px 6px;"><input type="checkbox"/> Mitchell Admin</li>
-    <li style="padding:4px 6px;"><input type="checkbox"/> Marc Demo</li>
+    <!-- SLOT: category section (select="one"), e.g. Employees ▸ Company -->
+    <section class="o_search_panel_section o_search_panel_category">
+      <header class="o_search_panel_section_header">
+        <svg class="o_icon o_search_panel_section_icon"><use href="#o-business"/></svg><b>Company</b>
+      </header>
+      <ul class="list-group o_search_panel_field">
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header active">
+            <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title fw-bold">All</span></div>
+          </header>
+        </li>
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header">
+            <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title">YourCompany</span></div>
+            <small class="o_search_panel_counter text-muted">23</small>
+          </header>
+        </li>
+      </ul>
+    </section>
+
+    <!-- SLOT: hierarchical category — parent unfolded + active, one child folded -->
+    <section class="o_search_panel_section o_search_panel_category">
+      <header class="o_search_panel_section_header">
+        <svg class="o_icon o_search_panel_section_icon"><use href="#o-group"/></svg><b>Department</b>
+      </header>
+      <ul class="list-group o_search_panel_field">
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header">
+            <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title fw-bold">All</span></div>
+          </header>
+        </li>
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header active">
+            <div class="o_search_panel_label"><span class="o_toggle_fold o_toggle_fold_with_children"><svg class="o_icon"><use href="#o-caret-down"/></svg></span><span class="o_search_panel_label_title">Management</span></div>
+            <small class="o_search_panel_counter">23</small>
+          </header>
+          <ul class="list-group">
+            <li class="o_search_panel_category_value list-group-item o_treeEntry">
+              <header class="o_search_panel_category_value_header">
+                <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title">Administration</span></div>
+                <small class="o_search_panel_counter text-muted">2</small>
+              </header>
+            </li>
+            <li class="o_search_panel_category_value list-group-item o_treeEntry">
+              <header class="o_search_panel_category_value_header">
+                <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title">Professional Services</span></div>
+                <small class="o_search_panel_counter text-muted">6</small>
+              </header>
+            </li>
+            <li class="o_search_panel_category_value list-group-item o_treeEntry">
+              <header class="o_search_panel_category_value_header">
+                <div class="o_search_panel_label"><span class="o_toggle_fold o_toggle_fold_with_children"><svg class="o_icon"><use href="#o-caret-right"/></svg></span><span class="o_search_panel_label_title">Research &amp; Development</span></div>
+                <small class="o_search_panel_counter text-muted">10</small>
+              </header>
+            </li>
+            <li class="o_search_panel_category_value list-group-item o_treeEntry">
+              <header class="o_search_panel_category_value_header">
+                <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title">Sales</span></div>
+                <small class="o_search_panel_counter text-muted">3</small>
+              </header>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+  </div>
+  <div class="o_search_panel_resize"></div>
+
+  <!-- SLOT: the view — paste list_view.html (.o_list_view) / kanban.html
+       (.o_kanban_view) / a graph (.o_graph_renderer) here, right after the gutter -->
+  <div class="o_list_view"> … </div>
+</main>
+
+<!-- FILTER section (select="multi") — ILLUSTRATIVE: Employees itself has only
+     Company + Department. Add one only when the real <searchpanel> declares
+     a field with select="multi"; it goes inside .o_search_panel after the
+     category sections. Tags is a placeholder label.
+<section class="o_search_panel_section o_search_panel_filter">
+  <header class="o_search_panel_section_header">
+    <svg class="o_icon o_search_panel_section_icon"><use href="#o-filter"/></svg><b>Tags</b>
+  </header>
+  <ul class="list-group o_search_panel_field">
+    <li class="o_search_panel_filter_value list-group-item">
+      <div class="form-check"><input type="checkbox" class="o_search_panel_filter_value_checkbox form-check-input"/><label class="o_search_panel_label form-check-label"><span class="o_search_panel_label_title">Consultant</span><span class="o_search_panel_counter text-muted small">6</span></label></div>
+    </li>
+    <li class="o_search_panel_filter_value list-group-item active">
+      <div class="form-check"><input type="checkbox" checked class="o_search_panel_filter_value_checkbox form-check-input"/><label class="o_search_panel_label form-check-label"><span class="o_search_panel_label_title">Developer</span><span class="o_search_panel_counter text-muted small">10</span></label></div>
+    </li>
   </ul>
-</aside>
+</section>
+-->
+
+<!-- COLLAPSED (SIDEBAR) variant — replaces .o_search_panel + .o_search_panel_resize;
+     the view follows it directly. The selection shows "All" when nothing is
+     selected, else one span per active section (category values joined " / ",
+     filter values joined ", "), with the section icon:
+<div class="o_search_panel_sidebar o_search_panel_wrap">
+  <div class="d-flex">
+    <button class="o_search_panel_sidebar_button btn btn-light btn-sm" title="Open sidebar"><svg class="o_icon"><use href="#o-left-panel-open"/></svg></button>
+    <div class="o_search_panel_current_selection">
+      <span class="o_search_panel_category"><svg class="o_icon o_search_panel_section_icon"><use href="#o-group"/></svg>Management</span>
+    </div>
+  </div>
+</div>
+-->

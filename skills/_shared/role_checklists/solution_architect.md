@@ -1,6 +1,6 @@
 # Solution Architect — Technical Spec
 
-*Calibrated against Odoo 19.0. Re-review on each major version bump.*
+*Calibrated against Odoo 20.0. Re-review on each major version bump — see [release cadence runbook](../release_cadence.md).*
 
 ## Goal
 Decide how each user story maps to Odoo primitives — models, fields, views, methods — minimising new code and maximising reuse of standard Odoo.
@@ -73,7 +73,7 @@ resource:
 - Default rule: prefer `_inherit` over a parallel model when the relationship is "is a kind of".
 - Default rule: prefer `_inherits` (delegation) over `_inherit` when the new model has its own lifecycle but reuses fields.
 - For view changes: write the smallest `<xpath expr="..." position="...">` that achieves the goal. Avoid `replace` unless absolutely necessary; prefer `after`/`before`/`inside`/`attributes`.
-- Resolve every model reference to its owning module before adding to manifest `depends`. Run `../scripts/_check_odoo_source.py --models <list>`.
+- Resolve every model reference to its owning module before adding to manifest `depends`. Run the resolver script (see `_lint_addon.py`).
 - For each new model, decide `_log_access`, `_order`, `_rec_name` deliberately — defaults are usually right but worth one sentence each.
 - **`Command.create` / `Command.update` / `Command.link` for x2many writes** (Odoo 17+ idiom; replaces legacy `(0, 0, {...})` / `(1, id, {...})` / `(4, id)` tuples):
   ```python
@@ -88,17 +88,25 @@ resource:
 - **`@api.constrains` (server-side) vs `@api.onchange` (UI-only)**: `@api.constrains` runs on every write/create at the ORM layer — fires from any code path (ORM, RPC, imports, UI). `@api.onchange` runs ONLY in the web client when a user edits the form — does NOT fire from imports, automated actions, or RPC. Use `constrains` for invariants that must always hold; `onchange` for UX hints / autofill that only matter when the user is typing.
 - **`_check_company` decorator** for multi-company integrity: applied to `Many2one` fields that reference another model with `company_id`, validates that the target record's `company_id` matches the source record's. Example: a sales order's pricelist must belong to the same company as the order; a `_check_company`-decorated `Many2one("product.pricelist", check_company=True)` enforces it.
 - **OWL component model** (Odoo 17+ default) for new interactive UI. OWL components live under `<addon>/static/src/` and register via the registry pattern. Legacy QWeb widgets still work for extending existing views, but new UI surfaces (custom views, dashboards, complex forms) should be OWL.
-- **POS / OWL frontends: keep the frontend thin, the server methods fat and guarded.** A POS control button, popup, or any `static/src` OWL component is INVISIBLE to lint, install, and operational smoke — only a human in a live session exercises it. So every guard, state transition, and `sudo` escalation must live in a server method the OWL layer merely *calls* (`this.pos.data.call(model, method, [[ids], ...args], {kwargs})` → `browse(ids).method(*args)`), never in the JS. That keeps the business logic provable by module tests + a server-method shell smoke even though the UI itself is manually checked. See [`../odoo_runtime_idioms.md`](../odoo_runtime_idioms.md) § POS / OWL frontends.
-- **Custom financial reports are `account.report` (data) + an `AbstractModel` handler — Enterprise only.** A custom report extends the `account_reports` engine (Enterprise; confirm edition before designing). The handler subclasses `account.report.custom.handler` as an `AbstractModel` — no table, **no ACL row**, never searched. Define columns in the `account.report` XML (no `line_ids`); emit lines from `_dynamic_lines_generator`; build dynamic period/bucket columns by declaring a static MAX and renaming/filtering in `_custom_options_initializer`. See [`../odoo_runtime_idioms.md`](../odoo_runtime_idioms.md) § Financial reports.
+- **POS / OWL frontends: keep the frontend thin, the server methods fat and guarded.** A POS control button, popup, or any `static/src` OWL component is INVISIBLE to lint, install, and `_smoke_module.py` — only a human in a live session exercises it. So every guard, state transition, and `sudo` escalation must live in a server method the OWL layer merely *calls* (`this.pos.data.call(model, method, [[ids], ...args], {kwargs})` → `browse(ids).method(*args)`), never in the JS. That keeps the business logic provable by Stage 3b tests + a server-method shell smoke even though the UI itself is manually checked. See [`../../odoo-plan-development/reference/odoo_runtime_idioms.md`](../../odoo-plan-development/reference/odoo_runtime_idioms.md) § POS / OWL frontends.
+- **Custom financial reports are `account.report` (data) + an `AbstractModel` handler — Enterprise only.** A custom report extends the `account_reports` engine (Enterprise; confirm edition before designing). The handler subclasses `account.report.custom.handler` as an `AbstractModel` — no table, **no ACL row**, never searched. Define columns in the `account.report` XML (no `line_ids`); emit lines from `_dynamic_lines_generator`; build dynamic period/bucket columns by declaring a static MAX and renaming/filtering in `_custom_options_initializer`. See [`../../odoo-plan-development/reference/odoo_runtime_idioms.md`](../../odoo-plan-development/reference/odoo_runtime_idioms.md) § Financial reports.
 - **A workflow that touches POS gets its own `*_pos` module, depending on core; core never depends on `point_of_sale`.** Put ALL `point_of_sale` / `pos.order` references and the POS-cashier ACL in the satellite module (extend the core model via `_inherit`). One-directional pos→core keeps the core addon installable and fully testable standalone, and avoids the dependency cycle a shared `pos.order` Many2one in core would create.
 - **`pre_init_hook` vs `post_init_hook` vs migration scripts boundary**:
-  - `pre_init_hook` — raw `cr` only, ORM NOT loaded. Use for schema work that must happen before models load (rare).
-  - `post_init_hook` — ORM available. Use for one-time setup on FRESH install (gate with idempotency check: "only run if X doesn't exist yet"). Fires on every `-i` AND every `-u` — without a gate, it re-runs on every upgrade.
+  - `pre_init_hook(env)` — runs on install, before the module's own models are loaded (`odoo/modules/loading.py:174-179` in v20, the same in v19). The ORM works for models of modules already loaded, not for this module's. Use for preparation that must happen before its models load (rare).
+  - `post_init_hook(env)` — ORM available. Runs on install only, including a reinstall after an uninstall, and never on `-u` (`loading.py:236-240` in v20). Use for install-time setup, written idempotently ("only if blank" per item) so a reinstall over data the uninstall left behind does no harm.
   - `<addon>/migrations/<version>/post-...py` — fires on `-u` when the manifest version increments past `<version>`. Use for *version-bumping* data changes; `post_init_hook` is for *install-time* setup.
-  Picking the wrong one: a `post_init_hook` for what should be a migration runs unconditionally on upgrades and re-applies. A migration script for what should be a `post_init_hook` doesn't run on fresh install.
+  Picking the wrong one: a `post_init_hook` for what should be a migration never runs on the databases being upgraded. A migration script for what should be a `post_init_hook` doesn't run on fresh install.
 - **Studio-vs-code boundary**: Studio handles view tweaks, simple computed fields, automated actions, approval rules, and most "add a field, hide it conditionally, send mail" flows. Custom code is the right tool when: (a) the compute is non-trivial Python; (b) the approval needs per-line gates Studio can't express; (c) the workflow has cross-record state transitions; (d) the addon needs to ship as a deployable artifact to multiple tenants. Default to Studio; reach for code when the Studio limit is real.
 - **Reservation / lock primitives are reusable, not confirm-only.** Put "(re)apply the commitment" in ONE method called from BOTH the confirm hook AND `_action_assign` (Check Availability), so a release always has a restore. A confirm-time-only re-pin leaves no way back after a manual unreserve.
 - **Availability reference frame.** `stock.quant._get_available_quantity` = on-hand − reserved, and *reserved* includes this document's own reservation. To answer "can my committed lot still be obtained," **add back this line's own reservation** and subtract only *other* documents' claims — otherwise a correctly-booked confirmed line reads as a shortage.
+
+### Odoo 20+
+- **`card` view type** — a first-class `ir.ui.view` type alongside list / form / kanban. When a workflow wants a card-tile surface, declare a `card` view rather than bending a kanban into card layout.
+- **`compute_sql` field attribute** — a computed field can emit SQL (`compute_sql(model, table) -> SQL`) instead of a Python `_compute_`. Non-stored, SQL-representable **related** fields now auto-resolve via SQL JOINs — searchable / sortable without `store=True`. Reach for it when the compute is pure projection / join over columns the DB already holds; a stored `_compute_` is still the answer for anything Python-side or aggregated.
+- **`TableSQL` / `FieldSQL` join API** — the modern join builder for hand-written queries. The old `Query.where(...)` / string-join forms now raise `DeprecationWarning "Since 20.0"`; build joins with the new API in new code.
+- **`CachedModel` mixin + named `CacheLayer` caches** (reworked `ormcache`, e.g. `cache='stable'`) for stable per-registry reference data that rarely changes — prefer it over hand-rolled module-level dicts for lookup tables.
+- **Core model moves — check before adding a `depends`:** `stock.picking.batch` now lives in core `stock` (the `stock_picking_batch` module is gone — don't add it to `depends`); core stock also ships the `stock.orderpoint.suggest` and `stock.zero.demand.confirmation` wizards. New reusable `res.currency.rate.consolidation.mixin` (inherited by `account.move.line` + `account.report`) and an `account.stock.valuation.report` model are available for reuse.
+- **Security data files** — `ir.model.access` + `ir.rule` are unified into `ir.access` in v20; see the [Security checklist](security.md) for the ACL/record-rule data-file shape.
 
 ## Common Pitfalls
 - **Reaching into other addons' private methods** (`_compute_*`, `_*_implementation`). They're private for a reason; wrap a public helper if needed.
@@ -110,7 +118,7 @@ resource:
 - **Mixing legacy x2many tuples with `Command` form** — both work but the codebase reads as half-migrated. Pick the `Command` form for new code; refactor adjacent tuples in the same edit.
 - **`@api.onchange` for an invariant that must always hold** — onchange only fires in the web client; imports and RPC writes skip it. Use `@api.constrains` for invariants.
 - **`Many2one` to a company-scoped target without `_check_company`** — cross-company data leaks silently. The check_company decorator is one line and prevents the failure mode entirely.
-- **`post_init_hook` without an idempotency gate** — re-runs on every `-u`, re-applies whatever it does. Always guard: `if not env['my.model'].search([], limit=1):` (or equivalent state check).
+- **`post_init_hook` that is not idempotent, or gated on a run-once marker** — it runs again on a reinstall after an uninstall, over whatever the uninstall left behind, and a marker row the `uninstall_hook` does not delete blocks that reinstall's seeding entirely (plan-dev troubleshooting #112). Guard each item instead: `if not company.my_setting_id:` (or an equivalent state check).
 - **Building custom what Studio handles** — wasted dev cycles on view tweaks Studio does in 5 minutes. Try Studio FIRST; reach for code when Studio's limit is concrete.
 - **A commit / lock / reserve with no inverse** — reserves but never frees, locks but never unlocks, or a terminal state (cancel/expire) that strands the held resource. Incomplete per principle #15.
 - **`readonly` mistaken for enforcement** — a view-only readonly leaves `create` / import / RPC paths open and still shows Add/Delete controls that merely error on save. Lock at the model (write+create+unlink) AND remove the control.
@@ -118,12 +126,17 @@ resource:
 - **Business logic in the OWL / JS layer** — a guard or state change implemented in a POS popup's JS is unverifiable (no automated stage drives it) and bypassable. Push it to a guarded server method the frontend calls.
 - **Availability that counts your own reservation as unavailable** — `on-hand − reserved` flags a correctly-booked confirmed line as short. Add back the line's own reservation.
 
+### Odoo 20+
+- **Referencing the removed `account.group`** — the CoA group model is gone entirely in v20; a plan that reads / writes / `_inherit`s `account.group` fails at install or runtime. Use the current CoA-hierarchy mechanism.
+- **Hand-rolling a join the `TableSQL` / `FieldSQL` API supersedes** — string-concatenated joins and `Query.where(...)` raise `DeprecationWarning "Since 20.0"`. Use the new join builder in new code.
+- **Reaching for a v20-deprecated ORM call ("Since 20.0")** — `env.clear()` → `transaction.clear` / `reset`; `clear_access_cache` → `invalidate_access_cache`; field-form `check_access` → `check_field_access()`; `_table_has_rows` removed. Each still-present call warns (or fails) on the next upgrade.
+
 ## Production-readiness criteria
 - [ ] Every new model has `_name`, `_description`, `_order`, `_rec_name` decided.
 - [ ] Every model used in code is declared in manifest `depends` (via its owning module).
 - [ ] No `_inherit` of a model whose owning module isn't a declared dep.
 - [ ] **Each declared `depends` entry is verified installed in the validation DB before Stage 2** (per SKILL.md Section B.1).
-- [ ] **Required feature groups / `res.config.settings` toggles are listed under a `Required configuration` heading and either enabled via `post_init_hook` or documented in the manuals.**
+- [ ] **Required feature groups / `res.config.settings` toggles are listed in the plan and either enabled via `post_init_hook` or documented in the manuals** (per SKILL.md Section B.2).
 - [ ] No computed field with `store=True` lacks a tested `@api.depends`.
 - [ ] State machine has at least one transition method per transition (no setting `state` directly from views).
 - [ ] View inheritance uses minimal xpath — no `position="replace"` of a stable upstream view without a comment explaining why.

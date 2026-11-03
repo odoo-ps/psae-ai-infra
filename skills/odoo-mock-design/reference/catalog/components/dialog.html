@@ -1,168 +1,205 @@
 <!--
-  dialog.html — Odoo modal/wizard dialog (web/static/src/core/dialog/dialog.{xml,scss}).
+  dialog.html — Odoo 20 modal dialog (web/static/src/core/dialog/dialog.{xml,scss,js},
+  core/confirmation_dialog/confirmation_dialog.xml, core/errors/error_dialogs.xml).
 
-  Use for a wizard step or a confirm prompt. Render it ON TOP of the
-  underlying screen (place inside the same .mock-screen, after the
-  .o_web_client) so the backdrop dims that screen.
+  Use for a wizard step, a confirmation prompt or a blocking error. Render
+  it ON TOP of the underlying screen (inside the same .mock-screen, after the
+  .o_web_client): the backdrop is 25% black + grayscale(50%), so the page
+  behind stays readable but desaturated — never darken or blur it further.
 
-  ===== TWO SHAPES — pick the one that fits =====
+  ===== TWO SHAPES — pick one per package, don't mix =====
 
   1. **Simplified catalog shape** (default — short and clear for mock work)
      `.o_dialog_backdrop > .o_dialog > .o_dialog_header / .o_dialog_body / .o_dialog_footer`
 
-  2. **Real Odoo shape** (Bootstrap-faithful — matches dialog.xml exactly;
-     use when the mock is being handed to a developer who will translate
-     it 1:1 into a real Dialog component)
+  2. **Real Odoo 20 shape** (dialog.xml 1:1 — for dev-facing mocks)
      `<div class="o_dialog">
-        <div class="modal d-block">
-          <div class="modal-dialog modal-dialog-centered modal-md">
+        <div role="dialog" class="modal d-block o_technical_modal o_modal_design_minimal o_modal_body_padding">
+          <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-sm">
             <div class="modal-content">
-              <header class="modal-header">...</header>
-              <main   class="modal-body">...</main>
-              <footer class="modal-footer">...</footer>
+              <header class="modal-header">
+                <h4 class="modal-title text-wrap text-break fs-3 flex-grow-1">…</h4>
+                <button type="button" class="btn-close position-sm-absolute top-0 end-0" title="Close" aria-label="Close"></button>
+              </header>
+              <main class="modal-body">…</main>
+              <footer class="modal-footer d-empty-none justify-content-around justify-content-md-start flex-wrap gap-2 w-100">…</footer>
             </div>
           </div>
         </div>
       </div>`
+     lg / xl dialogs carry `o_modal_design_default` and a plain `btn-close`
+     (no position classes); wizards / form dialogs / the Search More picker
+     carry `o_modal_no_body_padding` (the hosted form brings its own padding).
 
-  Both shapes share the same CSS so they render identically. Pick the
-  shape consistently across a package — don't mix.
+  Both shapes share the same CSS and render identically.
 
-  ===== SIZE VARIANTS =====
-  Bootstrap modifier classes on `.o_dialog` or `.modal-dialog`:
-    `.modal-sm`  →  360px  (compact confirmations)
-    `.modal-md`  →  650px  (default — `--o-modal-md`)
-    `.modal-lg`  →  980px  (form wizards with many fields, `--o-modal-lg`)
-    `.modal-xl`  → 1140px  (select-create dialogs, picker dialogs)
+  ===== SIZE DECIDES THE DESIGN (Odoo 20 Dialog.design) =====
+  Size modifier on `.o_dialog` (simplified) or `.modal-dialog` (real):
 
-  ===== FOOTER BUTTON ORDER (load-bearing) =====
+    `.modal-sm`   460px  MINIMAL  ConfirmationDialog (Archive / Cancel / Reset
+                                  prompts), AlertDialog, every UserError /
+                                  ValidationError / warning dialog
+    `.modal-md`   620px  MINIMAL  action context dialog_size='medium'; command
+                                  palette; most POS popups
+    (none) = lg   980px  DEFAULT  the Dialog default: every act_window wizard
+                                  (target=new), form dialogs, the Select /
+                                  "Search more..." picker (`.modal-lg` = same)
+    `.modal-xl`  1140px  DEFAULT  only when the action context sets
+                                  dialog_size='extra-large'
 
-  Odoo authors buttons **PRIMARY FIRST → SECONDARY SECOND** in the DOM:
-      <button class="btn btn-primary">Save</button>      ← FIRST
-      <button class="btn o_btn_outline">Discard</button> ← SECOND
+  MINIMAL = no header/footer rules, 24px padding, title 18.2px/500 black,
+            the X pinned to the top-right corner.
+  DEFAULT = ruled header + footer, 16px padding, X at the header's right end.
+  A confirmation WITHOUT `modal-sm` renders as a 980px ruled wizard — always
+  give prompts `modal-sm`.
 
-  On desktop the eye scans left-to-right and the rightmost button reads
-  as the "final" action — but the DOM order puts primary first so screen
-  readers and tab-order users hit the primary action first. Do NOT reverse
-  the DOM order to fake desktop visual order — Odoo's CSS handles the
-  responsive flip via `justify-content-around` (mobile) /
-  `justify-content-md-start` (desktop) on `.modal-footer`.
+  ===== HEADER =====
+  Title is `<h4 class="modal-title">` (never a bold span). Every dialog has the
+  X: `<button class="btn-close" type="button" title="Close" aria-label="Close"
+  data-mock-modal-close></button>` (thin SVG X at 50% opacity — no "×" text).
+
+  ===== FOOTER (load-bearing) =====
+  LEFT-aligned, 8px gap, buttons in DOM order:
+      <button class="btn btn-primary">Save</button>       ← FIRST = LEFTMOST
+      <button class="btn btn-secondary">Discard</button>  ← then the white secondary
+  Never right-align, never reverse the order, never `o_btn_outline` here.
+
+  ===== CANONICAL ODOO 20 COPY =====
+  - Archive:  title "Confirmation", body "Are you sure that you want to archive
+              this record?", [Archive] [Discard]
+  - Generic confirmation: [Ok] [Discard]
+  - Delete:   title "Bye-bye, record!", body "Are you sure you want to delete
+              this record?", [Delete] (btn-danger) [No, keep it]
+  - Error titles come from the exception: UserError "Invalid Operation",
+    ValidationError "Validation Error", AccessError "Access Error",
+    MissingError "Missing Record", other warnings "Odoo Warning".
+    Never "User Error"; never a red / yellow header bar.
 
   ===== USAGE MODES =====
-
   (a) **As its own walkthrough step** — a `.mock-screen` whose body is the
-      dimmed base + this dialog always visible (good when the wizard is a
-      distinct step you want in the Next sequence).
+      base screen + this dialog always visible.
   (b) **As an IN-PLACE modal on an existing screen** — give the backdrop
       `data-mock-modal="ID"` (hidden until opened), open it from a button
-      with `data-mock-modal-open="ID"`, and close with `data-mock-modal-close`
-      (or Esc / a goto). Use this when the modal shouldn't be its own step.
+      with `data-mock-modal-open="ID"`, close with `data-mock-modal-close`
+      (the X, Discard — or Esc / a goto).
 
   Example (in-place):
-    <button data-mock-modal-open="confirm">Confirm</button>
+    <button class="btn btn-secondary" data-mock-modal-open="confirm">Archive</button>
     <div class="o_dialog_backdrop" data-mock-modal="confirm">
-      ... footer button has data-mock-modal-close (and optionally
-      data-mock-goto="next-screen") ...
+      <div class="o_dialog modal-sm"> … footer buttons carry data-mock-modal-close
+      (and optionally data-mock-goto="next-screen") … </div>
     </div>
 -->
 
-<!-- ===== Simplified catalog shape (RECOMMENDED for most mocks) ===== -->
+<!-- ===== Wizard (act_window target=new) — simplified shape, default size lg 980px ===== -->
 <div class="o_dialog_backdrop">
   <div class="o_dialog">
     <div class="o_dialog_header">
-      <span class="modal-title"><!-- SLOT: wizard title, e.g. Confirm Delivery --></span>
-      <button class="btn-close" type="button" aria-label="Close"></button>
+      <h4 class="modal-title"><!-- SLOT: wizard title, e.g. Confirm Delivery --></h4>
+      <button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button>
     </div>
     <div class="o_dialog_body">
-      <!-- SLOT: wizard fields / confirmation text -->
-      <div class="o_field_row">
-        <label class="o_form_label">Delivery Date</label>
-        <div class="o_field_widget">06/15/2026</div>
+      <!-- SLOT: wizard fields. A full form (o_form_view) goes in an
+           `.o_dialog_body.p-0` — the hosted form brings its own padding. -->
+      <div class="o_inner_group">
+        <div class="o_field_row">
+          <label class="o_form_label">Delivery Date</label>
+          <div class="o_field_widget">06/15/2026</div>
+        </div>
       </div>
     </div>
     <div class="o_dialog_footer">
-      <!-- PRIMARY first, SECONDARY second — see header rules. -->
+      <!-- PRIMARY first (leftmost), then btn-secondary — see header rules. -->
       <button class="btn btn-primary">Validate</button>
-      <button class="btn o_btn_outline">Discard</button>
+      <button class="btn btn-secondary" data-mock-modal-close>Discard</button>
     </div>
   </div>
 </div>
 
-<!-- ===== Real Odoo Bootstrap shape (for dev-facing mocks) =====
+<!-- ===== Confirmation (ConfirmationDialog) — modal-sm, minimal =====
 
-  Renders identically to the simplified shape but uses the real Odoo class
-  hierarchy. Useful when the mock is handed off as a spec for an actual
-  Dialog component implementation.
-
-  <div class="o_dialog">
-    <div role="dialog" class="modal d-block">
-      <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content">
-          <header class="modal-header">
-            <h4 class="modal-title">Confirm Delivery</h4>
-            <button class="btn-close" type="button" aria-label="Close"></button>
-          </header>
-          <main class="modal-body">
-            <p>Confirming this delivery will deduct stock and post the move journal.</p>
-          </main>
-          <footer class="modal-footer">
-            <button class="btn btn-primary">Validate</button>
-            <button class="btn o_btn_outline">Discard</button>
-          </footer>
-        </div>
+  <div class="o_dialog_backdrop" data-mock-modal="archive">
+    <div class="o_dialog modal-sm">
+      <div class="o_dialog_header">
+        <h4 class="modal-title">Confirmation</h4>
+        <button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button>
+      </div>
+      <div class="o_dialog_body">
+        <p>Are you sure that you want to archive this record?</p>
+      </div>
+      <div class="o_dialog_footer">
+        <button class="btn btn-primary" data-mock-modal-close>Archive</button>
+        <button class="btn btn-secondary" data-mock-modal-close>Discard</button>
       </div>
     </div>
   </div>
 -->
 
-<!-- ===== Size variants =====
+<!-- ===== UserError / ValidationError (WarningDialog) — sm, minimal =====
 
-  Compact confirmation (modal-sm):
-    <div class="o_dialog modal-sm">…</div>
-
-  Form-wizard (modal-lg):
-    <div class="o_dialog modal-lg">
-      <div class="o_dialog_header"><h4 class="modal-title">Create Customer</h4>
-        <button class="btn-close"/></div>
-      <div class="o_dialog_body">
-        ... a full .o_form_view with statusbar + sheet + groups + fields ...
-      </div>
-      <div class="o_dialog_footer">
-        <button class="btn btn-primary">Save &amp; Close</button>
-        <button class="btn btn-secondary">Save &amp; New</button>
-        <button class="btn o_btn_outline">Discard</button>
-      </div>
-    </div>
-
-  Select-create picker (modal-xl):
-    <div class="o_dialog modal-xl">
-      <div class="o_dialog_header"><h4 class="modal-title">Select Product</h4>
-        <button class="btn-close"/></div>
-      <div class="o_dialog_body">
-        ... a .o_control_panel with search + a .o_list_view ...
-      </div>
-      <div class="o_dialog_footer">
-        <button class="btn btn-primary">Select</button>
-        <button class="btn btn-secondary">New</button>
-        <button class="btn o_btn_outline">Close</button>
-      </div>
-    </div>
--->
-
-<!-- ===== UserError / ValidationError dialog =====
-
-  Different visual: no border on header, larger title, single Close button
-  in a right-aligned footer. Use `.o_dialog_user_error` (or
-  `.o_dialog_validation_error`) as a modifier.
+  `.o_dialog_user_error` (or `.o_dialog_validation_error`) = a 460px minimal
+  dialog: exception title, the X, the message, ONE left-aligned primary
+  "Close". No coloured header, no right-aligned footer, no min-width.
 
   <div class="o_dialog_backdrop">
     <div class="o_dialog o_dialog_user_error">
-      <div class="o_dialog_header"><span>Validation Error</span></div>
+      <div class="o_dialog_header">
+        <h4 class="modal-title">Invalid Operation</h4>
+        <button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button>
+      </div>
       <div class="o_dialog_body">
-        <p>Allocate lots or serials on every tracked line before confirming this quotation.</p>
+        <div role="alert"><p>Allocate lots or serials on every tracked line before confirming this quotation.</p></div>
       </div>
       <div class="o_dialog_footer">
-        <button class="btn btn-primary" data-mock-modal-close>Close</button>
+        <button class="btn btn-primary o-default-button" data-mock-modal-close>Close</button>
+      </div>
+    </div>
+  </div>
+-->
+
+<!-- ===== Extra-large (dialog_size='extra-large') — default design =====
+
+  <div class="o_dialog modal-xl">
+    <div class="o_dialog_header"><h4 class="modal-title">Compose Email</h4>
+      <button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button></div>
+    <div class="o_dialog_body p-0"> … a full .o_form_view … </div>
+    <div class="o_dialog_footer">
+      <button class="btn btn-primary">Send</button>
+      <button class="btn btn-secondary">Discard</button>
+    </div>
+  </div>
+
+  Select / "Search more..." picker = the DEFAULT size (lg), not xl:
+  <div class="o_dialog">
+    <div class="o_dialog_header"><h4 class="modal-title">Search: Customer</h4>
+      <button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button></div>
+    <div class="o_dialog_body p-0"> … a .o_control_panel with search + a .o_list_view … </div>
+    <div class="o_dialog_footer">
+      <button class="btn btn-primary">Select</button>
+      <button class="btn btn-secondary">New</button>
+      <button class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+-->
+
+<!-- ===== Real Odoo 20 shape (dev-facing mocks) — same Confirmation =====
+
+  <div class="o_dialog">
+    <div role="dialog" class="modal d-block o_technical_modal o_modal_design_minimal o_modal_body_padding">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-sm">
+        <div class="modal-content">
+          <header class="modal-header">
+            <h4 class="modal-title text-wrap text-break fs-3 flex-grow-1">Confirmation</h4>
+            <button type="button" class="btn-close position-sm-absolute top-0 end-0" title="Close" aria-label="Close"></button>
+          </header>
+          <main class="modal-body">
+            <p class="text-prewrap mb-0">Are you sure that you want to archive this record?</p>
+          </main>
+          <footer class="modal-footer d-empty-none justify-content-around justify-content-md-start flex-wrap gap-2 w-100">
+            <button class="btn btn-primary">Archive</button>
+            <button class="btn btn-secondary">Discard</button>
+          </footer>
+        </div>
       </div>
     </div>
   </div>

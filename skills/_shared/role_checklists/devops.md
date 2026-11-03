@@ -1,6 +1,6 @@
 # DevOps / Operability
 
-*Calibrated against Odoo 19.0. Re-review on each major version bump.*
+*Calibrated against Odoo 20.0. Re-review on each major version bump — see [release cadence runbook](../release_cadence.md).*
 
 ## Goal
 Make the addon installable, upgradable, and observable in production without on-call surprises.
@@ -34,10 +34,16 @@ Make the addon installable, upgradable, and observable in production without on-
 - **Health and observability**: `/web/health` returns 200 when Odoo is responsive. Log-stream consumption on Odoo.sh via the web UI; on-prem via the configured `logfile` or stdout (12-factor logs-to-stdout pattern). Structured JSON logging is not Odoo's default but can be configured via `logging` module handlers in `pre_init_hook` if downstream tooling needs it.
 - **12-factor app discipline** — config in env / `ir.config_parameter`, logs to stdout, processes stateless (`ir.config_parameter` and the DB are the only stateful surfaces). Maps cleanly onto Odoo.sh's container model.
 
+### Odoo 20+
+- **Runtime floor raised**: minimum Python is now **3.12** (was 3.10) and minimum PostgreSQL is now **16** (was 13) — `odoo/release.py` sets `MIN_PY_VERSION=(3, 12)` and `MIN_PG_VERSION=16`. Provision the base image / host with these before a v20 deploy; an older interpreter or DB server won't start.
+- **`requirements.txt` changes**: the legacy `python_version < 3.11/3.12` fallback pins are dropped, `xlwt` is **removed** (XLS *write* via xlwt is gone — retest any `.xls` export path; it must move to `xlsxwriter` / `.xlsx`), and `h11` is added. Re-freeze the deployment's pinned deps against the v20 file rather than carrying the v19 set forward.
+- **CLI `odoo populate` removed**, replaced by the new **`odoo duplicate`** command (`odoo/cli/duplicate.py`). Any deploy / test script that seeded scale data via `odoo populate` must switch to `odoo duplicate`.
+- **`ir.cron` resilience overhaul** (`addons/base/models/ir_cron.py`): `MIN_TIME_PER_JOB` is raised from 10s to **120s** (a job scheduled more frequently is throttled to the floor); a cron that fails repeatedly is now **auto-deactivated** (after 5 failures / 7 days) with an admin notification; and each job now runs in an **isolated `contextvars` `copy_context()`** so one job can't leak context onto the next. Size cron intervals for the 120s floor, and don't rely on a cron self-healing silently — the 5-failure deactivation is visible and terminal until an admin re-enables it.
+
 ## Common Pitfalls
 - **Cron with no batch limit** — degrades silently as data grows; in prod it'll start missing its window.
 - **Cron with no error handling** — one transient HTTP failure auto-disables it; no one notices for days.
-- **`pre_init_hook` doing schema work** — runs before the ORM is ready; you have only `cr` (raw cursor). Easy to break.
+- **`pre_init_hook` touching the module's own models** — it gets `env`, but runs before this module's models are loaded, so only models of modules already loaded are usable and this module's tables do not exist yet. Easy to break.
 - **`uninstall_hook` not actually removing data** — uninstall leaves orphan tables; reinstall fails because the tables already exist with a different schema.
 - **Hardcoded URLs / credentials** — fine in dev, blocking in prod. Use `ir.config_parameter` from day one.
 - **Logging at `info` for hot-path events** — log volume explodes; switch to `debug`.
@@ -53,7 +59,7 @@ Make the addon installable, upgradable, and observable in production without on-
 - [ ] Environment-specific values use `ir.config_parameter`, not hardcodes.
 - [ ] Upgrade hooks (if any) are minimal and idempotent.
 - [ ] `uninstall_hook` cleans up any non-Odoo state the addon created (external resources, custom DB objects).
-- [ ] `pre_init_hook` (if any) uses raw `cr`, not the ORM.
+- [ ] `pre_init_hook` (if any) does not touch the module's own models (they are not loaded yet).
 - [ ] Hot-path log lines are at `_logger.debug`, not `_logger.info`.
 - [ ] Any model-level guard on a committed value exempts the legitimate system flows (cancel / unreserve / validate / backorder) that traverse the same code; only the manual path is blocked.
 
@@ -62,6 +68,6 @@ Make the addon installable, upgradable, and observable in production without on-
 1. **Logger discipline statement** — declare that every new Python file uses `_logger = logging.getLogger(__name__)` and `_logger.{info,warning,error,debug}` — never `print(...)`.
 2. **Cron inventory** — for every `ir.cron`, name the trigger schedule, the `limit=` per batch, the commit cadence between batches, and the error-handling pattern (silent skip / raise / alert via mail). Empty list (no cron) is valid.
 3. **External-call inventory** — every HTTP / SMTP / S3 / message-queue call the addon makes, with timeout, retry policy, and where credentials come from (`ir.config_parameter` key). Empty list is valid.
-4. **Hook inventory** — declare which of `pre_init_hook` / `post_init_hook` / `uninstall_hook` are used and what each does in one sentence. For `post_init_hook`, state the gate (fresh-install only / always-idempotent / one-time-flag). For `pre_init_hook`, confirm it uses raw `cr`, not ORM.
+4. **Hook inventory** — declare which of `pre_init_hook` / `post_init_hook` / `uninstall_hook` are used and what each does in one sentence. For `post_init_hook`, state how it stays idempotent: it runs on every install, including a reinstall after an uninstall, and never on `-u`; a one-time flag needs the `uninstall_hook` to delete it. For `pre_init_hook`, confirm it does not touch the module's own models.
 5. **Environment-config inventory** — every `ir.config_parameter` key the addon reads, with the UI path the admin uses to set it and the fallback / default behaviour.
 6. **Uninstall cleanup checklist** — for every non-Odoo resource the addon creates (S3 buckets, external webhooks, third-party records, custom DB objects), name the cleanup step in `uninstall_hook`. Empty list is valid if the addon is Odoo-only.

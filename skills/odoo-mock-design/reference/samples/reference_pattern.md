@@ -1,10 +1,10 @@
 # Reference Pattern — Annotated Mock-Package Walk-through
 
-*Calibrated against Odoo 19.0. Re-review on each major version bump.*
+*Calibrated to the catalog's current Odoo version (the `calibrated to Odoo NN` stamp atop `catalog/odoo.css`). Re-review whenever the catalog is recalibrated.*
 
 The fidelity + density + discipline benchmark for `odoo-mock-design` output. Read this once before invoking the skill to calibrate what *good* looks like — never copy verbatim. The skill **curates**: the smallest faithful mock that carries the brief's story.
 
-The reference package is a 5-screen mock of a Sales-Order lot/serial workflow on Odoo 19 Enterprise. Identifying details stripped; structural anatomy + fidelity cues preserved.
+The reference package is a 5-screen mock of a Sales-Order lot/serial workflow on Odoo Enterprise. Identifying details stripped; structural anatomy + fidelity cues preserved.
 
 ---
 
@@ -34,32 +34,36 @@ The cover carries three required structural elements + a strictly-ordered
 ```html
 <div class="mock-cover">
   <div class="mock-cover-kicker">
-    <img src="assets/odoo-icon.svg" alt=""/> Odoo 19 · Enterprise
+    <img src="assets/odoo-icon.svg" alt=""/> Odoo NN · Enterprise
   </div>
   <img class="mock-cover-logo" src="assets/odoo-logo.png" alt="Odoo"/>
   <h1>Lot / Serial Selection on Sales Order Lines</h1>
   <p>One-line workflow summary lifted from the brief.</p>
 </div>
 ```
+`NN` is the spec's Odoo major (`odoo_version`; fallback: the catalog
+stamp) — `_scaffold_mock.py` fills it; see `../cover_discipline.md` § 2.
 Two image assets are required and must live alongside other catalog
 copies in the package's `assets/` folder: `odoo-icon.svg` (the circular
 "O" mark) for the kicker + favicon, `odoo-logo.png` (the wordmark) for
 the cover watermark. Don't substitute an inline SVG `<use href="#o-odoo-logo"/>`
 — a sprite glyph won't carry the brand-quality raster the cover needs.
 
-### 2. "How to interact with this mock" — the canonical FIVE callouts
+### 2. "How to interact with this mock" — the canonical SIX callouts
 
 Wrap the callout block in `<div class="mock-cover-section">`. Each callout
 uses `<div class="mock-cover-callout">`.
 
 **Canonical wording lives in [`../templates/cover_callouts.html`](../templates/cover_callouts.html)
 — SINGLE SOURCE OF TRUTH.** Don't paraphrase, don't reorder, don't substitute.
-The template carries all five callouts with inclusion-rule markers
-(`ALWAYS` / `IF multi_workflows` / `IF variant_axes` / `IF field_help`); copy
-the bodies verbatim and omit conditional callouts whose trigger doesn't fire.
+The template carries all six callouts with inclusion-rule markers
+(`ALWAYS` / `IF multi_workflows` / `IF variant_axes` / `IF custom` /
+`IF field_help`); copy the bodies verbatim and omit conditional callouts
+whose trigger doesn't fire.
 
 Reading order (outside-in): whole mock → workflows → screen-state pivots →
-element notes → field-label help. The template enforces this order — keep it.
+element notes → custom scope → field-label help. The template enforces this
+order — keep it.
 
 The cover-callout example marker (the inline `i`) is reserved for the cover
 only — workflow screens use NUMBERED markers (1, 2, 3 …) restarting per
@@ -112,19 +116,11 @@ The third cell on each row is the **axis chip** — a three-cell
 </div>
 ```
 
-Key rules (full set in `SKILL.md` § Cover discipline, item 4):
-
-- The page-number cell (`mock-step-axes-page-num`) MUST be empty in
-  markup — JS fills it. Authors NEVER hand-write the number.
-- For STATEFUL axes (small discrete value set: State, Stage, Status),
-  every chip referencing the axis MUST show `.mock-step-axes-value`.
-  Non-stateful axes (e.g. Tracking — per-row property) omit the value.
-- **NEVER write `via Axis on step N`** as the axis-chip body — that
-  pattern was used in earlier drafts and is now anti-pattern. The
-  page-number cell does the cross-reference job.
-- A row with no axis pivot still emits a third cell — an empty
-  `<span></span>` AFTER the body text — so the row's subgrid keeps
-  three columns and the column divider doesn't gap out.
+Axis-chip rules are canonical in [`../cover_discipline.md`](../cover_discipline.md) § 4
+(empty JS-filled page-number cell; `.mock-step-axes-value` on stateful axes only;
+never `via Axis on step N`; always a third cell so the subgrid keeps three
+columns). The example above follows them — read § 4 for the full set, not this
+summary.
 
 ---
 
@@ -140,7 +136,7 @@ The brief named 5 workflow states (Quote draft → Allocate lots → Confirm ord
 | Confirmed SO (Locked) | Quote screen, `state=locked` (Confirm now disabled, ribbon visible) |
 | Lot picker pre-input | Dialog screen, `state=empty` |
 | Lot picker post-input | Dialog screen, `state=filled` |
-| Confirm blocked — lot unavailable | Quote screen, with a toast variant on `state=allocated → Confirm` |
+| Confirm blocked — lot unavailable | Quote screen, an Invalid Operation dialog on `state=allocated → Confirm` |
 | Edit blocked — locked | Disabled button + tooltip on the Quote screen `state=locked` |
 | Delivery | Standalone screen (different model/surface) |
 | Pick committed lots | Same Delivery screen, `state=ready` |
@@ -159,14 +155,25 @@ A guard earns its own screen only when (a) it redirects to a different model's v
                                          at a spec). <repo>/mocks/<kebab>/ is
                                          the orphan fallback for bare briefs
                                          with no spec-folder context.
-├── index.html                          ← single file; sprite inlined; all screens
-└── assets/
-    ├── odoo.css                        ← verbatim copy of catalog odoo.css
-    ├── annotations.css                 ← verbatim copy of catalog annotations.css
-    └── walkthrough.js                  ← verbatim copy of catalog walkthrough.js
+├── <name> - mock.html                  ← DELIVERABLE: one self-contained file,
+│                                         bundled by _bundle_mock.py after lint
+│                                         + both anchors pass; what gets shared
+└── _reference/                         ← WORKING PACKAGE: edit, lint, anchor,
+    │                                     render here; stays as the source
+    ├── index.html                      ← all screens; both sprites (icons.svg +
+    │                                     app-icons.svg) inlined
+    ├── README.md                       ← optional notes (mappings, deferred findings)
+    └── assets/
+        ├── odoo.css                    ← verbatim copy of catalog odoo.css
+        ├── annotations.css             ← verbatim copy of catalog annotations.css
+        ├── walkthrough.js              ← verbatim copy of catalog walkthrough.js
+        ├── odoo-icon.svg               ← cover kicker + favicon
+        └── odoo-logo.png               ← cover watermark
 ```
 
-**Self-containment is a hard gate.** The `mock-fidelity-anchor` refuses any `http://`, `//cdn`, `../`, or skill-folder reference. Every asset is bundled or inlined.
+`<name>` is the spec folder's name (e.g. `TEST010 - INTERNAL - timesheet-payroll-allocation - mock.html`), else the mocks folder's own name.
+
+**Self-containment is a hard gate.** The `mock-fidelity-anchor` refuses any `http://`, `//cdn`, `../`, or skill-folder reference. Inside `_reference/` every asset is copied or inlined; the bundle then inlines the copies (CSS/JS as `<style>` / `<script>`, images as `data:` URIs) so the deliverable is a single file.
 
 ---
 
@@ -190,46 +197,58 @@ A guard earns its own screen only when (a) it redirects to a different model's v
        — fill the SLOTs; never hand-code an alternative. -->
 
   <div class="o_form_view">
-    <div class="o_form_statusbar">
-      <!-- Confirm button: visibility depends on state axis -->
-      <button class="btn btn-primary"
-              data-mock-variant="state=allocated"
-              data-mock-toast="Quotation confirmed."
-              data-mock-toast-type="success">Confirm</button>
-      <button class="btn btn-primary"
-              data-mock-variant="state=partial"
-              data-mock-toast="Line has 2 of 3 units allocated. Allocate the remaining units before confirming."
-              data-mock-toast-type="danger">Confirm</button>
-      <button class="btn btn-primary" data-mock-variant="state=locked" disabled>Confirm</button>
-      ...
+    <div class="o_form_sheet_bg">
+      <!-- Statusbar = FIRST child of .o_form_sheet_bg (form_view.html) -->
+      <div class="o_form_statusbar">
+        <div class="o_statusbar_buttons">
+          <!-- Confirm button: visibility depends on state axis -->
+          <button class="btn btn-primary"
+                  data-mock-variant="state=allocated"
+                  data-mock-toast="Quotation confirmed."
+                  data-mock-toast-type="success">Confirm</button>
+          <!-- Refused action: re-opens the Invalid Operation dialog below -->
+          <button class="btn btn-primary"
+                  data-mock-variant="state=partial"
+                  data-mock-modal-open="partial-guard">Confirm</button>
+          <button class="btn btn-primary" data-mock-variant="state=locked" disabled>Confirm</button>
+          ... <!-- every other workflow button: btn btn-secondary -->
+        </div>
+        ... status pipeline ...
+      </div>
+
+      <div class="o_form_sheet">
+        <!-- Product line with the Allocation badge that varies on state -->
+        <td>
+          <span data-mock-variant="state=unallocated" class="badge rounded-pill text-bg-danger">Unallocated</span>
+          <span data-mock-variant="state=partial" class="badge rounded-pill text-bg-warning">Partial (2 of 3)</span>
+          <span data-mock-variant="state=allocated" class="badge rounded-pill text-bg-success">Complete</span>
+          <span data-mock-variant="state=locked" class="badge rounded-pill text-bg-success">Complete
+            <svg class="o_icon o_icon_sm"><use href="#o-lock"/></svg>
+          </span>
+          <!-- Row buttons are btn-link: only on lot-tracked + actionable states -->
+          <button class="btn btn-link"
+                  data-mock-variant="tracking=lot,state=unallocated"
+                  data-mock-goto="picker">Select Lots</button>
+          <button class="btn btn-link"
+                  data-mock-variant="tracking=lot,state=partial"
+                  data-mock-goto="picker">Continue Allocation</button>
+        </td>
+
+        <!-- One marker, anchored to a load-bearing element -->
+        <span class="mock-marker" data-note="The Select Lots button only appears on lot- or serial-tracked products (User Story #1).">1</span>
+      </div>
     </div>
-
-    <!-- Sheet, product line with the Allocation badge that varies on state -->
-    <td>
-      <span data-mock-variant="state=unallocated" class="badge text-bg-danger">Unallocated</span>
-      <span data-mock-variant="state=partial" class="badge text-bg-warning">Partial (2 of 3)</span>
-      <span data-mock-variant="state=allocated" class="badge text-bg-success">Complete</span>
-      <span data-mock-variant="state=locked" class="badge text-bg-success">Complete
-        <svg class="o_icon o_icon_sm"><use href="#o-lock"/></svg>
-      </span>
-      <!-- Select Lots button: only on lot-tracked + actionable states -->
-      <button class="btn btn-sm o_btn_outline"
-              data-mock-variant="tracking=lot,state=unallocated"
-              data-mock-goto="picker">Select Lots</button>
-      <button class="btn btn-sm o_btn_outline"
-              data-mock-variant="tracking=lot,state=partial"
-              data-mock-goto="picker">Continue Allocation</button>
-    </td>
-
-    <!-- One marker, anchored to a load-bearing element -->
-    <span class="mock-marker" data-note="The Select Lots button only appears on lot- or serial-tracked products (User Story #1).">1</span>
   </div>
+
+  <!-- Guard dialog, closed until Confirm is clicked at state=partial —
+       markup in ../interactions.md § UserError / ValidationError dialog
+       (.o_dialog_backdrop data-mock-modal="partial-guard"). -->
 </section>
 ```
 
-The chip row appears automatically: `Tracking: [Lot ▾]   State: [Unallocated ▾]`. Reader changes `state` to Partial → an inline warning banner appears on the form sheet ("Confirm refused — line has 2 of 3 units allocated"), the badge flips to Partial, and Confirm fires the same warning as a toast on click. Reader changes `state` to Locked → Confirm becomes disabled and the locked ribbon appears.
+The chip row appears automatically: `Tracking: [Lot ▾]   State: [Unallocated ▾]`. Reader changes `state` to Partial → the badge flips to Partial; clicking Confirm opens the **Invalid Operation** dialog ("Line has 2 of 3 units allocated…") over the form. Reader changes `state` to Locked → Confirm becomes disabled and the locked ribbon appears.
 
-Two-surface guard discipline: the **persistent banner** makes the rule legible in static review; the **toast** confirms what happens on click. State variants that represent a refused/blocked action MUST carry both.
+Guard discipline: a **setup** value (Partial) shows the normal form and the dialog opens on the gated click; only an **attempt** value (a variant naming the action itself) shows it open by default — never on a state the reader lands on (`GUARD-LANDING`; full rule in interactions.md § UserError / ValidationError dialog). Never an inline banner (`.alert` is for persistent context, not refusals).
 
 ### Data multiplicity vs variant axis
 
@@ -271,7 +290,7 @@ The reference uses **6 markers across the package**:
 | 3 | Quote screen, on the warehouse field | "Picker filters lots to this warehouse's on-hand" (New Fields row 4) |
 | 4 | Picker dialog, on the qty column | "Defaults to 1; fixed at 1 for serials" (New Fields row 5, Rule #4) |
 | 5 | Delivery screen, on a locked move-line | "Pre-committed lots ship read-only to the warehouse" (User Story #5) |
-| 6 | Settings screen, on the Lots & Serial toggle | "Precondition: this feature must be enabled" (impacted_apps row) |
+| 6 | Settings screen, on the Lots & Serial checkbox | "Precondition: this feature must be enabled" (impacted_apps row) |
 
 Not one per field; not one per guard. Each marker points at a behavior the brief introduces; each has a citation in `data-note`. Anything past 7 should be questioned — could two markers fuse, or does the package have too many concerns?
 
@@ -298,7 +317,7 @@ Chatter shows two messages: the confirmation system-log + the activity scheduled
 
 ```
 navbar.html         → outer chrome on every screen
-control_panel.html  → breadcrumbs + smart-button box on form screens; pager + switcher on list/kanban
+control_panel.html  → form: two-line breadcrumb + ⋮ + pager (+ smart buttons); list/kanban: New + title ⋮ + search + pager + switcher
 form_view.html      → quotation + delivery
 list_view.html      → picker dialog body; delivery operations table
 dialog.html         → picker dialog backdrop + container

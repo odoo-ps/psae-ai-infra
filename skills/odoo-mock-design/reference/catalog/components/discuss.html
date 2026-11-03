@@ -1,139 +1,268 @@
 <!--
-  discuss.html — Discuss app (mail; real classes o-mail-Discuss / o-mail-DiscussSidebar
-  / o-mail-DiscussContent / o-mail-Thread + o-mail-Message). Sidebar of inbox +
-  channels + DMs on the left, the active conversation header + thread + composer
-  on the right. Render inside the backend shell (navbar + this fills the action
-  area). Reuses the chatter message styling.
+  discuss.html — Discuss app, Odoo 20 Enterprise (client action mail.action_discuss).
+  Render inside the backend shell (navbar + this fills the action area).
+  Real DOM (odoo/addons/mail/static/src/):
+    core/public_web/discuss_app/discuss_app.xml   div.o-mail-Discuss.d-flex.gap-2.p-2 on the GRAY page
+      > ResizablePanel .o-mail-DiscussApp-sidebar (400px)  > MessagingMenu
+      > .o-mail-DiscussContent
+    core/public_web/messaging_menu/messaging_menu.xml
+      nav.o-mail-MessagingMenu-navbar   72px vertical tab rail: Chats (group, filled) /
+                                        Channels (tag = "#") / Meetings (videocam, filled)
+                                        [+ AI when the ai module is installed; + Notifications
+                                        only for users with notification_type=inbox; + Bookmarks
+                                        only when something is bookmarked]. Active tab = teal
+                                        pill icon; red counters (Enterprise; Community = green).
+      .o-mail-MessagingMenu             white 12px-radius bordered card: action button + Search
+                                        Conversation + filter pills, then button.o-mail-NotificationItem
+                                        rows. Per tab: Chats = "+ Chat", All / Unread / Group;
+                                        Channels = "+ Channel", All / Unread / Thread;
+                                        Meetings = "Meeting ▾", All / Today / Unread / Thread
+                                        (Today is the default active filter on Meetings).
+    core/public_web/notification_item.xml  58px rows: avatar + IM status, name, time, preview.
+    core/public_web/discuss_content.xml  header card (avatar, name, "local time" for a DM or the
+                                        channel description), ActionList boxes, Thread, Composer.
+    core/common/{thread,message,date_section,composer,action_list}.xml
+  GONE since v19: DiscussSidebar (Inbox / Starred / History, uppercase CHANNELS /
+  DIRECT MESSAGES with "+", coloured DM dots), "# name · N members" header, cog
+  button, reaction chips, and the boxed composer with a "Send" button.
 
-  Source mapping:
-    odoo/addons/mail/static/src/discuss/core/web/discuss_sidebar*.{xml,scss}
-    odoo/addons/mail/static/src/core/common/composer.xml
-    odoo/addons/mail/static/src/core/public_web/discuss.xml
+  Glyphs: tabs #o-group / #o-hashtag / #o-videocam; "+ Chat" #o-plus; search #o-search;
+  header #o-videocam + #o-phone (green, DMs with real users only), #o-bell (notifications),
+  #o-search, then the segmented group #o-paperclip / #o-push-pin / #o-user-plus
+  (channels: #o-forum threads / #o-paperclip / #o-push-pin / #o-group-o members);
+  composer #o-add-circle | #o-gif-box #o-emoji #o-paper-plane; preview "You:" #o-reply;
+  push prompt dismiss #o-close-small.
+  Message rows/bubbles/DateSection are the SHARED chatter markup (blue = others,
+  green = you; both LEFT-aligned in the Discuss app). Bubble colours, tail, author/date
+  typography and the DateSection come from the Chatter section of odoo.css.
+  (mock simplification: real Odoo draws the bubble as an absolute div.o-mail-Message-bubble
+  overlay behind a separate div.o-mail-Message-body; here one element carries both
+  classes, with padding 7px 11px + 1px border = the same 37px.)
+  The composer is drawn focused (o-focused: teal border), as when a conversation opens;
+  drop o-focused for an idle grey-border pill. The placeholder names the conversation
+  ("Message Marc Demo…" / "Message #General…"). Drop the bg-info "Turn on notifications"
+  row if it distracts.
 
-  Sidebar structure:
-    .o-mail-DiscussSidebar-section  → Inbox / Starred / History (no category label)
-    .o-mail-DiscussSidebar-category → "Channels" / "Direct messages" + add button
-    .o-mail-DiscussSidebarChannel   → one per channel/DM (active gets brand color)
+  Avatars: .o_user_avatar single-initial chips. Give one person the SAME o_avatar_cN
+  everywhere (row, header, intro, message, composer) — real Odoo shows one photo.
 
-  Header actions (.o-mail-Discuss-header-action) use the catalog's chrome
-  glyphs: o-search, o-phone (call), o-bell (notification preferences),
-  o-cog (settings), o-users (members).
+  Mock-only helpers (no real class): span.o-mail-MessagingMenu-tabIcon wraps the svg
+  (real: <i class="oi o-mail-MessagingMenu-tabIcon rounded-pill p-2 fs-5">);
+  .o-mail-Thread-start (real: classless div.pt-4.px-2); .o-mail-NotificationItem-dismiss
+  (real: span.oi[data-icon=close_small]); .o-mail-ImStatus is a dot + ring (real: a
+  12.48px glyph knocked out of the avatar through an SVG mask).
 
-  Composer toolbar uses: o-paperclip (attach), o-microphone (voice),
-  o-paper-plane (send button cluster's primary).
+  CHANNEL variant (Channels tab active, "+ Channel", filters All / Unread / Thread):
+    rows: square letter tile <span class="o_user_avatar o_avatar_cN">G</span>, preview
+          "Marc Demo: …", unread = <span class="badge o-discuss-badge o-mail-NotificationItem-badge o-empty"></span>
+          (14px gray dot; DMs use o-important = red with the count). Counters always sit inside the
+          row's <div class="o-mail-NotificationItem-counterArea"> (25px, present on every conversation row,
+          empty when there is nothing to count; omit it only on the bg-info push prompt).
+    header: <div class="o-mail-DiscussContent-headerBox py-1"> avatar 26px +
+            <div><div class="d-flex"><div class="o-mail-DiscussContent-threadName">General</div>
+            <div class="o-mail-DiscussContent-threadDescription">General announcements for all employees.</div></div></div>
+            actions: bell | search | o_switcher [#o-forum Threads, #o-paperclip, #o-push-pin, #o-group-o Members]
+            (no green call discs).
+            Channels open with the Members side panel (default isMemberPanelOpenByDefault=true):
+            .o-mail-DiscussContent-main holds the core column + <div class="o-mail-DiscussContent-panelContainer
+            o-discuss-ChannelMemberList"> (252px white card, 1px gray-300, radius 12, margin-top 4px) and the
+            Members switcher button carries .active. Panel markup:
+              <div class="o-mail-DiscussContent-panelContainer o-discuss-ChannelMemberList">
+                <div class="o-mail-ActionPanel-header"><svg class="o_icon"><use href="#o-group"/></svg>Members</div>
+                <div class="o-discuss-ChannelMemberList-search">
+                  <div class="o-mail-SearchInput"><svg class="o_icon"><use href="#o-search"/></svg><input type="text" class="form-control" placeholder="Search members"></div>
+                  <button class="btn btn-sm btn-primary"><svg class="o_icon o_icon_fw"><use href="#o-user-plus"/></svg>Add People</button>
+                </div>
+                <h6>Online - 1</h6>
+                <div class="o-discuss-ChannelMember"><span class="o_user_avatar o_avatar_c1">M</span><span>Mitchell Admin</span></div>
+                <h6>Offline - 2</h6>
+                <div class="o-discuss-ChannelMember o-offline"><span class="o_user_avatar o_avatar_c4">M</span><span>Marc Demo</span></div>
+              </div>
+    Intro: "Welcome to #General!" / "This is the start of the #General channel".
 -->
 <div class="o-mail-Discuss">
-  <aside class="o-mail-DiscussSidebar">
-    <!-- Top section: Inbox, Starred, History. -->
-    <div class="o-mail-DiscussSidebar-section">
-      <span class="o-mail-DiscussSidebarChannel o-mail-DiscussSidebar-inbox">
-        <svg class="o_icon"><use href="#o-envelope"/></svg> Inbox
-        <span class="o-mail-DiscussSidebar-count">3</span>
-      </span>
-      <span class="o-mail-DiscussSidebarChannel">
-        <svg class="o_icon"><use href="#o-star"/></svg> Starred
-      </span>
-      <span class="o-mail-DiscussSidebarChannel">
-        <svg class="o_icon"><use href="#o-clock"/></svg> History
-      </span>
-    </div>
+  <div class="o-mail-DiscussApp-sidebar">
+    <div class="o-mail-MessagingMenu-container">
+      <nav class="o-mail-MessagingMenu-navbar">
+        <button class="o-mail-MessagingMenu-tab active" aria-label="Chats">
+          <span class="o-mail-MessagingMenu-tabIcon"><svg class="o_icon"><use href="#o-group"/></svg></span>
+          <span class="o-xsmaller">Chats</span>
+          <span class="badge o-discuss-badge o-mail-MessagingMenu-tabCounter">1</span>
+        </button>
+        <button class="o-mail-MessagingMenu-tab" aria-label="Channels">
+          <span class="o-mail-MessagingMenu-tabIcon"><svg class="o_icon"><use href="#o-hashtag"/></svg></span>
+          <span class="o-xsmaller">Channels</span>
+          <span class="badge o-discuss-badge o-mail-MessagingMenu-tabCounter">3</span>
+        </button>
+        <button class="o-mail-MessagingMenu-tab" aria-label="Meetings">
+          <span class="o-mail-MessagingMenu-tabIcon"><svg class="o_icon"><use href="#o-videocam"/></svg></span>
+          <span class="o-xsmaller">Meetings</span>
+        </button>
+      </nav>
 
-    <!-- Channels category with add button. -->
-    <div class="o-mail-DiscussSidebar-category">
-      <span>Channels</span>
-      <span class="o-mail-DiscussSidebar-add" title="Add or join a channel">+</span>
-    </div>
-    <span class="o-mail-DiscussSidebarChannel active"># general</span>
-    <span class="o-mail-DiscussSidebarChannel"># sales</span>
-    <span class="o-mail-DiscussSidebarChannel"># warehouse</span>
-
-    <!-- Direct messages category with add button. -->
-    <div class="o-mail-DiscussSidebar-category">
-      <span>Direct messages</span>
-      <span class="o-mail-DiscussSidebar-add" title="Start a conversation">+</span>
-    </div>
-    <span class="o-mail-DiscussSidebarChannel"><span class="o-mail-dm-dot o-mail-dm-online"></span> Marc Demo</span>
-    <span class="o-mail-DiscussSidebarChannel"><span class="o-mail-dm-dot o-mail-dm-away"></span> Mitchell Admin</span>
-  </aside>
-
-  <div class="o-mail-DiscussContent">
-
-    <!-- Header: channel name + meta + actions. -->
-    <div class="o-mail-Discuss-header">
-      <span class="o-mail-Discuss-header-title">
-        <strong># general</strong>
-        <span class="o-mail-Discuss-header-meta">12 members</span>
-      </span>
-      <span class="o-mail-Discuss-header-actions">
-        <span class="o-mail-Discuss-header-action" title="Search Messages">
-          <svg class="o_icon"><use href="#o-search"/></svg>
-        </span>
-        <span class="o-mail-Discuss-header-action" title="Start a call">
-          <svg class="o_icon"><use href="#o-phone"/></svg>
-        </span>
-        <span class="o-mail-Discuss-header-action" title="Notification settings">
-          <svg class="o_icon"><use href="#o-bell"/></svg>
-        </span>
-        <span class="o-mail-Discuss-header-action" title="Channel settings">
-          <svg class="o_icon"><use href="#o-cog"/></svg>
-        </span>
-      </span>
-    </div>
-
-    <!-- Thread: messages with a date divider between clusters. -->
-    <div class="o-mail-Thread">
-      <div class="o-mail-Thread-divider"><span>Today</span></div>
-
-      <div class="o-mail-Message">
-        <div class="o-mail-Message-sidebar">
-          <div class="o-mail-Message-avatarContainer">
-            <div class="o-mail-Message-avatar o_avatar_c1">MD</div>
+      <div class="o-mail-MessagingMenu">
+        <div class="o-mail-MessagingMenu-searchContainer">
+          <div class="o-mail-MessagingMenu-searchRow">
+            <button class="btn btn-sm btn-primary"><svg class="o_icon o_icon_fw"><use href="#o-plus"/></svg>Chat</button>
+            <div class="o-mail-DiscussSearch">
+              <svg class="o_icon"><use href="#o-search"/></svg>
+              <input type="text" class="form-control" placeholder="Search Conversation">
+            </div>
+          </div>
+          <div class="o-mail-MessagingMenu-filters" role="tablist">
+            <button class="o-mail-MessagingMenu-filter o-active">All</button>
+            <button class="o-mail-MessagingMenu-filter">Unread</button>
+            <button class="o-mail-MessagingMenu-filter">Group</button>
           </div>
         </div>
-        <div class="o-mail-Message-core">
-          <div class="o-mail-Message-header">
-            <span class="o-mail-Message-author">Marc Demo</span>
-            <span class="o-mail-Message-date">9:24 AM</span>
-          </div>
-          <div class="o-mail-Message-contentContainer">
-            <div class="o-mail-Message-body">Did the lot allocation ship on S00078?</div>
+
+        <div class="o-mail-MessagingMenu-tabContent">
+          <!-- Push-permission prompt (always first until enabled / dismissed) -->
+          <button class="o-mail-NotificationItem o-interest bg-info">
+            <div class="o-mail-MessagingMenuItem-avatarContainer"><span class="o_user_avatar o_avatar_c3">O</span><span class="o-mail-ImStatus"></span></div>
+            <div>
+              <div class="o-mail-NotificationItem-line">
+                <span class="o-mail-NotificationItem-name">Turn on notifications</span>
+                <span class="btn btn-info btn-sm">Enable</span>
+                <svg class="o_icon o-mail-NotificationItem-dismiss"><use href="#o-close-small"/></svg>
+              </div>
+              <div class="o-mail-NotificationItem-line">
+                <div class="o-mail-NotificationItem-text">Stay tuned! Enable push notifications to never miss a message.</div>
+              </div>
+            </div>
+          </button>
+
+          <!-- Read conversation (no o-interest => .875 opacity, muted date/preview) -->
+          <button class="o-mail-NotificationItem">
+            <div class="o-mail-MessagingMenuItem-avatarContainer"><span class="o_user_avatar o_avatar_c3">O</span><span class="o-mail-ImStatus"></span></div>
+            <div>
+              <div class="o-mail-NotificationItem-line">
+                <span class="o-mail-NotificationItem-name">OdooBot</span>
+                <small class="o-mail-NotificationItem-date o-muted">12:32 PM</small>
+              </div>
+              <div class="o-mail-NotificationItem-line">
+                <div class="o-mail-NotificationItem-text o-muted text-truncate">Hello 👋 Odoo's Discuss application helps employees collaborate efficiently.</div>
+                <div class="o-mail-NotificationItem-counterArea"></div>
+              </div>
+            </div>
+          </button>
+
+          <!-- Open conversation (o-active = gray wash); your own last message previews as "↩ You: …" -->
+          <button class="o-mail-NotificationItem o-active">
+            <div class="o-mail-MessagingMenuItem-avatarContainer"><span class="o_user_avatar o_avatar_c4">M</span><span class="o-mail-ImStatus"></span></div>
+            <div>
+              <div class="o-mail-NotificationItem-line">
+                <span class="o-mail-NotificationItem-name">Marc Demo</span>
+                <small class="o-mail-NotificationItem-date o-muted">11:28 AM</small>
+              </div>
+              <div class="o-mail-NotificationItem-line">
+                <div class="o-mail-NotificationItem-text o-muted text-truncate"><svg class="o_icon"><use href="#o-reply"/></svg>You: Not yet, I'll take a look this afternoon.</div>
+                <div class="o-mail-NotificationItem-counterArea"></div>
+              </div>
+            </div>
+          </button>
+
+          <!-- Unread conversation (o-interest, bold date, red counter) -->
+          <button class="o-mail-NotificationItem o-interest">
+            <div class="o-mail-MessagingMenuItem-avatarContainer"><span class="o_user_avatar o_avatar_c0">J</span><span class="o-mail-ImStatus o-offline"></span></div>
+            <div>
+              <div class="o-mail-NotificationItem-line">
+                <span class="o-mail-NotificationItem-name">Joel Willis</span>
+                <small class="o-mail-NotificationItem-date">9:31 AM</small>
+              </div>
+              <div class="o-mail-NotificationItem-line">
+                <div class="o-mail-NotificationItem-text text-truncate">Joel Willis: LOT-0007 and LOT-0011 reserved, picking is Ready.</div>
+                <div class="o-mail-NotificationItem-counterArea"><span class="badge o-discuss-badge o-mail-NotificationItem-badge o-important">2</span></div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="o-mail-DiscussContent">
+    <div class="o-mail-DiscussContent-header">
+      <div class="o-mail-DiscussContent-headerInfo">
+        <div class="o-mail-DiscussContent-headerBox">
+          <div class="o-mail-DiscussContent-threadAvatar"><span class="o_user_avatar o_avatar_c4">M</span></div>
+          <div>
+            <div class="o-mail-DiscussContent-threadName">Marc Demo</div>
+            <div class="o-mail-DiscussContent-localDateTime">03:06 PM local time</div>
           </div>
         </div>
       </div>
+      <div class="o-mail-ActionList">
+        <span class="o-mail-ActionList-group">
+          <button class="o-mail-ActionList-button btn btn-success o_btn_circle" title="Start Video Call"><svg class="o_icon"><use href="#o-videocam"/></svg></button>
+          <button class="o-mail-ActionList-button btn btn-success o_btn_circle" title="Start Call"><svg class="o_icon"><use href="#o-phone"/></svg></button>
+        </span>
+        <span class="o-mail-ActionList-group">
+          <button class="o-mail-ActionList-button btn btn-secondary" title="Mute Conversation"><svg class="o_icon"><use href="#o-bell"/></svg></button>
+        </span>
+        <span class="o-mail-ActionList-group">
+          <button class="o-mail-ActionList-button btn btn-secondary" title="Search Messages"><svg class="o_icon"><use href="#o-search"/></svg></button>
+        </span>
+        <span class="o-mail-ActionList-group o_switcher">
+          <button class="o-mail-ActionList-button btn" title="Attachments"><svg class="o_icon"><use href="#o-paperclip"/></svg></button>
+          <button class="o-mail-ActionList-button btn" title="Pinned Messages"><svg class="o_icon"><use href="#o-push-pin"/></svg></button>
+          <button class="o-mail-ActionList-button btn" title="Invite People"><svg class="o_icon"><use href="#o-user-plus"/></svg></button>
+        </span>
+      </div>
+    </div>
 
-      <div class="o-mail-Message">
-        <div class="o-mail-Message-sidebar">
-          <div class="o-mail-Message-avatarContainer">
-            <div class="o-mail-Message-avatar o_avatar_c3">JW</div>
+    <div class="o-mail-DiscussContent-main">
+      <div class="o-mail-DiscussContent-core">
+        <div class="o-mail-Thread">
+          <div class="o-mail-Thread-start">
+            <div class="d-flex">
+              <div class="o-mail-Thread-avatar"><span class="o_user_avatar o_avatar_c4">M</span></div>
+              <div role="heading" aria-level="1">Marc Demo</div>
+            </div>
+            <p>This is the start of your direct chat with Marc Demo</p>
           </div>
-        </div>
-        <div class="o-mail-Message-core">
-          <div class="o-mail-Message-header">
-            <span class="o-mail-Message-author">Joel Willis</span>
-            <span class="o-mail-Message-date">9:31 AM</span>
+
+          <div class="o-mail-DateSection"><hr/><span>Today</span><hr/></div>
+
+          <div class="o-mail-Message">
+            <div class="o-mail-Message-core">
+              <div class="o-mail-Message-sidebar"><div class="o-mail-Message-avatarContainer"><span class="o-mail-Message-avatar o_avatar_c4">M</span></div></div>
+              <div>
+                <div class="o-mail-Message-header mb-1"><span class="o-mail-Message-author"><strong>Marc Demo</strong></span><small class="o-mail-Message-date">10:28 AM</small></div>
+                <div class="o-mail-Message-contentContainer"><div class="o-mail-Message-textContent">
+                  <div class="o-mail-Message-bubbleTail o-blue"><svg viewBox="0 0 6 12" width="6" height="12"><path class="o-mail-Message-bubbleTailBorder" fill="currentColor" d="M 0, 0 L 5, 9 V 0 z"/><path class="o-mail-Message-bubbleTailBg" fill="currentColor" d="M 2, 1 L 5, 7 V 1 z"/></svg></div>
+                  <div class="o-mail-Message-body o-mail-Message-bubble o-blue"><p>Hi! Did you get a chance to review the latest quotation?</p></div>
+                </div></div>
+              </div>
+            </div>
           </div>
-          <div class="o-mail-Message-contentContainer">
-            <div class="o-mail-Message-body">Yes — LOT-0007 and LOT-0011 reserved, picking is Ready.</div>
-            <div class="o-mail-Message-reactions">
-              <span class="o-mail-reaction">👍 2</span>
+
+          <div class="o-mail-Message o-selfAuthored">
+            <div class="o-mail-Message-core">
+              <div class="o-mail-Message-sidebar"><div class="o-mail-Message-avatarContainer"><span class="o-mail-Message-avatar o_avatar_c1">M</span></div></div>
+              <div>
+                <div class="o-mail-Message-header mb-1"><span class="o-mail-Message-author"><strong>Mitchell Admin</strong></span><small class="o-mail-Message-date">11:28 AM</small></div>
+                <div class="o-mail-Message-contentContainer"><div class="o-mail-Message-textContent">
+                  <div class="o-mail-Message-bubbleTail o-green"><svg viewBox="0 0 6 12" width="6" height="12"><path class="o-mail-Message-bubbleTailBorder" fill="currentColor" d="M 0, 0 L 5, 9 V 0 z"/><path class="o-mail-Message-bubbleTailBg" fill="currentColor" d="M 2, 1 L 5, 7 V 1 z"/></svg></div>
+                  <div class="o-mail-Message-body o-mail-Message-bubble o-green"><p>Not yet, I'll take a look this afternoon and get back to you.</p></div>
+                </div></div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Composer: input + toolbar (attach, voice, emoji) + Send button.
-         Real Odoo's composer doesn't `is-collapsed` itself in Discuss —
-         it's always visible. The collapse pattern is chatter-only. -->
-    <div class="o-mail-Composer">
-      <span class="o-mail-Composer-input o_input_placeholder">Message #general…</span>
-      <div class="o-mail-Composer-actions">
-        <span class="o-mail-Composer-toolbar">
-          <svg class="o_icon" title="Attach files"><use href="#o-paperclip"/></svg>
-          <svg class="o_icon" title="Voice message"><use href="#o-microphone"/></svg>
-          <svg class="o_icon" title="Add emoji"><use href="#o-comment"/></svg>
-        </span>
-        <button class="btn btn-primary"><svg class="o_icon o_icon_xs"><use href="#o-paper-plane"/></svg> Send</button>
+        <div class="o-mail-Composer o-discussApp o-hasSelfAvatar o-focused">
+          <div class="o-mail-Composer-sidebarMain"><span class="o-mail-Composer-avatar o_user_avatar o_avatar_c1">M</span></div>
+          <div class="o-mail-Composer-inputContainer">
+            <span class="o-mail-Composer-actions o-mail-Composer-moreActions"><svg class="o_icon" title="More Actions"><use href="#o-add-circle"/></svg></span>
+            <span class="o-mail-Composer-input o_input_placeholder">Message Marc Demo…</span>
+            <span class="o-mail-Composer-actions o-mail-Composer-quickActions">
+              <svg class="o_icon" title="Send GIF"><use href="#o-gif-box"/></svg>
+              <svg class="o_icon" title="Add Emojis"><use href="#o-emoji"/></svg>
+              <svg class="o_icon o-mail-Composer-send" title="Send"><use href="#o-paper-plane"/></svg>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

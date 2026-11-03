@@ -5,7 +5,7 @@ What this DOES:
   - Read a spec folder's `_reference/_build_<task-code>.py` `SPEC_DATA` dict.
   - Emit a starter `index.html` with the structural pieces a mock requires:
       • <head> + inline icon sprite (copies catalog/icons.svg verbatim)
-      • Cover screen — brand header, canonical FIVE callouts (with the
+      • Cover screen — brand header, canonical SIX callouts (with the
         conditional ones included/omitted per the spec's structure),
         workflow narrative table with three-cell axis chips.
       • One `<div class="mock-workflow">` shell per workflow (multi-
@@ -39,7 +39,9 @@ Usage:
 
     # spec-folder is a path like
     # `specifications/TEST00X - INTERNAL - <slug>/`. The script writes
-    # `<spec-folder>/mocks/` (creates `mocks/` and `assets/` if absent).
+    # the working package `<spec-folder>/mocks/_reference/` (index.html +
+    # assets/). After the final checks, `_bundle_mock.py` consolidates it into
+    # the deliverable `<spec-folder>/mocks/<spec-folder-name> - mock.html`.
 
 Exit code 0 = success, 1 = problem (e.g. SPEC_DATA missing required keys).
 
@@ -50,6 +52,7 @@ NOT required — we only need the `SPEC_DATA` dict, not the docx builder.
 import argparse
 import importlib.util
 import os
+import re
 import shutil
 import sys
 import textwrap
@@ -135,6 +138,9 @@ def _flow_strip(wf):
     return steps
 
 
+_WARNED_TITLES = set()
+
+
 def _short_workflow_title(name):
     """Reduce a long workflow name to ≤ 12 chars for the chip.
 
@@ -154,6 +160,9 @@ def _short_workflow_title(name):
         result = first
     else:
         result = first[:12]
+    if name in _WARNED_TITLES:      # called once per emitted slot — warn once per workflow
+        return result
+    _WARNED_TITLES.add(name)
     print(
         f'WARN: workflow "{name}" chip title set to "{result}" '
         f'(>{12} chars in source). Review and pick a single business '
@@ -186,7 +195,8 @@ def _parse_callout_template(text):
     """Parse `reference/templates/cover_callouts.html` into [(id, rule, body), ...].
 
     Marker format: `<!-- CALLOUT: <id> | <rule> -->`
-    Rules: `ALWAYS`, `IF multi_workflows`, `IF variant_axes`, `IF field_help`.
+    Rules: `ALWAYS`, `IF multi_workflows`, `IF variant_axes`, `IF custom`,
+    `IF field_help`.
     Markers appear in the canonical reading order; we preserve that order.
     """
     import re
@@ -203,8 +213,8 @@ def _parse_callout_template(text):
     return out
 
 
-def _cover_callouts(has_multi_workflows, has_variant_axes_hint, has_new_fields):
-    """Emit the canonical FIVE callouts, including only those whose
+def _cover_callouts(has_multi_workflows, has_variant_axes_hint, has_custom, has_new_fields):
+    """Emit the canonical SIX callouts, including only those whose
     conditional trigger fires.
 
     Canonical wording lives in `reference/templates/cover_callouts.html`
@@ -218,6 +228,7 @@ def _cover_callouts(has_multi_workflows, has_variant_axes_hint, has_new_fields):
     flags = {
         "multi_workflows": has_multi_workflows,
         "variant_axes": has_variant_axes_hint,
+        "custom": has_custom,
         "field_help": has_new_fields,
     }
     parts = []
@@ -238,7 +249,23 @@ def _cover_callouts(has_multi_workflows, has_variant_axes_hint, has_new_fields):
     return "\n".join(parts)
 
 
-def _emit_cover(title, summary, workflows):
+def _catalog_odoo_major():
+    """Odoo major version the catalog is calibrated to, read from the
+    `calibrated to Odoo NN` stamp at the top of catalog/odoo.css (single
+    source of truth). None when the stamp is missing."""
+    head = _read_catalog_file("odoo.css")[:600]
+    m = re.search(r"calibrated to Odoo (\d+)", head)
+    return m.group(1) if m else None
+
+
+def _odoo_major(spec_data):
+    """Odoo major version for the cover kicker: the spec's own `odoo_version`
+    (e.g. "20.0"), else the catalog's calibrated version."""
+    m = re.match(r"\s*(\d+)", str(spec_data.get("odoo_version", "")))
+    return m.group(1) if m else (_catalog_odoo_major() or "20")
+
+
+def _emit_cover(title, summary, workflows, odoo_major):
     """Main cover: brand header + canonical callouts + workflow narrative table."""
     multi = len(workflows) >= 2
     has_axes_hint = True  # assume yes; generator can remove the callout if no screen ends up with axes
@@ -246,14 +273,20 @@ def _emit_cover(title, summary, workflows):
         wf.get("subsections", {}).get("new_fields", {}).get("table")
         for wf in workflows
     )
-    callouts = _cover_callouts(multi, has_axes_hint, has_new_fields)
+    # Anything the spec adds is marked custom on its screen (interactions.md
+    # § Custom elements); new fields and new models are what SPEC_DATA
+    # tables, so they trigger the callout.
+    has_custom = has_new_fields or any(
+        wf.get("subsections", {}).get("new_models", {}).get("table")
+        for wf in workflows
+    )
+    callouts = _cover_callouts(multi, has_axes_hint, has_custom, has_new_fields)
 
     # Workflow narrative — one <li> per workflow when multi; one <li> per
     # flow_strip step when single.
     if multi:
         rows = []
         for i, wf in enumerate(workflows, start=1):
-            short = _short_workflow_title(wf["name"])
             wf_slug = _slug(wf["name"])
             summary_text = wf.get("summary", "")
             rows.append(f'''        <li>
@@ -277,7 +310,7 @@ def _emit_cover(title, summary, workflows):
 <section class="mock-screen" data-screen="cover" data-title="Overview"
          data-desc="What this mock demonstrates">
   <div class="mock-cover">
-    <div class="mock-cover-kicker"><img src="assets/odoo-icon.svg" alt=""/> Odoo 19 · Enterprise</div>
+    <div class="mock-cover-kicker"><img src="assets/odoo-icon.svg" alt=""/> Odoo {odoo_major} · Enterprise</div>
     <img class="mock-cover-logo" src="assets/odoo-logo.png" alt="Odoo"/>
     <h1>{_escape(title)}</h1>
     <p>{_escape(summary)}</p>
@@ -300,7 +333,6 @@ def _emit_cover(title, summary, workflows):
 def _emit_workflow_overview(idx, total, wf):
     """Per-workflow overview screen — actors + narrative + step list.
     Only emitted when there are ≥ 2 workflows."""
-    short = _short_workflow_title(wf["name"])
     actors_table = wf.get("subsections", {}).get("user_stories_and_steps", {}).get("table") or []
     actors = sorted({row[2] for row in actors_table[1:] if len(row) >= 3 and row[2]})  # column "Actor"
 
@@ -355,7 +387,9 @@ def _emit_placeholder_screen(wf_idx, step_idx, step_text):
          appropriate chrome (navbar + control_panel for backend, o_website + header
          for public website). Add `data-mock-variant-axes` if this step has ≥ 2
          renderings the spec encodes; add `mock-marker` annotations for
-         solution-changing elements (numbered 1, 2, 3 ... per screen). -->
+         solution-changing elements (numbered 1, 2, 3 ... per screen); mark
+         every solution-added element `mock-custom` (or the whole section,
+         when the screen is a custom model's view). -->
   </section>
 '''
 
@@ -397,14 +431,17 @@ def _copy_assets(out_dir):
 
 def build_index_html(spec_data):
     """Compose a complete index.html string from a SPEC_DATA dict."""
-    title = spec_data.get("title", "Mock")
+    # write-specifications SPEC_DATA names the solution `functionality_title`.
+    title = spec_data.get("title") or spec_data.get("functionality_title") or "Mock"
     summary = spec_data.get("subtitle", "") or spec_data.get("summary", "")
     workflows = spec_data.get("workflows", []) or []
 
-    sprite = _read_catalog_file("icons.svg")
+    # Inline BOTH sprites: UI glyphs + app brand icons (settings tabs, home
+    # menu, navbar brand use #o-app-*). External <use> dies on file://.
+    sprite = _read_catalog_file("icons.svg") + "\n" + _read_catalog_file("app-icons.svg")
     walkthrough_bar = _read_catalog_file("components/walkthrough_bar.html")
 
-    cover = _emit_cover(title, summary, workflows)
+    cover = _emit_cover(title, summary, workflows, _odoo_major(spec_data))
 
     if len(workflows) >= 2:
         # Multi-workflow: cover lives inside an "Overview" workflow wrapper
@@ -459,7 +496,7 @@ def main(argv=None):
     parser.add_argument("spec_folder",
         help="Path to the spec folder (e.g. `specifications/TEST00X - ...`).")
     parser.add_argument("--force", action="store_true",
-        help="Overwrite existing index.html. Default: refuse if a non-empty mocks/ already exists.")
+        help="Overwrite existing index.html. Default: refuse if mocks/_reference/index.html already exists.")
     args = parser.parse_args(argv)
 
     if not os.path.isdir(args.spec_folder):
@@ -478,7 +515,8 @@ def main(argv=None):
         print(f"ERROR loading SPEC_DATA: {e}", file=sys.stderr)
         return 1
 
-    out_dir = os.path.join(args.spec_folder, "mocks")
+    # Working package; the single-file deliverable is bundled next to it later.
+    out_dir = os.path.join(args.spec_folder, "mocks", "_reference")
     index_path = os.path.join(out_dir, "index.html")
     if os.path.exists(index_path) and not args.force:
         print(f"REFUSE: {index_path} already exists. Re-run with --force to overwrite.",
@@ -496,7 +534,8 @@ def main(argv=None):
     print(f"  {len(spec_data.get('workflows', []))} workflow(s)")
     print(f"  Next: fill in the SLOT placeholders by composing screens from")
     print(f"        reference/catalog/components/*.html. Then run the lint + the")
-    print(f"        mock-coverage-anchor + mock-fidelity-anchor pair before delivery.")
+    print(f"        mock-coverage-anchor + mock-fidelity-anchor pair, and finally")
+    print(f"        bundle the deliverable: _bundle_mock.py \"{os.path.dirname(out_dir)}\"")
     return 0
 
 

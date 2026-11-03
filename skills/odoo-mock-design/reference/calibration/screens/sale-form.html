@@ -1,0 +1,270 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Calibration — sale-form</title><link rel="stylesheet" href="assets/odoo.css"><link rel="stylesheet" href="../../catalog/odoo.css"></head><body>
+<!-- SPRITE -->
+<!-- Calibration page: real Odoo 20 Enterprise /odoo/orders/4 (Sales Order S00004),
+     composed only from catalog/components/{navbar,control_panel,form_view,list_view,chatter}.html.
+     Not reproducible with the catalog (left out here): the Promised Delivery
+     datetime input box, real photo avatars
+     (user menu / activity assignee), the empty qty-at-date widget columns of
+     the order lines. -->
+<div class="o_web_client">
+<header class="o_navbar">
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+    </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-sales"/></svg>
+    <span class="o_menu_brand">Sales</span>
+  </a>
+  <div class="o_menu_sections" role="menu">
+    <a class="o_nav_entry">Orders</a>
+    <a class="o_nav_entry">Products</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
+  </div>
+  <div class="o_menu_systray" role="menu">
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge">6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+      <span class="badge">17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name">YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar o_avatar_c1">M</span>
+    </button>
+  </div>
+</nav>
+</header>
+<div class="o_action_manager">
+
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-outline-primary o_form_button_create">New<svg class="o_icon o_caret"><use href="#o-caret-down"/></svg></button></div>
+      <div class="o_breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item o_back_button"><a href="#">Sales Orders</a></li>
+        </ol>
+        <div>
+          <div class="o_last_breadcrumb_item active"><span>S00004</span></div>
+          <div class="o_control_panel_breadcrumbs_actions">
+            <div class="o_cp_action_menus">
+              <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="o_form_status_indicator">
+        <div class="o_form_status_indicator_buttons invisible">
+          <button class="o_form_button_save btn btn-light" title="Save manually"><svg class="o_icon o_icon_fw"><use href="#o-save"/></svg></button>
+          <button class="o_form_button_cancel btn btn-light" title="Discard all changes"><svg class="o_icon o_icon_fw"><use href="#o-times"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="o_control_panel_actions"></div>
+
+    <div class="o_control_panel_navigation">
+      <div class="o_cp_pager" role="search">
+        <nav class="o_pager" aria-label="Pager">
+          <span class="o_pager_counter"><span class="o_pager_value">1</span><span> / </span><span class="o_pager_limit">1</span></span>
+          <span class="btn-group">
+            <button class="btn btn-secondary o_pager_previous" aria-label="Previous" disabled><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+            <button class="btn btn-secondary o_pager_next" aria-label="Next" disabled><svg class="o_icon"><use href="#o-chevron-right"/></svg></button>
+          </span>
+        </nav>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="o_form_view">
+  <div class="o_content_with_chatter">
+  <div class="o_form_sheet_bg">
+
+    <div class="o_form_statusbar">
+      <div class="o_statusbar_buttons">
+        <button class="btn btn-secondary">Create Invoice</button>
+        <button class="btn btn-secondary">Send</button>
+        <button class="btn btn-secondary">Preview</button>
+        <button class="btn btn-secondary">Cancel</button>
+      </div>
+      <div class="o_field_widget o_field_statusbar o_readonly_modifier">
+        <div class="o_statusbar_status" role="radiogroup">
+          <button class="btn btn-secondary o_arrow_button" disabled>Quotation</button>
+          <button class="btn btn-secondary o_arrow_button" disabled>Quotation Sent</button>
+          <button class="btn btn-secondary o_arrow_button o_arrow_button_current" disabled aria-current="step">Sales Order</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="o_form_sheet">
+
+      <div class="oe_title">
+        <h1 class="o_form_title">S00004</h1>
+      </div>
+
+      <div class="o_group">
+        <div class="o_inner_group">
+          <div class="o_field_row">
+            <label class="o_form_label o_form_label_readonly">Customer</label>
+            <div class="o_field_widget"><a class="o_form_link">Gemini Furniture</a><div>Via Industria 21</div><div>Serravalle 47899</div><div>San Marino</div><div>SM12345</div></div>
+          </div>
+        </div>
+        <div class="o_inner_group">
+          <div class="o_field_row">
+            <label class="o_form_label o_form_label_readonly">Order Date<span class="o_field_help">?</span></label>
+            <div class="o_field_widget">Oct 6, 12:29 PM</div>
+          </div>
+          <div class="o_field_row">
+            <label class="o_form_label">Payment Terms</label>
+            <div class="o_field_widget"><span class="o_input_placeholder">Immediate</span></div>
+          </div>
+          <div class="o_field_row">
+            <label class="o_form_label">Promised Delivery<span class="o_field_help">?</span></label>
+            <div class="o_field_widget"><div class="d-flex align-items-center gap-3"><span class="o_input_placeholder">Oct 6, 12:29 PM</span><div class="o_field_widget o_field_badge"><span class="badge rounded-pill text-bg-info">Not Delivered</span></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="o_notebook">
+        <div class="o_notebook_headers">
+          <span class="nav-link active" data-mock-tab="lines">Order Lines</span>
+          <span class="nav-link" data-mock-tab="quote">Quote Builder</span>
+          <span class="nav-link o_page_invalid" data-mock-tab="other">Other Info</span>
+        </div>
+        <div class="o_notebook_content">
+          <div data-mock-tabpanel="lines" class="is-active-tab">
+            <div class="document_tax_mode"><div class="o_field_widget overlap_badge_tab tax_mode_badge"><div class="d-flex flex-wrap"><span class="o_selection_badge">Tax Excl.</span></div></div></div>
+            <div class="o_field_widget o_field_one2many"><div class="o_field_x2many o_field_x2many_list"><div class="o_list_renderer">
+              <table class="o_list_table o_list_table_ungrouped o_list_table_min">
+                <thead><tr>
+                  <th class="o_handle_cell"></th><th>Description</th><th class="o_list_number_th">Quantity</th><th class="o_list_widget_th"></th><th class="o_list_uom_th">Unit</th>
+                  <th class="o_list_number_th">Delivered</th><th class="o_list_number_th">Invoiced</th>
+                  <th class="o_list_number_th">Unit Price</th><th>Taxes</th><th class="o_list_number_th o_monetary_cell">Amount</th><th class="o_list_widget_th"></th>
+                  <th class="o_list_actions_header"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></th>
+                </tr></thead>
+                <tbody>
+                  <tr class="o_data_row">
+                    <td class="o_handle_cell"><svg class="o_icon o_row_handle"><use href="#o-drag"/></svg></td>
+                    <td class="o_list_text"><div class="o_field_widget o_field_sol_label_text"><div>Virtual Interior Design</div></div></td><td class="o_list_number">16.00</td><td></td><td>Hours</td>
+                    <td class="o_list_number">0.00</td><td class="o_list_number">0.00</td><td class="o_list_number">75.00</td>
+                    <td><span class="o_tag o_tag_color_0"><div class="o_tag_badge_text">0% Exports</div></span></td><td class="o_list_number">$ 1,200.00</td><td></td>
+                    <td class="o_list_record_remove"><button class="btn btn-link text-danger" aria-label="Delete row"><svg class="o_icon"><use href="#o-trash"/></svg></button></td>
+                  </tr>
+                  <tr class="o_data_row">
+                    <td class="o_handle_cell"><svg class="o_icon o_row_handle"><use href="#o-drag"/></svg></td>
+                    <td class="o_list_text"><div class="o_field_widget o_field_sol_label_text"><div>[FURN_8888] Office Lamp</div></div></td><td class="o_list_number">10.00</td><td></td><td>Units</td>
+                    <td class="o_list_number">0.00</td><td class="o_list_number">0.00</td><td class="o_list_number">45.00</td>
+                    <td><span class="o_tag o_tag_color_0"><div class="o_tag_badge_text">0% Exports</div></span></td><td class="o_list_number">$ 450.00</td><td></td>
+                    <td class="o_list_record_remove"><button class="btn btn-link text-danger" aria-label="Delete row"><svg class="o_icon"><use href="#o-trash"/></svg></button></td>
+                  </tr>
+                  <tr class="o_data_row">
+                    <td class="o_handle_cell"><svg class="o_icon o_row_handle"><use href="#o-drag"/></svg></td>
+                    <td class="o_list_text"><div class="o_field_widget o_field_sol_label_text"><div>[FURN_6741] Large Meeting Table</div><div class="fst-italic">Big table seats 10–12 for team discussions</div></div></td><td class="o_list_number">3.00</td><td></td><td>Units</td>
+                    <td class="o_list_number">0.00</td><td class="o_list_number">0.00</td><td class="o_list_number">150.00</td>
+                    <td><span class="o_tag o_tag_color_0"><div class="o_tag_badge_text">0% Exports</div></span></td><td class="o_list_number">$ 450.00</td><td></td>
+                    <td class="o_list_record_remove"><button class="btn btn-link text-danger" aria-label="Delete row"><svg class="o_icon"><use href="#o-trash"/></svg></button></td>
+                  </tr>
+                  <tr class="o_data_row">
+                    <td class="o_handle_cell"><svg class="o_icon o_row_handle"><use href="#o-drag"/></svg></td>
+                    <td class="o_list_text"><div class="o_field_widget o_field_sol_label_text"><div>[FURN_7777] Office Chair</div><div class="fst-italic">Comfortable yellow chair for daily work</div></div></td><td class="o_list_number">2.00</td><td></td><td>Units</td>
+                    <td class="o_list_number">0.00</td><td class="o_list_number">0.00</td><td class="o_list_number">70.00</td>
+                    <td><span class="o_tag o_tag_color_0"><div class="o_tag_badge_text">0% Exports</div></span></td><td class="o_list_number">$ 140.00</td><td></td>
+                    <td class="o_list_record_remove"><button class="btn btn-link text-danger" aria-label="Delete row"><svg class="o_icon"><use href="#o-trash"/></svg></button></td>
+                  </tr>
+                  <tr><td></td><td class="o_field_x2many_list_row_add" colspan="11"><button class="btn btn-link">Add Line</button><button class="btn btn-link">Add Section</button><button class="btn btn-link">Add Note</button><button class="btn btn-link">Catalog</button></td></tr>
+                </tbody>
+              </table>
+            </div></div></div>
+            <div class="o_subtotal_footer">
+              <table>
+                <tr><td class="o_subtotal_label">Untaxed Amount</td><td class="o_subtotal_amount">$ 2,240.00</td></tr>
+                <tr><td class="o_subtotal_label">Tax 0%</td><td class="o_subtotal_amount">$ 0.00</td></tr>
+                <tr class="o_total"><td class="o_subtotal_label">Total</td><td class="o_subtotal_amount"><span>$ 2,240.00</span></td></tr>
+              </table>
+            </div>
+          </div>
+          <div data-mock-tabpanel="quote"></div>
+          <div data-mock-tabpanel="other"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<aside class="o-mail-Chatter">
+  <div class="o-mail-Chatter-top">
+    <div class="o-mail-Chatter-topbar">
+      <div class="o-mail-Chatter-topbarButtons">
+        <button class="btn btn-primary o-mail-Chatter-sendMessage">Send message</button>
+        <button class="btn btn-secondary o-mail-Chatter-logNote">Log note</button>
+        <button class="btn btn-secondary o-mail-Chatter-activity"><span>Activity</span></button>
+      </div>
+      <span class="o-mail-Chatter-topbarGrow"></span>
+      <button class="o-mail-Chatter-search" title="Search Messages" aria-label="Search Messages"><svg class="o_icon"><use href="#o-search"/></svg></button>
+      <button class="o-mail-Chatter-attachFiles" title="Attach files" aria-label="Attach files"><svg class="o_icon"><use href="#o-paperclip"/></svg></button>
+      <div class="o-mail-Followers">
+        <button class="o-mail-Followers-button active" title="Show Followers"><svg class="o_icon"><use href="#o-user"/></svg><sup class="o-mail-Followers-counter">1</sup></button>
+      </div>
+    </div>
+  </div>
+  <div class="o-mail-Chatter-content">
+    <div class="o-mail-ActivityList">
+      <div class="o-mail-ActivityList-header">
+        <hr/>
+        <div class="o-mail-ActivityList-title"><svg class="o_icon"><use href="#o-caret-down"/></svg>Planned Activities</div>
+        <hr/>
+      </div>
+      <div class="o-mail-Activity">
+        <div class="o-mail-Activity-sidebar">
+          <div class="o-mail-Activity-avatarContainer">
+            <span class="o-mail-Activity-avatar o_avatar_c1">M</span>
+            <span class="o-mail-Activity-iconContainer text-bg-success"><svg class="o_icon"><use href="#o-check"/></svg></span>
+          </div>
+        </div>
+        <div class="o-mail-Activity-core">
+          <div class="o-mail-Activity-info">
+            <span class="fw-bolder text-success">Due in 5 days:</span><span class="o-mail-Activity-name">Upsell</span><span class="o-mail-Activity-user">for Mitchell Admin</span><svg class="o_icon" title="Info"><use href="#o-info-circle"/></svg>
+          </div>
+          <div class="o-mail-Activity-tools">
+            <button class="o-mail-Activity-markDone"><svg class="o_icon"><use href="#o-check"/></svg> Done</button>
+            <button class="o-mail-Activity-edit"><svg class="o_icon"><use href="#o-pencil"/></svg> Edit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="o-mail-Thread">
+      <div class="o-mail-DateSection"><hr/><span>Today</span><hr/></div>
+      <div class="o-mail-Message">
+        <div class="o-mail-Message-core">
+          <div class="o-mail-Message-sidebar"><div class="o-mail-Message-avatarContainer"><span class="o-mail-Message-avatar o_avatar_odoobot"></span></div></div>
+          <div>
+            <div class="o-mail-Message-header"><span class="o-mail-Message-author"><strong>OdooBot</strong></span><small class="o-mail-Message-date">12:29 PM</small></div>
+            <div class="o-mail-Message-contentContainer"><div class="o-mail-Message-textContent">
+              <div class="o-mail-Message-body o-note"><p>Sales Order created</p></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+  </div>
+</div>
+
+</div>
+</div>
+</body></html>

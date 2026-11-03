@@ -4,7 +4,7 @@
   .mock-screen per workflow step (composed from the other fragments), and
   pastes the icon sprite + walkthrough_bar.
 
-  Asset references are RELATIVE to the package root (./assets/...). Never
+  Asset references are RELATIVE to the package root (assets/...). Never
   reference back into the skill folder — assets are copied into the package.
   Keep these <link>/<script> lines as-is; the lint requires local-only refs.
 
@@ -27,7 +27,7 @@
 <body>
 
   <!-- SLOT: INLINE the sprite — paste the full contents of catalog/icons.svg
-       here (the <svg style="display:none">…</svg> block). Icons are inlined,
+       here (the hidden 0x0 <svg>…</svg> block). Icons are inlined,
        NOT linked: external SVG `<use href="file.svg#id">` is blocked over
        file://, so a linked sprite makes every icon silently vanish when the
        package is opened as a local file. All `<use>` refs in the page use
@@ -37,10 +37,10 @@
   <!-- Full discipline: reference/cover_discipline.md. Required elements:
        1. Favicon link (already in <head> above).
        2. Brand header — kicker + watermark + title + summary.
-       3. .mock-cover-section wrapping the 5 canonical callouts. Copy the
+       3. .mock-cover-section wrapping the 6 canonical callouts. Copy the
           callout markup VERBATIM from reference/templates/cover_callouts.html;
           omit conditional callouts whose trigger doesn't fire
-          (multi-workflows / variant-axes / field-help).
+          (multi-workflows / variant-axes / custom / field-help).
        4. Workflow narrative — .mock-step-list-wrap with two column headers
           + an <ol class="mock-step-list"> whose <li>s are three-cell sub-grid
           rows (number / description / .mock-step-axes chip).
@@ -51,19 +51,22 @@
            data-desc="What this mock demonstrates">
     <div class="mock-cover">
       <div class="mock-cover-kicker">
-        <img src="assets/odoo-icon.svg" alt=""/> Odoo 19 · Enterprise
+        <!-- SLOT: version — read "Odoo <major> · <edition>" off the stamp atop
+             assets/odoo.css; never hard-code it (cover_discipline.md § version). -->
+        <img src="assets/odoo-icon.svg" alt=""/> Odoo NN · Enterprise
       </div>
       <img class="mock-cover-logo" src="assets/odoo-logo.png" alt="Odoo"/>
       <h1><!-- SLOT: Solution name --></h1>
       <p><!-- SLOT: one-line summary of the proposed solution --></p>
     </div>
     <div class="mock-cover-section">
-      <!-- SLOT: callouts — paste 2 to 5 .mock-cover-callout blocks VERBATIM
+      <!-- SLOT: callouts — paste 2 to 6 .mock-cover-callout blocks VERBATIM
            from reference/templates/cover_callouts.html, in canonical order.
            ALWAYS include: interactive_mock, numbered_markers.
            Conditional on package structure:
              - multiple_workflows  (>= 2 .mock-workflow wrappers)
              - variant_chips       (>= 1 screen has data-mock-variant-axes)
+             - custom              (>= 1 element or screen has mock-custom)
              - field_help          (>= 1 screen has o_field_help "?")
       -->
       <div class="mock-step-list-wrap">
@@ -89,9 +92,12 @@
 
   <!-- ============ WORKFLOW SCREENS ====================================== -->
   <!-- SLOT: one <section class="mock-screen" ...> per workflow step. Compose
-       each from navbar + control_panel + (form_view | list_view | kanban | ...)
-       per reference/view_types.md. Each screen MUST have data-screen,
-       data-title, data-desc.
+       each from navbar + control_panel + the view body (form_view |
+       list_view | kanban | ...) per reference/view_types.md. When the real
+       action has a <searchpanel>, the view body is components/search_panel.html
+       (<main class="o_content o_component_with_search_panel"> = panel +
+       gutter + view), which turns a list into the white rounded card.
+       Each screen MUST have data-screen, data-title, data-desc.
 
        Multi-workflow packages: wrap each workflow's screens in
          <div class="mock-workflow" data-workflow="<slug>"
