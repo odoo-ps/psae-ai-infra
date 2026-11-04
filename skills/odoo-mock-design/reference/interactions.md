@@ -41,6 +41,17 @@ Hidden until opened; closes on `data-mock-modal-close`, Esc, or a screen change.
 <div class="o-autocomplete-dropdown" data-mock-toggleable="lotsel"> … </div>
 ```
 Click flips `.is-open`; only one toggle open at a time; Esc / screen change close it.
+The id resolves inside the clicked element's screen first, so fragment ids (e.g.
+the chatter's `composer-msg` / `composer-note`) may repeat on several screens.
+To render a toggleable OPEN statically, add `is-open` and drop
+`data-mock-toggleable` (a screen change closes every toggleable) — e.g.
+`.o-mail-Chatter-composer.is-open`. Never hand-add `.active` to the chatter's
+topbar buttons; CSS derives it from the open composer.
+
+Every Odoo dropdown (⋮ action menu, Print ▸, `New ▾`, navbar section menus, the
+search bar menu) is an `.o-dropdown--menu.dropdown-menu` with `.dropdown-item` /
+`.dropdown-divider` / `.dropdown-header`, placed in a `.mock-anchor` next to its
+toggle and wired with this pair. Never hand-roll a menu.
 
 ## Screen variants — multi-axis filter-chip chrome
 
@@ -76,18 +87,18 @@ JSON-encoded on the `.mock-screen` itself:
   <span data-mock-variant="tracking=serial">Laptop M3 Pro (serial-tracked)</span>
 
   <!-- Elements that swap on the STATE axis -->
-  <span data-mock-variant="state=unallocated" class="badge text-bg-danger">Unallocated</span>
-  <span data-mock-variant="state=partial" class="badge text-bg-warning">Partial (2 of 3)</span>
-  <span data-mock-variant="state=allocated" class="badge text-bg-success">Complete</span>
-  <span data-mock-variant="state=locked" class="badge text-bg-success">Complete <svg class="o_icon o_icon_sm"><use href="#o-lock"/></svg></span>
+  <span data-mock-variant="state=unallocated" class="badge rounded-pill text-bg-danger">Unallocated</span>
+  <span data-mock-variant="state=partial" class="badge rounded-pill text-bg-warning">Partial (2 of 3)</span>
+  <span data-mock-variant="state=allocated" class="badge rounded-pill text-bg-success">Complete</span>
+  <span data-mock-variant="state=locked" class="badge rounded-pill text-bg-success">Complete <svg class="o_icon o_icon_sm"><use href="#o-lock"/></svg></span>
 
   <!-- Elements that combine multiple axes (only visible when ALL match) -->
-  <button data-mock-variant="tracking=lot,state=unallocated"
+  <button class="btn btn-secondary" data-mock-variant="tracking=lot,state=unallocated"
           data-mock-toggle="lot-picker">Select Lots</button>
-  <button data-mock-variant="tracking=lot,state=locked" disabled>View Lots (locked)</button>
+  <button class="btn btn-secondary" data-mock-variant="tracking=lot,state=locked" disabled>View Lots (locked)</button>
 
   <!-- Elements without data-mock-variant stay visible across all combinations -->
-  <div class="o_form_statusbar"> ... shared chrome ... </div>
+  <div class="o_form_sheet_bg"> ... shared statusbar + sheet chrome ... </div>
 </section>
 ```
 
@@ -204,7 +215,8 @@ a `goto` on the same element — they fire, then navigation runs.
 
 ## Annotations (numbered markers)
 - `.mock-marker[data-note]` — a numbered pin; click toggles its note. The
-  walkthrough-bar checkbox hides all markers for a clean screenshot.
+  **Annotations** chip in the walkthrough bar hides all markers for a clean
+  screenshot (it shares its row with the **Custom** chip — § Custom elements).
 - The note renders in **one body-level floating layer** (`position:fixed`, top
   z-index), so NO ancestor `overflow` (form sheet, list, notebook) can clip it —
   it's always fully visible. walkthrough.js clamps it to the viewport, flips it
@@ -299,30 +311,61 @@ interactive path covers the happy + main alternates.
 
 When a guard rule refuses an action (Confirm with partial allocation,
 Validate with shortages, Post with imbalanced journal), real Odoo
-shows a **UserError dialog** — a Bootstrap-style modal with a
-**red header** titled "User Error" (or yellow for "Validation Error"),
-the rule's message body, and a Close button. This is the standard
-Odoo blocking convention.
+shows a **blocking error dialog**: a small (460px) minimal modal — no
+coloured header bar — whose title comes from the exception, the rule's
+message, the thin X and ONE left-aligned primary **Close**. This is the
+standard Odoo blocking convention.
 
-The mock follows the same pattern. Use the existing dialog markup
-with the `o_dialog_user_error` (red) or `o_dialog_validation_error`
-(yellow) modifier class. For a guard State variant, the dialog is
-**open by default** (persistent rendering for static review) AND
-re-opens when the user clicks the gated action.
+| Exception | Dialog title |
+|---|---|
+| `UserError` | **Invalid Operation** (never "User Error") |
+| `ValidationError` | **Validation Error** |
+| `AccessError` / `MissingError` / other warnings | Access Error / Missing Record / Odoo Warning |
+
+The mock uses the `dialog.html` markup with the `o_dialog_user_error`
+modifier (`o_dialog_validation_error` for a ValidationError — same
+minimal `modal-sm` look). **When it opens depends on what the variant
+value means** (single source of truth for this rule):
+
+- **Setup value** — the precondition for a refusal (`state=partial`,
+  Block posting, a shared journal entry, a user without rights). The
+  screen renders its normal state; the dialog is closed and opens when
+  the reader clicks the gated action (`data-mock-modal-open="<id>"` on
+  the button). Setup values are often reached by click-through from
+  another screen (a list row's `data-mock-set-variant`), and an error
+  already open on arrival reads as if the reader did something wrong.
+- **Attempt value** — the variant names the action itself ("Change a
+  locked timesheet", "Set to Draft", "Delete"). The dialog is open by
+  default (`mock-blocking-modal is-open` + the variant), so static
+  review sees the refusal without a click.
+- **Never** open an error dialog by default on a state the reader lands
+  on: an axis default, a value another screen sets by click-through, or
+  the value an Ok / Save sets after a successful action (the Canceled
+  state a Cancel → Ok produces). `_lint_mock.py` fails this as
+  `GUARD-LANDING`.
+
+Modal ids resolve document-wide (`data-mock-modal-open` takes the first
+match in the page), so every dialog id must be unique across the package.
 
 ```html
-<!-- Modal opens by default when state=partial; close button dismisses. -->
-<div class="o_dialog_backdrop is-open" data-mock-variant="state=partial">
+<!-- Setup value: the gated action opens the guard dialog. -->
+<button class="btn btn-primary" data-mock-variant="state=partial"
+        data-mock-modal-open="partial-guard">Confirm</button>
+
+<!-- Closed until Confirm is clicked; the X / Close dismiss it.
+     (An ATTEMPT value would instead add `mock-blocking-modal is-open` and
+     its own data-mock-variant, e.g. data-mock-variant="action=edit".) -->
+<div class="o_dialog_backdrop" data-mock-modal="partial-guard">
   <div class="o_dialog o_dialog_user_error">
     <div class="o_dialog_header">
-      <span>User Error</span>
-      <svg class="o_icon" style="cursor:pointer;" data-mock-modal-close><use href="#o-times"/></svg>
+      <h4 class="modal-title">Invalid Operation</h4>
+      <button class="btn-close" type="button" title="Close" aria-label="Close" data-mock-modal-close></button>
     </div>
     <div class="o_dialog_body">
-      <p>Line "Conference Table — Black" has 2 of 3 units allocated to lots. Allocate the remaining units before confirming.</p>
+      <div role="alert"><p>Line "Conference Table — Black" has 2 of 3 units allocated to lots. Allocate the remaining units before confirming.</p></div>
     </div>
     <div class="o_dialog_footer">
-      <button class="btn btn-primary" data-mock-modal-close>Close</button>
+      <button class="btn btn-primary o-default-button" data-mock-modal-close>Close</button>
     </div>
   </div>
 </div>
@@ -342,9 +385,12 @@ The earlier persistent inline banner approach is retired. Reasons:
   so the reviewer still sees the form context — same legibility as a
   banner, but with the right chrome.
 
-When extending the catalog with a new dialog flavor (e.g. AccessError
-modal with a different colour header), follow the same pattern and
-update the catalog rather than inventing inline markup.
+`.alert` banners are for persistent context only (a duplicate warning,
+outstanding credits), never for a refused action. When extending the
+catalog with a new dialog flavor, follow `dialog.html` (size class,
+`h4.modal-title`, `btn-close`, left-aligned footer: primary first, then
+`btn-secondary`) and update the catalog rather than inventing inline
+markup.
 
 ## Custom-field help "?" (`.o_field_help`)
 Flag **every field the solution adds or modifies** with an Odoo-style help `?`
@@ -368,17 +414,18 @@ of thumb: if the field's existence, value, or behavior on this screen is
 something the addon manifest introduces, mark it; if it would render
 identically without the addon, leave it alone.
 
-Carry the attributes as `data-*`:
+Carry the attributes as `data-*`, and glue the `?` to the label text — NO
+whitespace before it, so it wraps with the last word like Odoo's `<sup>`:
 ```
-<label class="o_form_label">Lot Allocations
-  <span class="o_field_help"
+<label class="o_form_label">Lot Allocations<span class="o_field_help"
         data-help="Records which lot covers how much of the line."
         data-label="Lot Allocations" data-field="lot_allocation_ids"
         data-model="sale.order.line" data-type="one2many"
         data-readonly="state in ['done','cancel']">?</span></label>
 ```
-The tooltip shows the highlighted help text + a `Field / Model / Type / Readonly`
-list — the same shape as Odoo's developer field tooltip. Use it to make the
+It renders as Odoo's small blue superscript `?` (no circle). The tooltip shows
+the highlighted help text + a `Label / Field / Model / Type / Readonly` list —
+the same shape as Odoo's developer field tooltip. Use it to make the
 solution's new fields self-describing for the developer audience. (Standard
 fields don't get one — only the deltas.)
 
@@ -389,6 +436,73 @@ e.g. a Lot Allocations dialog's `Lot / Serial` (Many2one), `Available Qty`
 their own `?`, not just the form-level field. Don't stop at the main form,
 and don't skip a column because its `data-type` is `many2one` or its value
 is fetched via `related=` — both are still solution-added exposures.
+
+## Custom elements (`.mock-custom`)
+Mark **everything the solution adds or changes** with `mock-custom`, so a
+stakeholder sees at a glance what is custom and what is standard Odoo. This is
+as non-negotiable as the "?": the test is the same — if it would render
+identically without the addon, it is standard and stays unmarked; otherwise it
+is custom. That covers fields (as listed for the "?" above), actions (buttons,
+smart buttons, menu entries, dropdown items, search filters and group-bys),
+containers (form groups, notebook tabs, settings, wizards) and whole screens.
+
+The class renders two ways, depending on where it sits:
+
+- **On the `.mock-screen`** — the screen is custom from end to end (a view of
+  a custom model, a custom report, a new page). It shows a small pink
+  **Custom** banner across the top-right corner — partly see-through, so
+  the chrome under it still shows — and nothing inside the screen is marked
+  again.
+- **On an element** — that part of a standard screen is custom. It gets a
+  light-pink highlight, laid over the element like a highlighter pen: white or
+  see-through elements turn light pink, coloured ones (a primary button, a
+  status badge) keep their colour, and text stays legible.
+
+Put the class on the **outermost element that is entirely custom** — never on
+one that also holds standard content (that would paint the standard part as
+custom), and never on an element inside another custom element:
+
+| Custom thing | Mark |
+|---|---|
+| Field on a form | its `.o_field_row` |
+| Group the solution adds (separator + its fields) | the `.o_inner_group` — not each row |
+| List column | its `<th>` and every `<td>` of that column — cells, never the `<tr>` |
+| Notebook tab | the tab's `.nav-link` AND its `data-mock-tabpanel` panel |
+| Setting | its `.o_setting_box` |
+| Status widget in the statusbar | its `.o_field_widget` wrapper (badge + "?") |
+| Button, smart button, menu entry, dropdown item, search filter or facet | the element itself |
+| Wizard of a custom model over a standard screen | its `.o_dialog` |
+| Error the solution raises (its guard's UserError dialog) | the dialog's `.o_dialog_body` — the title and Close are Odoo's |
+| Line the solution adds to a standard dialog or confirmation | that line (`<p>` / `<div>`) |
+| Notification or chatter note the solution posts | the `.o_notification` / the message's `.o-mail-Message-body` — the author and date are Odoo's |
+| Standard button the solution disables or gates in a new state | that button, in that variant |
+| Values the solution writes into a standard field on some rows | those cells only — the column header stays standard, with no "?" |
+| View of a custom model, custom report, new page | the `.mock-screen` |
+
+```
+<section class="mock-screen mock-custom" data-screen="report" …>     ← whole screen
+<div class="o_field_row mock-custom"><label class="o_form_label">Lot Allocations<span class="o_field_help" …>?</span></label> …</div>
+```
+
+A custom field carries both: the "?" documents the field for developers, the
+mark shows its scope. Add `mock-custom` to the element's existing `class`
+attribute — a second `class` attribute on the same tag is dropped by the
+browser. The cover and workflow overviews are never marked; the cover's Custom
+callout uses `mock-custom-example` / `mock-custom-banner-example`, which stay
+visible whatever the chip says.
+
+The **Custom** chip (Show / Hide) sits beside **Annotations** in the
+walkthrough bar, the two splitting that row like two variant chips; it renders
+only when the package marks something custom. Hide adds `mock-custom-off` to
+`<body>`. Highlights and the banner never change layout, so toggling them
+reflows nothing.
+
+`_lint_mock.py` gates it like the "?": `CUSTOM-UNMARKED` fails any "?" field
+outside a custom element or screen, and `CUSTOM-PLACEMENT` fails marks on the
+cover / overviews, inside a custom screen, nested, or on a `<tr>` / `<table>` /
+void element (the highlight is an overlay `walkthrough.js` places inside the
+marked element). Which other elements the solution adds is judged by both
+anchors against the spec.
 
 ## Motion
 - Screens fade in (CSS `mock-screen-in`); respects `prefers-reduced-motion`.

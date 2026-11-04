@@ -1,0 +1,35 @@
+<!--
+  sale_dashboard.html — Sales dashboard band, Odoo 20
+  (sale/static/src/js/dashboard/dashboard.{xml,scss,js},
+  sale/static/src/js/date_filter_button/date_filter_button.xml).
+  Mounted by sale's dashboard list / kanban views (Quotations, Sales Orders)
+  between the control panel and the records: the FIRST child of
+  main.o_content, before .o_list_view / .o_kanban_view, on the page gray
+  (77px band at 1440; the list then starts at y=184).
+
+  LEFT — one count card per search filter the action has, in this order:
+    To Confirm  o_dashboard_card_orange  (quotations)
+    To Deliver  o_dashboard_card_purple
+    To Invoice  o_dashboard_card_cyan
+    To Upsell   o_dashboard_card_red     (hidden when 0)
+  Bold count in the card's dark shade over the label; the card whose filter
+  is active gets `active` (darker tint + 1px outline).
+  RIGHT — white bordered card: the period picker (Last 7 days ▾) then two KPI
+  columns, Sales Orders (count) and Sales Revenue (monetary), each with its
+  evolution: text-success (gain), text-danger (loss), text-muted "N/A".
+  Class names are the real ones except .o_dashboard_period, .o_period_card*
+  and .o_dashboard_card_label (mock stand-ins for unnamed Bootstrap divs).
+-->
+<div class="o_website_sale_dashboard">
+  <div class="o_dashboard_cards">
+    <button class="o_dashboard_card btn o_dashboard_card_purple" title="Orders to Deliver"><span class="o_dashboard_card_data">15</span><span class="o_dashboard_card_label">To Deliver</span></button>
+    <button class="o_dashboard_card btn o_dashboard_card_cyan" title="Orders to Invoice"><span class="o_dashboard_card_data">6</span><span class="o_dashboard_card_label">To Invoice</span></button>
+  </div>
+  <div class="o_dashboard_period">
+    <div class="o_date_filter_wrapper"><button><svg class="o_icon"><use href="#o-view-calendar"/></svg><span>Last 7 days</span><svg class="o_icon"><use href="#o-caret-down"/></svg></button></div>
+    <div class="o_cards_container">
+      <div class="o_period_card"><span class="o_period_card_title">Sales Orders</span><div class="o_period_card_values"><span class="o_period_card_value">13</span><span class="o_dashboard_card_evolution text-success">1200%</span></div></div>
+      <div class="o_period_card"><span class="o_period_card_title">Sales Revenue</span><div class="o_period_card_values"><span class="o_period_card_value">$ 382,315.50</span><span class="o_dashboard_card_evolution text-success">58358.03%</span></div></div>
+    </div>
+  </div>
+</div>

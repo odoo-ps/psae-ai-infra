@@ -1,68 +1,159 @@
 <!--
-  grid.html — Grid view (enterprise web_grid; real classes o_grid_view /
-  o_grid_renderer / o_grid_cell / o_grid_row_total). Used for timesheets &
-  planning: rows = task/project, columns = a time period (days of the week),
-  editable hour cells with row + column totals. Render inside the backend shell.
+  grid.html — Grid view, Odoo 20 (enterprise web_grid + timesheet_grid +
+  sale_timesheet_enterprise). Timesheets / Planning: rows = project | task,
+  columns = days, hour cells + row and column totals. Render inside the
+  backend shell, right after the control panel (Timesheets: btn-primary
+  "Add a Line" = o_grid_button_add in .o_control_panel_main_buttons).
+
+  STRUCTURE (grid_renderer.xml): .o_grid_renderer > .o_grid_grid is a CSS
+  grid of DIVS (not a table), 9 cells per row in this order: first cell
+  (nav / row title), 7 day cells, last cell (total). Rows:
+    1. header band (gray-100, border-bottom): .o_grid_navigation_wrap holds
+       btn-secondary "Today" + a JOINED .btn-group [west #o-west |
+       .btn-group.o_view_scale_selector "Week ▾" | east #o-east]; day
+       titles "Sun,⏎Oct 4" (500, centred, pre-line); "Time Spent".
+    2. one row per record: "Project | Task" (each part truncated at 300px,
+       gray-300 "|" separator; rows carried over from earlier weeks are
+       .fst-italic), 32px tall.
+    3. "Add a line" (teal btn-link + #o-add-circle).
+    4. footer: no label; day totals fs-5 fw-bolder, .text-success when the
+       day target is met (My Timesheets); grand total bold + bordered —
+       red (border-danger bg-danger-subtle text-danger) when under the
+       weekly target, green when met, else gray-100.
+    5. My Timesheets only: bar-chart row — a plum 50% pill per day
+       (border-top 2px primary), height = day total / max day total.
+  NO cell borders: day columns are separated by 4px WHITE gutters; the
+  first column has a right border, the total column a left border, and both
+  overlap the gutter beside them (Sun / Sat touch those rules). The first
+  column is as wide as its longest row; days share the rest (min 10ch).
+  Weekend / unavailable columns: .o_grid_unavailable (gray-100 cells, muted
+  title). Today: .o_grid_cell_today (info-subtle #d1ecf1 cells + a tab with
+  8px top radius behind the title, text-info). Today on a non-working day
+  (time off, weekend) = o_grid_cell_today AND o_grid_unavailable on the
+  title and on every cell of that column: the cells stay gray-100 (bg-100
+  wins), only the title keeps the blue tab + text-info. Values are durations
+  "2h 30m"; zero = "0h" in .text-900.text-opacity-25. There is NO start
+  timer row in v20.
+  KPI card (My Timesheets, mock helper .o_timesheet_kpi_header — real:
+  name="timesheet_kpi_leaderboard_header"): bordered white rounded-3 card
+  above the grid: "OCT 2026 | 25 hours worked | 9 hours billable | Want to
+  track your activities automatically?". Omit it on other grid actions.
+  Icons (Odoo 20): Previous / Next = #o-west / #o-east (grid_renderer.xml);
+  'Add a line' = #o-add-circle; scale caret = #o-caret-down.
 -->
 <div class="o_grid_view">
-  <!-- Top affordance row: timer + hotkey hint. Real timesheet_grid opens
-       in week view with a prominent ▶ START button and keyboard tips. -->
-  <div class="o_grid_timer">
-    <button class="btn btn-primary o_grid_start"><svg class="o_icon o_icon_xs"><use href="#o-chevron-right"/></svg> START</button>
-    <span class="o_grid_timer_hint">
-      <div>Press <kbd>Enter</kbd> or <kbd>[a]</kbd> to launch the timer</div>
-      <div>Press <kbd>Shift</kbd> + <kbd>[A]</kbd> to add 15 min</div>
-    </span>
+  <div class="o_timesheet_kpi_header" name="timesheet_kpi_leaderboard_header">
+    <div class="o_kpi_period"><span>Oct</span><span>2026</span></div>
+    <div class="o_kpi"><span class="o_kpi_value">25</span><div class="o_kpi_unit"><span>Hours</span><span>worked</span></div></div>
+    <div class="o_kpi"><span class="o_kpi_value">9</span><div class="o_kpi_unit"><span>Hours</span><span>billable</span></div></div>
+    <a class="btn btn-link o_kpi_link"><span>Want to track your</span><span>activities automatically?</span></a>
   </div>
-  <div class="o_grid_buttons">
-    <button class="btn o_btn_outline o_grid_button_today">Today</button>
-    <span class="o_gantt_scale active">Week <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
-    <button class="btn o_btn_outline o_grid_nav"><svg class="o_icon o_icon_xs"><use href="#o-chevron-left"/></svg></button>
-    <button class="btn o_btn_outline o_grid_nav"><svg class="o_icon o_icon_xs"><use href="#o-chevron-right"/></svg></button>
-  </div>
-  <table class="o_grid_renderer">
-    <thead>
-      <tr>
-        <th></th>
-        <!-- Day headers show "DayShort, Mon DD" — full date wraps onto a
-             second line for legibility. Mark today's column with
-             .o_grid_cell_today (light teal-blue tint). -->
-        <th class="o_list_number_th"><div class="o_grid_day_dow">Sun,</div><div class="o_grid_day_num">Jun 7</div></th>
-        <th class="o_list_number_th"><div class="o_grid_day_dow">Mon,</div><div class="o_grid_day_num">Jun 8</div></th>
-        <th class="o_list_number_th"><div class="o_grid_day_dow">Tue,</div><div class="o_grid_day_num">Jun 9</div></th>
-        <th class="o_list_number_th"><div class="o_grid_day_dow">Wed,</div><div class="o_grid_day_num">Jun 10</div></th>
-        <th class="o_list_number_th"><div class="o_grid_day_dow">Thu,</div><div class="o_grid_day_num">Jun 11</div></th>
-        <th class="o_list_number_th"><div class="o_grid_day_dow">Fri,</div><div class="o_grid_day_num">Jun 12</div></th>
-        <th class="o_list_number_th o_grid_cell_today"><div class="o_grid_day_dow">Sat,</div><div class="o_grid_day_num">Jun 13</div></th>
-        <th class="o_list_number_th o_grid_total_col">Time Spent</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Home Construction <span class="text-muted">/ Install drawers</span></td>
-        <td class="o_grid_cell">2:00</td><td class="o_grid_cell">3:00</td><td class="o_grid_cell">1:30</td>
-        <td class="o_grid_cell">—</td><td class="o_grid_cell">2:00</td><td class="o_grid_cell o_grid_cell_today">—</td>
-        <td class="o_grid_cell">—</td><td class="o_grid_row_total">8:30</td>
-      </tr>
-      <tr>
-        <td>Office Fit-out <span class="text-muted">/ QA &amp; handover</span></td>
-        <td class="o_grid_cell">1:00</td><td class="o_grid_cell">2:00</td><td class="o_grid_cell">4:00</td>
-        <td class="o_grid_cell">3:00</td><td class="o_grid_cell">1:00</td><td class="o_grid_cell o_grid_cell_today">—</td>
-        <td class="o_grid_cell">—</td><td class="o_grid_row_total">11:00</td>
-      </tr>
-      <tr>
-        <td><span class="o_list_link o_grid_add_line">Add a line</span></td>
-        <td class="o_grid_cell"></td><td class="o_grid_cell"></td><td class="o_grid_cell"></td><td class="o_grid_cell"></td>
-        <td class="o_grid_cell"></td><td class="o_grid_cell o_grid_cell_today"></td><td class="o_grid_cell"></td><td class="o_grid_row_total"></td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr class="o_grid_total_row">
-        <td>Total</td>
-        <td class="o_list_number">3:00</td><td class="o_list_number">5:00</td><td class="o_list_number">5:30</td>
-        <td class="o_list_number">3:00</td><td class="o_list_number">3:00</td><td class="o_list_number">0:00</td>
-        <td class="o_list_number">0:00</td><td class="o_list_number o_grid_total_col">19:30</td>
-      </tr>
-    </tfoot>
-  </table>
+  <div class="o_grid_renderer"><div class="o_grid_grid">
+    <!-- header -->
+    <div class="o_grid_column_title o_grid_navigation_wrap o_grid_first_cell">
+      <div class="o_grid_navigation_buttons">
+        <button class="btn btn-secondary">Today</button>
+        <div class="btn-group">
+          <button class="btn btn-secondary" title="Previous"><svg class="o_icon"><use href="#o-west"/></svg></button>
+          <div class="btn-group o_view_scale_selector"><button class="btn btn-secondary dropdown-toggle">Week <svg class="o_icon"><use href="#o-caret-down"/></svg></button></div>
+          <button class="btn btn-secondary" title="Next"><svg class="o_icon"><use href="#o-east"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="o_grid_column_title o_grid_unavailable"><span>Sun,
+Oct 4</span></div>
+    <div class="o_grid_column_title"><span>Mon,
+Oct 5</span></div>
+    <div class="o_grid_column_title o_grid_cell_today"><span>Tue,
+Oct 6</span></div>
+    <div class="o_grid_column_title"><span>Wed,
+Oct 7</span></div>
+    <div class="o_grid_column_title"><span>Thu,
+Oct 8</span></div>
+    <div class="o_grid_column_title"><span>Fri,
+Oct 9</span></div>
+    <div class="o_grid_column_title o_grid_unavailable"><span>Sat,
+Oct 10</span></div>
+    <div class="o_grid_column_title o_grid_row_total o_grid_last_cell"><span>Time Spent</span></div>
+    <!-- row -->
+    <div class="o_grid_row o_grid_row_title o_grid_first_cell"><span class="o_grid_field_project">AGR - S00023 - Acme Corporation - Sales Order</span><span class="o_grid_row_data_separator">|</span><span class="o_grid_field_task">Furniture Delivery</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span>2h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_cell_today"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_row_total o_grid_last_cell"><span>2h</span></div>
+    <!-- row -->
+    <div class="o_grid_row o_grid_row_title o_grid_first_cell"><span class="o_grid_field_project">AGR - S00023 - Acme Corporation - Sales Order</span><span class="o_grid_row_data_separator">|</span><span class="o_grid_field_task">Kitchen Assembly</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_cell_today"><span>2h 30m</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_row_total o_grid_last_cell"><span>2h 30m</span></div>
+    <!-- row -->
+    <div class="o_grid_row o_grid_row_title o_grid_first_cell"><span class="o_grid_field_project">Internal</span><span class="o_grid_row_data_separator">|</span><span class="o_grid_field_task">Meeting</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_cell_today"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_row_total o_grid_last_cell"><span>0h</span></div>
+    <!-- row -->
+    <div class="o_grid_row o_grid_row_title o_grid_first_cell"><span class="o_grid_field_project">Research &amp; Development</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span>8h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_cell_today"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_row_total o_grid_last_cell"><span>8h</span></div>
+    <!-- row carried over from an earlier week (fst-italic) -->
+    <div class="o_grid_row o_grid_row_title o_grid_first_cell fst-italic"><span class="o_grid_field_project">Research &amp; Development</span><span class="o_grid_row_data_separator">|</span><span class="o_grid_field_task">Usability review</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable fst-italic"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell fst-italic"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_cell_today fst-italic"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell fst-italic"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell fst-italic"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell fst-italic"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_column_cell o_grid_unavailable fst-italic"><span class="text-900 text-opacity-25">0h</span></div>
+    <div class="o_grid_row o_grid_row_total o_grid_last_cell fst-italic"><span>0h</span></div>
+    <!-- add a line -->
+    <div class="o_grid_row o_grid_add_line o_grid_first_cell"><a class="btn btn-link"><svg class="o_icon"><use href="#o-add-circle"/></svg>Add a line</a></div>
+    <div class="o_grid_row o_grid_add_line o_grid_column_cell o_grid_unavailable"></div>
+    <div class="o_grid_row o_grid_add_line o_grid_column_cell"></div>
+    <div class="o_grid_row o_grid_add_line o_grid_column_cell o_grid_cell_today"></div>
+    <div class="o_grid_row o_grid_add_line o_grid_column_cell"></div>
+    <div class="o_grid_row o_grid_add_line o_grid_column_cell"></div>
+    <div class="o_grid_row o_grid_add_line o_grid_column_cell"></div>
+    <div class="o_grid_row o_grid_add_line o_grid_column_cell o_grid_unavailable"></div>
+    <div class="o_grid_add_line o_grid_last_cell"></div>
+    <!-- footer: day totals + grand total -->
+    <div class="o_grid_first_cell o_grid_footer_first"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_unavailable"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell"><span class="text-success">10h</span></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_cell_today"><span class="text-success">2h 30m</span></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_unavailable"></div>
+    <div class="o_grid_grand_total o_grid_last_cell border-danger bg-danger-subtle text-danger"><span>12h 30m</span></div>
+    <!-- My Timesheets bar-chart row: pill height = day total / max total -->
+    <div class="o_grid_row_barChart o_grid_first_cell"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_bar_chart_container"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_bar_chart_container"><div class="o_grid_bar_chart_total_pill" style="height:100%;"></div></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_bar_chart_container"><div class="o_grid_bar_chart_total_pill" style="height:25%;"></div></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_bar_chart_container"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_bar_chart_container"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_bar_chart_container"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_column_cell o_grid_bar_chart_container"></div>
+    <div class="o_grid_row o_grid_column_total o_grid_row_total o_grid_last_cell"></div>
+  </div></div>
 </div>

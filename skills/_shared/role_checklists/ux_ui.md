@@ -1,6 +1,6 @@
 # UX/UI Designer
 
-*Calibrated against Odoo 19.0. Re-review on each major version bump.*
+*Calibrated against Odoo 20.0. Re-review on each major version bump — see [release cadence runbook](../release_cadence.md).*
 
 ## Goal
 Make the addon usable on first try — discoverable menu, scannable list views, focused form, and obvious next action.
@@ -48,7 +48,15 @@ Make the addon usable on first try — discoverable menu, scannable list views, 
 
 ### Odoo 17+
 - **OWL component model** for new interactive UI. Custom views, dashboards, complex forms, and any UI that needs reactive client-side logic are OWL components. Legacy QWeb widgets remain valid for *extending* existing views (xpath patches, attribute changes) but new UI surfaces should be OWL. OWL components live under `<addon>/static/src/` and register via the registry pattern.
-- **Dark mode** — custom CSS must honour the theme via Odoo's CSS variables, not hardcoded `color: #FFFFFF` / `background: #000`. Use `var(--o-text-primary)` / `var(--o-background-color)` etc. — defined to flip correctly on dark mode.
+- **Dark mode** — custom CSS must honour the theme via Odoo's CSS variables, not hardcoded `color: #FFFFFF` / `background: #000`. Use `var(--o-text-primary)` / `var(--o-background-color)` etc. — defined to flip correctly on dark mode. (No community change in Odoo 20 — dark mode's `color_scheme` and `*.dark.scss` remain Enterprise-only in both 19 and 20; this note is version-stable.)
+
+### Odoo 20+
+- **OWL 3.x** — the OWL framework bumps 2.8.x → 3.x, with a new reactive / typed-props API. Any custom OWL component spec must target the 3.x API (reactive state + typed props); a component copy-pasted from a 2.8.x example needs porting. Relevant only when the addon ships hand-written OWL — pure XML view work is unaffected.
+- **`card` view type** — a new first-class view type backed by a reusable card component / renderer (`web/static/src/views/card/`). Consider it alongside `list` / `form` / `kanban` when choosing how a model is presented: `card` fits a summary-tile presentation without hand-rolling a kanban template. Name it explicitly in the view-type decision, don't default to kanban.
+- **Structured list columns** — list arch gains `<column>` tags and a `column_group` node type for grouped / multi-column list layouts, plus a per-column / per-field `width` attribute. Prefer the structured `<column>` / `column_group` form (and explicit `width=`) over legacy width hacks when a list needs grouped or fixed-width columns.
+- **New field widgets** — the functional-config widget palette gains `boolean_checkbox`, `badges_many2one` (opts `badge_limit` / `related_icon_field` / `default_icon`), `many2many_tags_color_dot`, `float_time_tz`, `many2one_binary` / `many2x_binary`, and `additional_identifiers`. Pick these when they right-fit before falling back to a generic widget.
+- **Renamed / removed widgets** — checklists and specs must use the new names: `remaining_days` → **`relative_date`**; `badge_selection` → **`badges_selection`**. `badge_selection_with_filter` is **removed with no replacement** — a spec still naming it is a defect.
+- **New UX helpers** — `offline_action_helper` (an offline empty-state helper) and `multi_drag` (multi-record drag) are available for the empty-state and drag interactions they name.
 
 ### Enterprise edition only (any supported Odoo version)
 - **Enterprise-only view types** — `calendar` (date/datetime-based records, drag-to-reschedule), `gantt` (planned vs actual on a timeline), `cohort` (retention / churn analysis), `pivot` (cross-tab aggregation, also community), `map` (geo-coords for `partner`-like records), `dashboard` (composite of cards + charts). Each fits a specific data shape; pick deliberately, don't default. Calendar/Gantt/Cohort/Map/Dashboard are Odoo Enterprise; community deployments don't have them.

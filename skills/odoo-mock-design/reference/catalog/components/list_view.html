@@ -1,15 +1,55 @@
 <!--
-  list_view.html — Odoo list/tree view (list_renderer.scss .o_list_table).
-  Use ungrouped (below) or add .o_group_header rows for a grouped list. Also
-  used inline inside a form notebook (order lines). Numeric columns: add
-  class o_list_number to th/td and right-align.
+  list_view.html — Odoo 20 list view (web/static/src/views/list/
+  list_renderer.{xml,scss} + web_enterprise views/list/list_renderer.scss).
+  Goes in main.o_content under the control panel. Next to a search panel the
+  same .o_list_view becomes a white card (see search_panel.html). Variants
+  below: grouped rows, avatar/image cells, activity cells, sorted column,
+  selected rows, inline one2many (order lines) + totals. Quotations / Sales
+  Orders lists also carry the sales dashboard band ABOVE the list (first child
+  of main.o_content) — see sale_dashboard.html.
 
-  Odoo 19 line cues to keep: relational/editable cells are teal links
-  (.o_list_link), an editable list shows a drag handle (.o_list_handle) as the
-  first cell, inline tags use .o_tag (gray pill — NOT a colored status badge),
-  and the header carries an optional-columns toggle (.o_optional_columns_toggle)
-  on the far right. For sale/purchase/invoice, follow the table with an
-  .o_subtotal_footer (see bottom).
+  CELL RULES (what real v20 renders)
+  - Cells are PLAIN dark text, relational columns included (Customer,
+    Salesperson, Department, Manager, Product). Never wrap a cell value in
+    .o_list_link. Teal only for a many2one the arch declares readonly
+    (<a class="o_form_uri">Sep 2026</a>, e.g. payslip Pay Run) and for
+    btn-link buttons (Add a line, row buttons).
+  - The reference/number column of sale/purchase/invoice lists is
+    <td class="fw-bold"> (decoration-bf; fw-bold = 500 in the backend).
+    Row decorations go on the <tr> (text-muted / text-danger / text-warning /
+    text-info / fw-bold); a cell decoration goes on the value span:
+    <td class="o_list_number"><span class="fw-bold text-info">$ 1,706.00</span></td>.
+  - Numbers: th.o_list_number_th + td.o_list_number (right-aligned).
+  - COLUMN WIDTHS (column_width_hook.js): typed columns are FIXED-width, the
+    others share what is left. Tag the header so the mock pins it:
+      float     th.o_list_number_th                     (102.6px)
+      monetary  th.o_list_number_th.o_monetary_cell     (114.6px: Total, Amount)
+      integer   th.o_list_number_th.o_list_integer_th   ( 80.6px)
+      date      th.o_list_date_th                       (104.6px)
+      datetime  th.o_list_datetime_th                   (202.6px: Order Date)
+    Char / many2one / selection / text headers stay untagged (they grow),
+    except a column of short values (order refs, codes) that Odoo holds at
+    its 80px minimum: th.o_list_min_th (89.6px: Number).
+  - Durations (widget float_time: Hours, Duration…) are LEFT-aligned in v20
+    and not fixed-width: <th class="o_list_number_th o_float_time_cell">Hours</th>
+    + <td class="o_list_number o_float_time_cell">184h</td>.
+  - Status (widget badge): <span class="badge rounded-pill text-bg-{success|
+    info|warning|danger|primary}"> = 15% tint + dark text, never solid; a
+    value without decoration = text-bg-300 (gray). Tags (many2many_tags):
+    <span class="o_tag o_tag_color_N"> bordered pill, colour 0 = gray.
+    Badge = status, tag = m2m value: keep them distinct.
+  - Person / partner columns that use many2one_avatar in the real view
+    (Employee, Manager, Customer, Salesperson): AVATAR CELL (see below).
+  - Cells never wrap (single 40px line). A long free-text column (notes,
+    description) gets <td class="o_list_text"> to wrap.
+  - Footer: aggregate values only, under their numeric columns. No "Total"
+    label, no rule. Empty footer cells collapse.
+  - Last header cell = optional-columns toggle (tune). Each row ends with an
+    empty <td> under it.
+  ICONS (v20 Material Symbols): optional columns #o-settings-adjust (tune,
+  never the cog); drag handle #o-drag (drag_indicator); row delete #o-trash
+  (delete); group caret #o-caret-right (folded) / #o-caret-down (open);
+  sorted column #o-arrow-upward / #o-arrow-downward.
 -->
 <div class="o_list_view">
   <table class="o_list_table o_list_table_ungrouped">
@@ -17,76 +57,138 @@
       <tr>
         <th class="o_list_record_selector"><input type="checkbox"/></th>
         <!-- SLOT: column headers -->
-        <th>Number</th>
+        <th class="o_list_min_th">Number</th>
+        <th class="o_list_datetime_th">Order Date</th>
         <th>Customer</th>
-        <th>Salesperson</th>
+        <th class="o_list_number_th o_monetary_cell">Total</th>
         <th>Status</th>
-        <th class="o_list_number_th">Total</th>
-        <th style="width:28px;"><svg class="o_icon o_optional_columns_toggle"><use href="#o-cog"/></svg></th>
+        <th class="o_list_actions_header"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></th>
       </tr>
     </thead>
     <tbody>
-      <!-- SLOT: data rows. Link-like cells use .o_list_link (teal). -->
+      <!-- SLOT: data rows (plain text; see CELL RULES) -->
       <tr class="o_data_row">
         <td class="o_list_record_selector"><input type="checkbox"/></td>
-        <td><span class="o_list_link">SO0042</span></td>
-        <td><span class="o_list_link">Deco Addict</span></td>
-        <td>Mitchell Admin</td>
-        <td><span class="o_tag">Quotation</span></td>
-        <td class="o_list_number">$ 1,250.00</td>
+        <td class="fw-bold">S00026</td>
+        <td>Oct 6, 12:30 PM</td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">A</span></span><span>Acme Corporation</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold text-info">$ 290,616.50</span></td>
+        <td><span class="badge rounded-pill text-bg-success">Sales Order</span></td>
         <td></td>
       </tr>
       <tr class="o_data_row">
         <td class="o_list_record_selector"><input type="checkbox"/></td>
-        <td><span class="o_list_link">SO0041</span></td>
-        <td><span class="o_list_link">Gemini Furniture</span></td>
-        <td>Mitchell Admin</td>
-        <td><span class="o_tag">Sales Order</span></td>
-        <td class="o_list_number">$ 3,980.00</td>
+        <td class="fw-bold">S00016</td>
+        <td>Oct 6, 12:29 PM</td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">G</span></span><span>Gemini Furniture</span></div></div></td>
+        <td class="o_list_number"><span class="fw-bold">$ 1,186.50</span></td>
+        <td><span class="badge rounded-pill text-bg-info">Quotation</span></td>
         <td></td>
       </tr>
     </tbody>
     <tfoot>
       <tr>
         <td></td><td></td><td></td><td></td>
-        <td class="o_list_number">Total</td>
-        <td class="o_list_number">$ 5,230.00</td>
-        <td></td>
+        <td class="o_list_number">$ 291,803.00</td>
+        <td></td><td></td>
       </tr>
     </tfoot>
   </table>
 </div>
 
-<!-- Editable order-lines variant (inside a form notebook): first cell is a
-     drag handle, product + numeric cells are teal links, tax is a gray o_tag.
-  <tr class="o_data_row">
-    <td class="o_list_handle"><svg class="o_icon"><use href="#o-bars"/></svg></td>
-    <td><span class="o_list_link">test hannah timesheet</span></td>
-    <td class="o_list_number"><span class="o_list_link">6.00</span></td>
-    <td class="o_list_number">1.00</td>
-    <td><span class="o_tag">15%</span></td>
-    <td class="o_list_number">$ 6.00</td>
+<!-- AVATAR CELL (many2one_avatar / many2one_avatar_user / _employee): 24px
+     initial tile (6px radius) + 4px gap + name. Pick o_avatar_c0..c7 per
+     person (Odoo's generated tile for a record without a photo).
+  <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1">
+    <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">J</span></span><span>Jeffrey Kelly</span>
+  </div></div></td>
+     IMAGE COLUMN (hr.employee / res.users / partner lists: avatar_128 with
+     width="30" before Name; empty header, 39.6px column):
+  <th class="o_image_cell"></th>  …  <td class="o_image_cell"><span class="o_user_avatar o_avatar_c1">B</span></td>
+-->
+
+<!-- ACTIVITY CELL (widget list_activity, the "Activities" column of sale /
+     purchase / CRM / invoice lists; mail list_activity.xml): one dark 14px/500
+     link-button = the activity glyph in a 22.5px slot + the summary. No
+     activity = outline clock in the TEXT colour (never teal), no summary.
+     Next activity = its FILLED type glyph (#o-check To-Do, #o-phone Call,
+     #o-envelope Email, #o-calendar-fill Meeting, #o-upload Document) coloured
+     on the <svg>: text-success planned / text-warning today / text-danger
+     overdue, then the summary (or the type name).
+  <th class="o_list_activity_cell">Activities</th>  …
+  <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Show activities"><svg class="o_icon"><use href="#o-clock"/></svg><span class="o-mail-ListActivity-summary"></span></button></div></td>
+  <td class="o_list_activity_cell"><div class="o_field_widget o_field_list_activity"><button class="o-mail-ActivityButton btn btn-link btn-dark" title="Upsell"><svg class="o_icon text-warning"><use href="#o-check"/></svg><span class="o-mail-ListActivity-summary">Upsell</span></button></div></td>
+-->
+
+<!-- SORTED COLUMN — only when the step relies on the order; one column max.
+  <th class="o_list_number_th o_monetary_cell table-active">Total<svg class="o_icon o_list_sortable_icon"><use href="#o-arrow-downward"/></svg></th>
+-->
+
+<!-- SELECTED ROWS — tick the checkbox and mark the row; the control panel
+     then shows the selection box (control_panel.html):
+  <tr class="o_data_row o_data_row_selected"><td class="o_list_record_selector"><input type="checkbox" checked/></td> …</tr>
+-->
+
+<!-- GROUPED variant: table class o_list_table_grouped; one group row per
+     group. Name + muted "N records" ("1 record" singular); per-column sums in
+     their numeric column as <span class="fw-bold">; a trailing <th> per
+     remaining column. Folded group = #o-caret-right; open group = add
+     o_group_open + #o-caret-down, then its data rows follow. Nested level:
+     style="--o-list-group-level:1" on the caret (24px indent per level).
+     Grouping keeps the column widths the list had before (Odoo freezes them
+     as th style="width: …px" + table-layout fixed): with only folded groups
+     (no data rows) the mock cannot size columns from content, so copy the
+     ungrouped screen's widths onto the untagged headers the same way.
+  <tr class="o_group_header">
+    <th class="o_group_name" colspan="4"><div class="d-flex align-items-center">
+      <svg class="o_icon o_group_caret"><use href="#o-caret-right"/></svg>
+      <span>Marc Demo <span class="text-muted">11 records</span></span>
+    </div></th>
+    <td class="o_list_number"><span class="fw-bold">$ 10,027.00</span></td>
+    <th></th><th></th>
   </tr>
 -->
 
-<!-- Grouped variant: insert grouped header rows like this in <tbody>. The td
-     keeps default table-cell display so colspan spans the full row width;
-     wrap the content in .o_group_header_content when you need the flex row
-     (caret + name + optional buttons + right-aligned pager).
-  <tr class="o_group_header"><td colspan="7">
-    <div class="o_group_header_content">
-      <span class="o_group_caret"><svg class="o_icon"><use href="#o-caret-down"/></svg></span>
-      <span class="o_group_name">Quotation (12)</span>
-    </div>
-  </td></tr>
+<!-- INLINE one2many (order / invoice lines in a form notebook page). As the
+     first content of the page it sits flush under the tabs, edge to edge, with
+     a white header; handle first, remove (trash) column last, then the create
+     row. Product / quantity cells are plain text. sale.order lines read
+     "Add Line · Add Section · Add Note · Catalog" (v20); any other one2many
+     reads "Add a line". Taxes are o_tag pills. A product line with a sale
+     description shows it as a second, italic line:
+     <td class="o_list_text"><div>[FURN_6741] Large Meeting Table</div><div class="fst-italic">Big table seats 10–12 for team discussions</div></td>
+     Sale / purchase / invoice lines: the tax-mode badge ("Tax Excl." /
+     "Tax Incl.") is the FIRST child of the lines page, before the one2many;
+     CSS pulls it up to the right end of the tab strip:
+     <div class="document_tax_mode"><div class="o_field_widget overlap_badge_tab tax_mode_badge"><div class="d-flex flex-wrap"><span class="o_selection_badge">Tax Excl.</span></div></div></div>
+  <div class="o_field_widget o_field_one2many"><div class="o_field_x2many o_field_x2many_list"><div class="o_list_renderer">
+    <table class="o_list_table o_list_table_ungrouped">
+      <thead><tr>
+        <th class="o_handle_cell"></th><th>Product</th><th class="o_list_number_th">Quantity</th>
+        <th class="o_list_number_th">Unit Price</th><th>Taxes</th><th class="o_list_number_th o_monetary_cell">Amount</th>
+        <th class="o_list_actions_header"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></th>
+      </tr></thead>
+      <tbody>
+        <tr class="o_data_row">
+          <td class="o_handle_cell"><svg class="o_icon o_row_handle"><use href="#o-drag"/></svg></td>
+          <td>[FURN_8888] Office Lamp</td><td class="o_list_number">10.00</td><td class="o_list_number">45.00</td>
+          <td><span class="o_tag o_tag_color_0">0% Exports</span></td><td class="o_list_number">$ 450.00</td>
+          <td class="o_list_record_remove"><button class="btn btn-link text-danger" aria-label="Delete row"><svg class="o_icon"><use href="#o-trash"/></svg></button></td>
+        </tr>
+        <tr><td></td><td class="o_field_x2many_list_row_add" colspan="6"><button class="btn btn-link">Add Line</button><button class="btn btn-link">Add Section</button><button class="btn btn-link">Add Note</button><button class="btn btn-link">Catalog</button></td></tr>
+      </tbody>
+    </table>
+  </div></div></div>
 -->
 
-<!-- Subtotal footer (sale/purchase/invoice) — place directly after the lines:
+<!-- TOTALS under the lines (sale / purchase / invoice — account tax_totals):
+     compact, pushed right, each label right next to its value; the Total
+     value is wrapped in a <span> (1.3em bold, rule above the value only).
   <div class="o_subtotal_footer">
     <table>
-      <tr><td class="o_subtotal_label">Untaxed Amount</td><td class="o_subtotal_amount">$ 6.00</td></tr>
-      <tr><td class="o_subtotal_label">Tax 15%</td><td class="o_subtotal_amount">$ 0.90</td></tr>
-      <tr class="o_total"><td>Total</td><td class="o_subtotal_amount">$ 6.90</td></tr>
+      <tr><td class="o_subtotal_label">Untaxed Amount</td><td class="o_subtotal_amount">$ 2,240.00</td></tr>
+      <tr><td class="o_subtotal_label">Tax 15%</td><td class="o_subtotal_amount">$ 336.00</td></tr>
+      <tr class="o_total"><td class="o_subtotal_label">Total</td><td class="o_subtotal_amount"><span>$ 2,576.00</span></td></tr>
     </table>
   </div>
 -->

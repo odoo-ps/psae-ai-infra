@@ -1,0 +1,6 @@
+{
+  "name": "odoo-mock-design-calibrate",
+  "private": true,
+  "description": "Maintainer-only calibration kit for the odoo-mock-design catalog (see reference/REFRESH.md). Uses the system Chrome via puppeteer-core; no browser download.",
+  "dependencies": { "puppeteer-core": "^24" }
+}

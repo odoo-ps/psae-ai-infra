@@ -2,8 +2,8 @@
 
 **There is no per-model cache.** Where a standard Odoo field lives (which group,
 which notebook tab, the statusbar stages) is discovered **at generation time from
-the actual Odoo source** at `/home/odoo/src/odoo/` (Community) and
-`/home/odoo/src/enterprise/`, both read-only on every Odoo.sh build. This guarantees the mock matches the *real* code present — including
+the actual Odoo source** in the repo's `odoo/` (Community) and `enterprise/`
+checkouts. This guarantees the mock matches the *real* code present — including
 module inheritance — instead of a stale, hand-maintained snapshot.
 
 The reason placement must come from source and not memory: an Odoo form is not
@@ -18,10 +18,11 @@ The same rule governs **where structural chrome renders**, not only which group 
 field sits in. Component placement drifts between major versions, and memory of
 "how Odoo looks" lags the code — so verify chrome layout against source the same
 way you verify a field's group. The canonical miss: **smart buttons (the
-stat-button box) moved out of the form sheet into the control panel's centered
-`.o_control_panel_actions` cell in Odoo 19** (`views/form/form_controller.xml`
-renders `ButtonBox` into the `layout-actions` slot) — re-deriving it from memory
-lands them in the sheet (the pre-17 look). When a screen's structure hinges on
+stat-button box) render in the control panel's centred `.o_control_panel_actions`
+cell, not in the form sheet** (`views/form/form_controller.xml` fills the control
+panel's actions slot with the button box; the slot name has changed between
+versions) — re-deriving it from memory lands them in the sheet (the old look).
+When a screen's structure hinges on
 *where a component lives* (button box, statusbar, pager, breadcrumb actions,
 chatter side-vs-bottom), grep the relevant `web` / view template and trust the
 code, not the recollection. Treat a placement you "just know" as a hypothesis to
@@ -41,7 +42,7 @@ Same rule for any field pair you're tempted to fuse for visual economy
 (`partner_id` + `partner_shipping_id` are two rows, not one
 "Customer + Shipping" composite; `date_order` + `commitment_date` are
 two rows, not "Order → Delivery"). When in doubt, grep the model's
-form view in `/home/odoo/src/odoo/addons/<app>/views/` — every `<field name="...">`
+form view in `odoo/addons/<app>/views/` — every `<field name="...">`
 is its own row.
 
 The single exception: small Odoo helpers that wrap two fields in a
@@ -52,19 +53,24 @@ Those are explicit patterns in source, not invented.
 
 Before deriving any standard screen, check what's present:
 
-- `/home/odoo/src/odoo/` (Community source) — required for faithful base screens.
-- `/home/odoo/src/enterprise/` — required for enterprise-only models/fields (accounting
+- `odoo/` (Community source) — required for faithful base screens.
+- `enterprise/` — required for enterprise-only models/fields (accounting
   extensions, subscriptions, field service, etc.).
+
+Read the stack that matches the spec's Odoo version — this workspace keeps
+one per major under `versions/v<major>/odoo` + `versions/v<major>/enterprise`.
+Placement comes from the spec's version; styling always comes from the
+catalog (one calibrated version — see the stamp atop `catalog/odoo.css`).
 
 Then:
 
 - **Both present** → derive from source (below). Note in the plan which trees
   were read.
-- **Community only** → derive from `/home/odoo/src/odoo/`, and **warn**: enterprise-only fields
+- **Community only** → derive from `odoo/`, and **warn**: enterprise-only fields
   / pages won't appear, so enterprise screens may differ from reality.
 - **Neither present** → **STOP and warn the user explicitly**, e.g.:
 
-  > ⚠ Odoo source (Community/Enterprise) was not found at `/home/odoo/src/odoo/` / `/home/odoo/src/enterprise/`.
+  > ⚠ Odoo source (Community/Enterprise) was not found at `odoo/` / `enterprise/`.
   > Field placement and screen structure are **best-effort and may not match real
   > Odoo**. Provide the checkout for faithful screens, or treat these mocks as
   > approximate.
@@ -80,18 +86,18 @@ For each screen that represents a standard model:
 1. **Find the primary form view.** Grep the source for the model's form record,
    e.g. the `<field name="model">sale.order</field>` form arch, or the known
    `*_views.xml` under the owning module
-   (`grep -rl 'view_order_form\|model">sale.order' /home/odoo/src/odoo/addons /home/odoo/src/enterprise`).
+   (`grep -rl 'view_order_form\|model">sale.order' odoo/addons enterprise`).
 2. **Resolve inheritance.** Grep for views that inherit it — `inherit_id` on the
-   model plus `position="…"` / `xpath` snippets across `/home/odoo/src/odoo/addons/*/views/` and
-   `/home/odoo/src/enterprise/*/views/`. Merge them mentally into the effective arch (this is
+   model plus `position="…"` / `xpath` snippets across `odoo/addons/*/views/` and
+   `enterprise/*/views/`. Merge them mentally into the effective arch (this is
    what adds module-specific fields like Warehouse).
 3. **Extract the structure** the catalog needs:
    - Statusbar stages (`<field name="state" widget="statusbar" statusbar_visible="…">`)
      and their label↔state mapping.
    - Header workflow buttons; corner `web_ribbon` states.
-   - Smart buttons (`oe_button_box`) — defined inside the form arch, but in
-     Odoo 19 they RENDER in the control panel's centered `.o_control_panel_actions`
-     cell (the OWL `layout-actions` slot), not in the sheet. Mock them there.
+   - Smart buttons (`oe_button_box`) — defined inside the form arch, but they
+     RENDER in the control panel's centred `.o_control_panel_actions` cell, not
+     in the sheet. Mock them there (`control_panel.html`, FORM shell).
    - Main `<sheet>` groups — left / right, field label ↔ field name, in order.
    - `<notebook>` pages in order and which fields/groups sit on each.
    - Chatter presence (`<chatter/>` / mail mixin).
@@ -111,10 +117,14 @@ For each screen that represents a standard model:
   the solution's delta). Flag each with a custom-field help **"?"**
   (`.o_field_help`) carrying its attributes (`data-field` / `data-model` /
   `data-type` / `data-help`) so the developer audience sees what's new — see
-  `reference/interactions.md` § Custom-field help. Do not skip the `?` because
-  the field's `data-type` is `many2one` / `one2many` / `many2many` or because
-  the value comes via `related=`: the *exposure* on this view is what the
-  solution adds, and that's what the `?` documents.
+  `reference/interactions.md` § Custom-field help — and mark its row (or
+  column cells, or settings box) `mock-custom` so every reader sees it too
+  (§ Custom elements). Do not skip the `?` because the field's `data-type` is
+  `many2one` / `one2many` / `many2many` or because the value comes via
+  `related=`: the *exposure* on this view is what the solution adds, and
+  that's what the `?` documents.
 - **Entirely custom models** have no source ground truth; compose from
   `view_types.md` anatomy + the brief. Placement is sensible-Odoo-shaped by
-  design, not a fidelity claim.
+  design, not a fidelity claim. A screen showing a custom model's own view
+  carries `mock-custom` on its `.mock-screen` (the Custom banner) instead of
+  on each field.

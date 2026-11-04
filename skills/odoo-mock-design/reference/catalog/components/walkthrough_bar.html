@@ -6,13 +6,13 @@
 
   STRUCTURE (3 stacked columns):
 
-    ┌──────────────────┬─────────────────────────┬─────────────────────┐
-    │ Workflow: ___ ▾  │ Step title              │ STATE: Draft ▾ │…   │
-    │ ──────────────── │ Step desc (1 line)      │ ──────────────────  │
-    │ ◀ Prev │ Next ▶  │ 3 / 5  ● ● ● ● ●        │ ANNOTATIONS: Show ▾ │
-    └──────────────────┴─────────────────────────┴─────────────────────┘
+    ┌──────────────────┬─────────────────────────┬────────────────────────────────┐
+    │ Workflow: ___ ▾  │ Step title              │ STATE: Draft ▾ │ …             │
+    │ ──────────────── │ Step desc (1 line)      │ ────────────────────────────── │
+    │ ◀ Prev │ Next ▶  │ 3 / 5  ● ● ● ● ●        │ ANNOTATIONS: Show ▾ │ CUSTOM: Show ▾ │
+    └──────────────────┴─────────────────────────┴────────────────────────────────┘
        Nav cluster        Step cluster                Control cluster
-       240px (fixed)      flex-grow                   290px (fixed)
+       240px (fixed)      flex-grow                   340px (fixed)
 
   Each cluster is a vertical-stack of two rows. When the top row of a
   cluster is hidden (workflow chip hidden in single-workflow mode, or
@@ -23,9 +23,12 @@
   to the full 80px cluster. Same predictable cluster footprint on every
   screen; content variations stay contained inside their cluster.
 
-  The variant-chip row + annotations chip both follow the same chip
-  pattern: LABEL (uppercase gray) + VALUE (brand purple) + caret. When
-  two variant chips are present, a vertical divider draws between them.
+  The variant-chip row + the annotations / custom chips all follow the same
+  chip pattern: LABEL (uppercase gray) + VALUE (brand purple) + caret. When
+  two chips share a row, a vertical divider draws between them. The Custom
+  chip renders only when the package marks something `mock-custom`
+  (reference/interactions.md § Custom elements); otherwise Annotations
+  takes the whole bottom row.
 
   Multi-workflow Next button has four labels (handled by walkthrough.js; the
   button's chevron icon provides the forward-direction arrow in every case):
@@ -67,7 +70,7 @@
     </div>
   </div>
 
-  <!-- ===== Cluster 3: Control — variant chips (top) + annotations chip (bottom) ===== -->
+  <!-- ===== Cluster 3: Control — variant chips (top) + annotations / custom chips (bottom) ===== -->
   <div class="mock-wt-control-cluster">
     <div class="mock-wt-chips" hidden>
       <!-- chips filled by walkthrough.js when the active screen declares
@@ -75,9 +78,10 @@
            and CSS :has() centers the annotations row below in that case -->
     </div>
     <div class="mock-wt-toggle">
-      <!-- annotations chip filled by walkthrough.js — same label/value/caret
-           pattern as the variant chips above, with Show/Hide options.
-           Selecting Hide adds .mock-annotations-off to <body> -->
+      <!-- annotations + custom chips filled by walkthrough.js — same
+           label/value/caret pattern as the variant chips above, with
+           Show/Hide options. Hide adds .mock-annotations-off /
+           .mock-custom-off to <body> -->
     </div>
   </div>
 

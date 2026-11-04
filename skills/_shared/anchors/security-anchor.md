@@ -1,6 +1,6 @@
 ---
 name: security-anchor
-description: Audit a plan file or specification draft against _shared/role_checklists/security.md. Flags drift in ACL coverage, record-rule discipline, sudo escalations, and secret handling. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
+description: Audit a odoo-plan-development plan file against _shared/role_checklists/security.md. Flags drift in ACL coverage, record-rule discipline, sudo escalations, and secret handling. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
 tools: Read, Grep, Glob
 ---
 
@@ -99,11 +99,24 @@ Single prompt argument: absolute path to the plan file.
      replacement (signed payload, API token, HMAC) — missing → `blocker`.
      Cite the route name and the missing token/replacement.
 
-   - **`t-raw` on user-controlled content** — QWeb template uses
-     `t-raw="<some user-input field>"` (or any field that traces back
-     to user input) instead of `t-esc`. Default to `t-esc` for any
-     user-derived value; `t-raw` only with a stated trusted-source
-     justification — `blocker`. (XSS vector.)
+   - **Raw HTML from user content** — a QWeb template renders a
+     user-derived value through `t-raw`, or the code wraps a user string
+     in `Markup(...)` / `markup(...)` (including an f-string inside
+     `Markup`) → `blocker` (XSS vector). Suggest `t-out` for the value
+     and `Markup` built from literals only. A v20 plan writing `t-esc`
+     or `t-raw` in a server template → `blocker` too: v20's server QWeb
+     does not compile them, the spot renders nothing.
+
+   - **(Odoo 20+) Group-less `ir.access` row used as a grant** — a row
+     with an empty `group_id` is a *restriction* AND-ed onto every user,
+     never a permission; a plan relying on it to grant access, or adding
+     two non-overlapping restrictions, locks the model → `blocker`.
+
+   - **(Odoo 20+) Write grants to everyone** — `c`, `u` or `d` granted to
+     `base.group_everyone`, `base.group_portal` or `base.group_public`
+     without a stated, narrow domain → `blocker`; `r` on personal or
+     business-sensitive data to those groups → `nit` asking for the
+     justification.
 
    - **`.sudo()` where `with_user(...)` was the right tool** —
      Implementation uses `.sudo()` for "do action on behalf of partner
@@ -124,6 +137,23 @@ Single prompt argument: absolute path to the plan file.
      group. For compliance-relevant deployments, missing 2FA-required
      statement → `nit`. (Production-tier deployments should require
      2FA for admin groups regardless.)
+
+   ### Odoo 20+
+
+   - **Legacy security CSV on v20** — the plan ships
+     `security/ir.model.access.csv` (or references it in the manifest)
+     when targeting Odoo 20+. On v20 the file is `security/ir.access.csv`
+     and the `ir.model.access` model is removed, so the old file loads
+     nothing → `blocker`. Cite the filename / manifest line.
+   - **Removed `perm_*` boolean columns** — an ACL CSV or `ir.access`
+     row uses `perm_read` / `perm_write` / `perm_create` / `perm_unlink`
+     on v20. Those columns are gone; the grant is the single `operation`
+     subset-of-`'crud'` string → `blocker`. Cite the row.
+   - **Removed ORM access methods** — the Implementation calls
+     `check_access_rights` / `check_access_rule` / `_filter_access_rules`
+     / `_filter_access_rules_python` on v20. These raise `AttributeError`;
+     the canonical API is `check_access` / `has_access` /
+     `_filtered_access` → `blocker`. Cite the call site.
 
 ## Output
 

@@ -9,16 +9,29 @@ Mechanically enforces the two promises the skill makes:
      the source brief has a screen.
 
 Usage:
-    python3 _lint_mock.py <package_dir> [--steps "Step A" "Step B" ...]
+    python3 _lint_mock.py <mocks-dir | _reference-dir> [--steps "Step A" "Step B" ...]
+
+    Either path resolves (via _mock_paths.py) to the working package
+    `<mocks>/_reference/` — or to `<mocks>/` itself for a legacy flat package.
+    The lint checks the package, never the bundled `<name> - mock.html`.
+
+Advisory `NOTE:` lines never fail the run: the cover's "Odoo NN" differs from
+the assets/odoo.css stamp, or the single-file bundle is missing / older than
+the package's index.html + assets/ (re-bundle with _bundle_mock.py).
 
 Exit code 0 = pass, 1 = findings (printed), 2 = bad invocation.
 No third-party dependencies (stdlib regex/html parsing only).
 """
 import argparse
 import html
+import json
+import glob
 import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _mock_paths  # noqa: E402
 from html.parser import HTMLParser
 
 # Reference-bearing attributes we check across the package's HTML/CSS.
@@ -44,6 +57,88 @@ class _RefCollector(HTMLParser):
             # SVG <use href="..."> and xlink:href both matter.
             if name in _URL_ATTRS or name.endswith(":href"):
                 self.refs.append((name, value.strip()))
+
+
+class _CustomScan(HTMLParser):
+    """Walks index.html with an element stack to check custom marking.
+
+    `.mock-custom` flags what the solution adds or changes (interactions.md
+    § Custom elements): on a `.mock-screen` the whole screen is custom (the
+    corner banner), on an element that element is (the pink highlight). A
+    field carrying the "?" is solution-added by the same definition, so it
+    must sit inside a custom element or on a custom screen.
+    """
+
+    _VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input",
+             "link", "meta", "param", "source", "track", "wbr"}
+    _TABLE_PARTS = {"table", "thead", "tbody", "tfoot", "tr", "colgroup"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack = []       # [(tag, is_custom_element)]
+        self.screen = None    # (sid, framing, custom) of the open .mock-screen
+        self.findings = []
+        self.unmarked = {}    # sid -> [labels of "?" fields outside any custom mark]
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        classes = (a.get("class") or "").split()
+        if tag == "section" and "mock-screen" in classes:
+            sid = a.get("data-screen", "(unnamed)")
+            framing = sid == "cover" or a.get("data-screen-kind") == "workflow-overview"
+            custom = "mock-custom" in classes
+            self.screen = (sid, framing, custom)
+            if framing and custom:
+                self._add("CUSTOM-PLACEMENT", "the cover and workflow overviews explain the mock — "
+                          "they are never solution scope; drop `mock-custom` from the screen")
+            if tag not in self._VOID:
+                self.stack.append((tag, False))
+            return
+        custom_el = "mock-custom" in classes and "mock-custom-example" not in classes
+        if self.screen:
+            sid, framing, screen_custom = self.screen
+            inside_custom = any(c for _t, c in self.stack)
+            if custom_el:
+                if framing:
+                    self._add("CUSTOM-PLACEMENT", "`mock-custom` on the cover / a workflow overview — those "
+                              "screens explain the mock; only the callout examples (`mock-custom-example`) belong there")
+                elif screen_custom:
+                    self._add("CUSTOM-PLACEMENT", "element marked `mock-custom` on a screen that is already "
+                              "custom as a whole (the corner banner says it) — drop the element mark")
+                elif inside_custom:
+                    self._add("CUSTOM-PLACEMENT", "`mock-custom` inside another `mock-custom` element — mark "
+                              "only the outermost element that is entirely custom")
+                if tag in self._TABLE_PARTS or tag in self._VOID:
+                    self._add("CUSTOM-PLACEMENT", f"`mock-custom` on a <{tag}> — the highlight overlay cannot "
+                              f"sit inside it; mark the cells (`<th>` / `<td>`) or the element's container")
+            if "o_field_help" in classes and not framing and not screen_custom and not inside_custom \
+                    and not custom_el:
+                label = a.get("data-label") or a.get("data-field") or "?"
+                self.unmarked.setdefault(sid, []).append(label)
+        if tag not in self._VOID:
+            self.stack.append((tag, custom_el))
+
+    def handle_endtag(self, tag):
+        for k in range(len(self.stack) - 1, -1, -1):
+            if self.stack[k][0] == tag:
+                del self.stack[k:]
+                break
+        if tag == "section" and not any(t == "section" for t, _c in self.stack):
+            self.screen = None
+
+    def _add(self, code, msg):
+        self.findings.append((code, f"index.html#{self.screen[0] if self.screen else '?'}", msg))
+
+    def results(self):
+        out = list(self.findings)
+        for sid, labels in self.unmarked.items():
+            names = list(dict.fromkeys(labels))
+            out.append(("CUSTOM-UNMARKED", f"index.html#{sid}",
+                        f'{len(names)} field(s) carry the "?" (solution-added) but are not marked custom: '
+                        f'{", ".join(names)}. Add `mock-custom` to each field\'s row / column cells / '
+                        f'settings box, or to the `.mock-screen` when the whole screen is custom '
+                        f'(interactions.md § Custom elements).'))
+        return out
 
 
 def _is_external(ref):
@@ -78,7 +173,67 @@ def _iter_files(package_dir, exts):
                 yield os.path.join(root, fn)
 
 
+def _blank_comments(s):
+    """Return `s` with every HTML comment replaced by equal-length spaces.
+
+    Length is preserved so byte offsets stay valid — the `<div>`/`</div>`
+    depth balancers search this copy (a `<div` inside a comment must not
+    count toward nesting depth) while still slicing bodies by offset from
+    the original text.
+    """
+    return re.sub(r"<!--.*?-->", lambda m: " " * len(m.group(0)), s, flags=re.DOTALL)
+
+
+def _screen_segments(index_text):
+    """Yield (sid, open_tag, body) for each `.mock-screen` <section>.
+
+    Segments at screen OPENERS (opener -> next opener), never at `</section>`,
+    so a nested <section> inside a screen (website_form, portal, dashboard
+    sidebar, search_panel, login_website, …) does not truncate the body. Class
+    matching is tolerant of extra classes on the section (`mock-screen o_cover`).
+    """
+    opens = list(re.finditer(
+        r'<section[^>]*\bclass="[^"]*\bmock-screen\b[^"]*"[^>]*>',
+        index_text, re.I))
+    segs = []
+    for k, m in enumerate(opens):
+        end = opens[k + 1].start() if k + 1 < len(opens) else len(index_text)
+        open_tag = m.group(0)
+        sid_m = re.search(r'data-screen="([^"]*)"', open_tag)
+        sid = sid_m.group(1) if sid_m else "(unnamed)"
+        segs.append((sid, open_tag, index_text[m.end():end]))
+    return segs
+
+
+def _catalog_class_tokens():
+    """Every class token used in the catalog component fragments.
+
+    CLASS-UNKNOWN credits these in addition to CSS-defined classes: a class
+    that appears in a shipped `components/*.html` fragment IS, by definition,
+    legitimate catalog vocabulary even when the catalog styles it only via a
+    child/descendant selector (e.g. the `o-mail-ActivityList` container whose
+    CSS lives under `.o-mail-ActivityList-header`). This is what keeps the rule
+    from false-failing a mock composed verbatim from the catalog, while still
+    catching genuinely invented classes (absent from both CSS and fragments).
+    """
+    tokens = set()
+    components = os.path.normpath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "catalog", "components"))
+    if not os.path.isdir(components):
+        return tokens
+    for f in _iter_files(components, {".html", ".htm"}):
+        try:
+            with open(f, encoding="utf-8", errors="replace") as fh:
+                frag = fh.read()
+        except OSError:
+            continue
+        for m in re.finditer(r'\bclass=(["\'])([^"\']*)\1', frag):
+            tokens.update(m.group(2).split())
+    return tokens
+
+
 def lint(package_dir, steps=None):
+    package_dir = _mock_paths.package_dir(package_dir)
     findings = []
     if not os.path.isdir(package_dir):
         return [("FATAL", package_dir, "package directory does not exist")]
@@ -115,6 +270,21 @@ def lint(package_dir, steps=None):
                     f'and use same-document "#id" refs (external <use> fails over file://)'))
             elif not _resolves_inside(package_dir, f, ref):
                 findings.append(("ESCAPE", rel, f'{attr}="{ref}" does not resolve to a file inside the package'))
+        # Same-document icon refs: every <use href="#x"> must resolve to an
+        # id="x" in this page (the inlined icons.svg + app-icons.svg sprites).
+        # An unresolved ref renders as a blank icon with no error anywhere.
+        # Comments are ignored on both sides (fragment comments carry examples).
+        live = re.sub(r"<!--[\s\S]*?-->", "", text)
+        ids = set(re.findall(r'\bid=["\']([^"\']+)["\']', live))
+        missing = []
+        for m in re.finditer(r'<use\b[^>]*?\b(?:xlink:)?href=["\']#([^"\']+)["\']', live):
+            if m.group(1) not in ids and m.group(1) not in missing:
+                missing.append(m.group(1))
+        for sym in missing:
+            findings.append(("UNRESOLVED-USE", rel,
+                f'<use href="#{sym}"> has no matching id="{sym}" in the page — the icon '
+                f'renders blank. Inline BOTH catalog sprites (icons.svg + app-icons.svg) '
+                f'and use an id that exists there (catalog `_gallery.html` § Icons lists them).'))
 
     # ---- Asset freshness — every `assets/<x>` must match catalog ----------
     # FINDINGS#26: stale catalog assets. When the catalog (`reference/catalog/`
@@ -172,6 +342,13 @@ def lint(package_dir, steps=None):
 
     # ---- Placeholder strings --------------------------------------------
     for rel, text in all_text:
+        if rel.lower().endswith((".html", ".htm")):
+            # Inlined sprites are catalog artwork, not author copy (the real
+            # `o-app-todo` app icon would read as "todo"): skip each <symbol>,
+            # the glyph comment right before it, and same-document #id refs.
+            text = re.sub(r"<!--(?:(?!-->)[\s\S])*-->(?=\s*<symbol\b)", "", text)
+            text = re.sub(r"<symbol\b[\s\S]*?</symbol>", "", text)
+            text = re.sub(r'\bhref=["\']#[^"\']*["\']', "", text)
         low = text.lower()
         for ph in _PLACEHOLDERS:
             # Word-ish boundary so "todol" / CSS classes don't false-positive.
@@ -203,6 +380,9 @@ def lint(package_dir, steps=None):
         if rel == "index.html":
             index_text = text
             break
+    # Comment-blanked copy (length-preserved) for the <div>-depth balancers —
+    # a `<div` inside an HTML comment must not count toward nesting depth.
+    index_text_nc = _blank_comments(index_text)
 
     if index_text:
         # Variant axes — every screen with data-mock-variant-axes JSON must:
@@ -212,14 +392,7 @@ def lint(package_dir, steps=None):
         #   (d) every data-mock-variant on a child references a declared axis
         #       and (warn-level) a value in that axis's options
         import json
-        for m in re.finditer(
-            r'<section[^>]*\bclass="[^"]*\bmock-screen\b[^"]*"[^>]*>(.*?)</section>',
-            index_text, re.DOTALL | re.I,
-        ):
-            section_open = m.group(0).split(">", 1)[0]
-            section_body = m.group(1)
-            sid_m = re.search(r'data-screen="([^"]*)"', section_open)
-            sid = sid_m.group(1) if sid_m else "(unnamed)"
+        for sid, section_open, section_body in _screen_segments(index_text):
             axes_m = re.search(
                 r"""data-mock-variant-axes=(?P<q>['"])(?P<body>.*?)(?P=q)""",
                 section_open, re.DOTALL,
@@ -370,8 +543,9 @@ def lint(package_dir, steps=None):
         # cover_callouts.html) and are cheap to catch at lint time so the
         # anchor pass fires on substantive findings.
         # Each entry: (regex, code, hint). Add new known-bad patterns here
-        # ONLY after observing them in a generated mock and confirming the
-        # canonical replacement.
+        # ONLY after observing them in a generated mock (or retiring them from
+        # the catalog in a recalibration) and confirming the canonical
+        # replacement. A pattern must not match any current catalog fragment.
         _KNOWN_BAD = [
             (r'\bmock-cover-body\b', "KNOWN-BAD",
              '`mock-cover-body` has no CSS rule — rename to `mock-cover-section` '
@@ -433,36 +607,34 @@ def lint(package_dir, steps=None):
              "KNOWN-BAD",
              'Settings class drift — `o_settings_sidebar`/`o_settings_pane`/'
              '`o_settings_tab`/`o_setting_left`/`o_setting_right` are invented. '
-             'Catalog `components/settings.html` uses `o_setting_search_panel` '
-             '(tab rail) + `app_settings_block` (right column) + `o_setting_band` '
-             '(full-width section header) + `o_setting_box` rows.'),
-            (r'\bclass="[^"]*\b(?:o_account_report_filter_chip|o_account_report_body|o_account_report_amount|o_account_report_line_subtotal)\b',
+             'Catalog `components/settings.html` uses `o_base_settings_view` > '
+             '`o_setting_container` > `settings_tab` (rail, `a.tab`) + `settings` '
+             '(card) > `app_settings_block` > `<h2>` bands + `o_settings_container` > '
+             '`o_setting_box col-12 col-lg-6`.'),
+            # Account report: the invented helpers AND the pre-recalibration
+            # catalog vocabulary (all CSS-less now). Real report-action classes
+            # (o_account_report_scroll_*, _chatter*, _name_ellipsis,
+            # _column_value, plural o_account_reports_table) must NOT match.
+            (r'\bclass="[^"]*\b(?:o_account_report_(?:filter_chip|body|amount|toolbar|title|filters|banner|card|period|subhead|line\w*|caret|group\w*|pos|neg)|o_report_filters?|o_report_pdf|o_account_reports_page)\b',
              "KNOWN-BAD",
-             'Account report class drift — `_filter_chip`/`_body`/`_amount`/'
-             '`_line_subtotal` are invented. Catalog '
-             '`components/account_report.html` uses `o_account_reports_page` '
-             '(outer wrapper), `o_account_report_card` (the table card), '
-             '`o_account_report_toolbar` (filter bar; chips via `o_report_filter`), '
-             '`o_account_report_filters` (inner wrapper around chips), '
-             '`o_account_report_title` (report name between exports + filters), '
-             '`line_name` (row title td), `o_list_number` (amount td), '
-             '`o_account_report_line` / `_section` / `_total` / `_indent` / '
-             '`_grandtotal` (row variants), `o_account_report_neg` (negative amount).'),
+             'Account report class drift — `o_account_reports_page`, '
+             '`o_account_report_toolbar`/`_title`/`_filters`/`_card`/`_line*`/`_neg` …, '
+             '`o_report_filter(s)` and `o_report_pdf` are not report-action classes. '
+             'Rebuild from catalog `components/account_report.html`: '
+             '`div.o_action.account_report` with its own `.o_control_panel` '
+             '(Print btn-primary, title + #o-cog, filters as '
+             '`div#filter_<x> > button.btn.btn-secondary`), the `#warnings` '
+             '`.alert-info`, then `.o_account_report_scroll_container` > table rows '
+             '`tr.line_level_N` with `td.line_cell.numeric` amounts.'),
             (r'\bclass="[^"]*\b(?:o-mail-Chatter-tab|o-mail-Chatter-divider|o-mail-Chatter-action)\b',
              "KNOWN-BAD",
              'Chatter class drift — `o-mail-Chatter-tab` / `-divider` / `-action` '
-             'are invented and have no CSS rules. The catalog topbar uses '
-             '`<button class="btn">` siblings (catalog/components/chatter.html '
-             'lines 19-21); the active tab gets `class="btn active"`. '
-             'Followers + attachment chips render as `<div class="o-mail-Followers">` '
-             'and `<span class="o-mail-Chatter-attach">` per the same fragment.'),
-            (r'\bclass="[^"]*\bo_report_filters\b(?!\w)',
-             "KNOWN-BAD",
-             '`o_report_filters` (plural) is invented — catalog '
-             '`components/account_report.html` uses `o_account_report_filters` '
-             '(prefixed) as the chip wrapper. The plural singular `o_report_filter` '
-             '(without `s`) IS in catalog as the chip itself; only the wrapper '
-             'differs.'),
+             'are invented and have no CSS rules. Catalog '
+             '`components/chatter.html`: Send message / Log note / Activity '
+             'buttons inside `.o-mail-Chatter-topbarButtons`, then '
+             '`.o-mail-Chatter-search`, `.o-mail-Chatter-attachFiles` and '
+             '`.o-mail-Followers > .o-mail-Followers-button`. Never hand-add '
+             '`.active` to the topbar buttons.'),
             # Kanban wrapper drift: real Odoo renders columns horizontally
             # because the renderer carries `o_kanban_renderer.o_kanban_grouped`
             # which sets flex-direction. A `<div class="o_kanban_view">` whose
@@ -484,13 +656,98 @@ def lint(package_dir, steps=None):
             # parent that scopes the positioning. A bare absolute marker
             # outside a positioned ancestor anchors to the viewport / nearest
             # positioned ancestor — usually the wrong one.
-            (r'<span class="mock-marker"(?![^>]*mock-marker-example)[^>]*style="[^"]*position\s*:\s*absolute',
+            (r'<span class="(?![^"]*\bmock-marker-example\b)[^"]*\bmock-marker\b[^"]*"[^>]*style="[^"]*position\s*:\s*absolute',
              "KNOWN-BAD",
              'mock-marker carries inline `position:absolute` — markers are placed '
              'INLINE next to their referent by default. Absolute positioning is only '
              'valid when wrapped in a `.mock-anchor` (position:relative) parent that '
              'scopes the anchor. Bare absolute markers float over data cells or land '
              'in dead space (style_guide.md § Annotations).'),
+            # ---- Retired by the 2026-10 catalog recalibration (the version
+            # in the odoo.css stamp; REFRESH.md). Earlier catalog fragments
+            # shipped this markup, so mocks that copied them still carry it;
+            # the CSS is gone, so it renders unstyled or as the old chrome.
+            (r'\bclass="[^"]*\bo_cp_cog\b', "KNOWN-BAD",
+             '`o_cp_cog` (gear action menu) is retired — the control-panel action '
+             'menu is ⋮: `<div class="o_control_panel_breadcrumbs_actions"><div '
+             'class="o_cp_action_menus"><button class="btn o_btn_circle btn-light">'
+             '` + `#o-ellipsis-v` INSIDE `.o_breadcrumb` (catalog '
+             '`components/control_panel.html`). No favorite star.'),
+            (r'\bclass="[^"]*\bbreadcrumb_(?:item|sep)\b', "KNOWN-BAD",
+             '`breadcrumb_item` / `breadcrumb_sep` are retired — a multi-level title is '
+             '`<ol class="breadcrumb"><li class="breadcrumb-item o_back_button"><a>Parent</a>'
+             '</li></ol>` (direct parent only; deeper levels collapse into `#o-ellipsis-h`) '
+             'over `.o_last_breadcrumb_item.active` (catalog `components/control_panel.html`).'),
+            (r'\bclass="[^"]*\b(?:o_searchview_caret|o_searchview_facet_remove|o_pager_arrows?|o_setting_bookmark)\b',
+             "KNOWN-BAD",
+             'Retired control-panel markup — no search caret (`o_searchview_caret`; the '
+             'toggler is an empty `button.o_searchview_dropdown_toggler`); facet remove is '
+             '`button.o_facet_remove` + `#o-close-small`; the pager is `nav.o_pager > '
+             'span.btn-group > button.btn.btn-secondary.o_pager_previous / o_pager_next`; '
+             'settings have no bookmark (catalog `components/control_panel.html`).'),
+            (r'\bclass="[^"]*\b(?:o_base_settings|o_setting_search_panel|o_settings_title|o_setting_band|o_setting_section|o_setting_box_split|o_setting_left_col|o_setting_right_col|o_settings_tab_icon|o_switch)\b',
+             "KNOWN-BAD",
+             'Retired settings markup — copy catalog `components/settings.html`: '
+             '`.o_base_settings_view` root, rail `.settings_tab > a.tab[.selected]`, '
+             'card `.settings > .app_settings_block`, `<h2>` bands, two-per-row '
+             '`.o_setting_box.col-12.col-lg-6` with a checkbox in `.o_setting_left_pane`; '
+             'no toggle switches, no label|control split rows.'),
+            (r'<span[^>]*\bclass="settings_tab\b', "KNOWN-BAD",
+             '`settings_tab` is the RAIL container (a `<div>`); each entry is '
+             '`<a class="tab [selected]">` with an `svg.icon` app icon + `span.app_name` '
+             '(catalog `components/settings.html`).'),
+            (r'\bclass="[^"]*\bo_kanban_(?:record_topbar|record_menu|record_right|record_bottom|record_subtitle|age_badge|progressbar(?:_seg)?|header_amount|ribbon(?:_lost|_won)?)\b',
+             "KNOWN-BAD",
+             'Retired kanban helper (topbar / menu / bottom / age badge / progressbar / '
+             'header amount / ribbon) — rebuild the card from catalog '
+             '`components/kanban.html` (title, lines, `<footer>`, hover-only '
+             '`.o_dropdown_kanban`; Lost/Won = the `o_widget_web_ribbon` widget; '
+             'column progress = `.o_kanban_counter > .o_column_progress`).'),
+            (r'<div\s[^>]*\bclass="(?![^"]*\bo_kanban_ghost\b)[^"]*\bo_kanban_record\b[^"]*"',
+             "KNOWN-BAD",
+             'Kanban records must be `<article class="o_card_record o_kanban_record">` — '
+             'a `<div>` record loses all card styling; only the trailing '
+             '`o_kanban_ghost` fillers are divs (catalog `components/kanban.html`).'),
+            (r'\bclass="[^"]*\bo_card_(?:grid|line|key)\b', "KNOWN-BAD",
+             'There is no standalone card view — `card` is the kanban record template. '
+             'For summary tiles use the ungrouped kanban (catalog `components/kanban.html` '
+             'layout 3).'),
+            (r'\bclass="[^"]*\bo-mail-Composer\b[^"]*\bis-collapsed\b', "KNOWN-BAD",
+             '`o-mail-Composer is-collapsed` is retired — wrap the composer in '
+             '`<div class="o-mail-Chatter-composer" data-mock-toggleable="composer-msg|'
+             'composer-note">` (or `.o-mail-Chatter-composer.is-open` without the '
+             'toggleable to show it open), per catalog `components/chatter.html`.'),
+            (r'\bclass="[^"]*\bo-mail-Chatter-activity\b[^"]*"[^>]*>\s*(?:<span[^>]*>\s*)?Activities\s*<',
+             "KNOWN-BAD",
+             'The chatter topbar button reads "Activity", never "Activities" — '
+             '`<button class="btn btn-secondary o-mail-Chatter-activity"><span>Activity</span></button>`.'),
+            # (A "Mark Done" <h6> popover title is real; only a button/link is not.)
+            (r'\bclass="[^"]*\bo-mail-Activity(?=[\s"])(?:(?!</aside>)[\s\S]){0,2000}?<(?:button|a)\b[^>]*>(?:\s*<(?:svg|i)\b[\s\S]{0,300}?</(?:svg|i)>)?\s*Mark Done\s*<',
+             "KNOWN-BAD",
+             'A planned activity has no "Mark Done" / "Cancel" buttons — its tools are '
+             '`button.o-mail-Activity-markDone` (#o-check) "Done" + '
+             '`button.o-mail-Activity-edit` (#o-pencil) "Edit" (catalog `components/chatter.html`).'),
+            (r'\bclass="[^"]*\b(?:o_mail_tracking_value|o-mail-Message-note|o_avatar_csys)\b',
+             "KNOWN-BAD",
+             'Retired chatter message markup — tracking is '
+             '`.o-mail-Message-body.o-note.o_track` with one "Old → <b>New</b> <i>(Field)</i>" '
+             'line per change; notes use `.o-mail-Message-body.o-note`; OdooBot is '
+             '`<span class="o-mail-Message-avatar o_avatar_odoobot"></span>` (catalog '
+             '`components/chatter.html`).'),
+            (r'\bclass="[^"]*\b(?:o_dialog_header|modal-header|modal-title)\b[^"]*"[^>]*>(?:\s*<(?!/)[^>]*>)*\s*User Error\s*<',
+             "KNOWN-BAD",
+             'No Odoo dialog is titled "User Error" — the title comes from the exception: '
+             'UserError → "Invalid Operation", ValidationError → "Validation Error", '
+             'AccessError → "Access Error". Use `<h4 class="modal-title">` (catalog '
+             '`components/dialog.html`).'),
+            (r'\bclass="[^"]*\b(?:o_dialog_footer|modal-footer)\b[^"]*"[^>]*>(?:(?!</(?:div|footer)>)[\s\S])*?\bo_btn_outline\b',
+             "KNOWN-BAD",
+             'Dialog footer secondary uses `o_btn_outline` — write `btn btn-secondary`, '
+             'after the leftmost `btn btn-primary` (catalog `components/dialog.html`).'),
+            (r'\bclass="[^"]*\bo_tour_step\b', "KNOWN-BAD",
+             '`o_tour_step` (numbered tour bubble) is retired — the tour pointer is '
+             '`.o_tour_pointer > .o_tour_pointer_tip.o_<direction>` with a popover; '
+             'number things with `.mock-marker` (catalog `components/tour_pointer.html`).'),
         ]
         # Variant-attribute same-axis-comma misuse. The walkthrough.js matcher
         # uses `pairs.every()` across comma-separated axis=value pairs, so
@@ -514,6 +771,30 @@ def lint(package_dir, steps=None):
             for m in re.finditer(pattern, index_text):
                 findings.append((code, "index.html", hint))
                 break  # one finding per pattern is enough; the hint is global
+
+        # Confirmation prompts are `modal-sm` (ConfirmationDialog size="sm").
+        # A dialog with NO size class renders as the 980px ruled wizard. Keyed
+        # on Odoo's canonical confirmation copy (title "Confirmation" /
+        # "Bye-bye, record!", or an "Are you sure…" body) so text-only wizards
+        # are not caught. A size class anywhere between the dialog opener and
+        # its title (real shape: on the inner .modal-dialog) satisfies it.
+        for m in re.finditer(
+            r'<div\b[^>]*\bclass="(?![^"]*\bo_dialog_(?:user|validation)_error\b)'
+            r'[^"]*\b(?:o_dialog|modal-dialog)(?=[\s"])[^"]*"[^>]*>', index_text):
+            window = index_text[m.start():m.start() + 1500]
+            head_m = re.search(
+                r'class="[^"]*\bmodal-title\b[^"]*"[^>]*>\s*([^<]*?)\s*<', window)
+            if not head_m or re.search(r'\bmodal-(?:sm|md|lg|xl)\b', window[:head_m.start()]):
+                continue
+            title = head_m.group(1)
+            body_m = re.search(r'<p\b[^>]*>\s*([^<]{0,40})', window[head_m.end():head_m.end() + 600])
+            body = body_m.group(1) if body_m else ""
+            if title in ("Confirmation", "Bye-bye, record!") or body.startswith("Are you sure"):
+                findings.append(("KNOWN-BAD", "index.html",
+                    f'confirmation dialog "{title}" has no size class — it renders as the '
+                    f'980px ruled wizard. Confirmation / delete / archive prompts are '
+                    f'`<div class="o_dialog modal-sm">` (catalog `components/dialog.html`).'))
+                break
 
         # FINDINGS#24: backend form chrome inside a non-backend surface
         # (`.o_website`, `.o_portal`, `.pos`). The recurring drift is authors
@@ -546,8 +827,8 @@ def lint(package_dir, steps=None):
                 i = start
                 end = -1
                 while i < len(index_text):
-                    open_m = re.search(r'<div\b', index_text[i:])
-                    close_m = re.search(r'</div>', index_text[i:])
+                    open_m = re.search(r'<div\b', index_text_nc[i:])
+                    close_m = re.search(r'</div>', index_text_nc[i:])
                     if not close_m:
                         break
                     if open_m and open_m.start() < close_m.start():
@@ -616,7 +897,10 @@ def lint(package_dir, steps=None):
         _dir = package_dir
         enterprise_present = False
         while True:
-            if os.path.isdir(os.path.join(_dir, "enterprise")):
+            # Flat layout (<root>/enterprise) or the versioned layout
+            # (<root>/versions/v<major>/enterprise) used by this workspace.
+            if os.path.isdir(os.path.join(_dir, "enterprise")) or glob.glob(
+                    os.path.join(_dir, "versions", "v*", "enterprise")):
                 enterprise_present = True
                 break
             parent = os.path.dirname(_dir)
@@ -654,7 +938,7 @@ def lint(package_dir, steps=None):
         # Match `<span class="mock-marker"` (NOT `mock-marker-example`) whose
         # text content is not a digit string.
         for m in re.finditer(
-            r'<span class="mock-marker"(?![^>]*mock-marker-example)[^>]*>([^<]+)</span>',
+            r'<span class="(?![^"]*\bmock-marker-example\b)[^"]*\bmock-marker\b[^"]*"[^>]*>([^<]+)</span>',
             index_text,
         ):
             txt = m.group(1).strip()
@@ -666,23 +950,29 @@ def lint(package_dir, steps=None):
                 # Don't break — let the lint surface each occurrence so the
                 # author can spot which screen needs renumbering.
 
-        # Corner ribbon (o_widget_web_ribbon) draws its band from the data-text
-        # ATTRIBUTE via CSS ::after; child text renders unstyled (the blank/
-        # capped-ribbon bug). Flag a ribbon missing data-text or carrying text.
+        # Corner ribbon (o_widget_web_ribbon). Two valid shapes: the real widget
+        # markup (an inner `.ribbon` element holding a `span.text-bg-*` label),
+        # or the legacy EMPTY element whose band text comes from data-text via
+        # CSS ::after. Bare child text without the inner `.ribbon` renders
+        # unstyled (the blank/capped-ribbon bug).
+        _RIBBON_HINT = ('use `<div class="o_widget o_widget_web_ribbon"><div class="ribbon '
+                        'ribbon-top-right"><span class="text-bg-success|danger">Label</span>'
+                        '</div></div>` (catalog `components/form_view.html`)')
         for m in re.finditer(
             r'<([a-zA-Z][\w-]*)\b([^>]*\bclass="[^"]*\bo_widget_web_ribbon\b[^"]*"[^>]*)>([\s\S]*?)</\1>',
             index_text,
         ):
             attrs = m.group(2)
+            if re.search(r'\bclass="[^"]*\bribbon\b', m.group(3)):
+                continue  # real widget markup
             inner = re.sub(r'<[^>]*>', '', m.group(3)).strip()
             if 'data-text=' not in attrs:
                 findings.append(("RIBBON", "index.html",
-                    "o_widget_web_ribbon needs its band text in a data-text attribute "
-                    "(drawn via CSS ::after), not as child text"))
+                    f"o_widget_web_ribbon has no band label — {_RIBBON_HINT}"))
             elif inner:
                 findings.append(("RIBBON", "index.html",
-                    f'o_widget_web_ribbon has child text "{inner[:24]}"; the band comes '
-                    "from data-text — leave the element empty"))
+                    f'o_widget_web_ribbon has child text "{inner[:24]}" next to data-text '
+                    f"(renders unstyled) — leave the data-text element empty, or {_RIBBON_HINT}"))
 
         # Backend guard banners use the UserError modal, not a Bootstrap
         # `alert alert-danger` inline banner. Scope the check to backend form
@@ -701,8 +991,8 @@ def lint(package_dir, steps=None):
             i = start
             end = -1
             while i < len(index_text):
-                open_m = re.search(r'<div\b', index_text[i:])
-                close_m = re.search(r'</div>', index_text[i:])
+                open_m = re.search(r'<div\b', index_text_nc[i:])
+                close_m = re.search(r'</div>', index_text_nc[i:])
                 if not close_m:
                     break
                 if open_m and open_m.start() < close_m.start():
@@ -724,6 +1014,60 @@ def lint(package_dir, steps=None):
                     'not an inline alert. Use `.o_dialog.o_dialog_user_error` '
                     'instead (see `reference/interactions.md` § UserError / '
                     'ValidationError dialog).'))
+
+        # ---- GUARD-LANDING: an error dialog open by default must not sit on a
+        # state the reader LANDS on. Setup values (Block posting, a shared
+        # entry…) render the normal screen and open the dialog on the gated
+        # click; only an "attempt" value (the variant names the action itself)
+        # may show it open by default (interactions.md § UserError dialog).
+        # Landing values = each axis default + every value another screen sets
+        # by click-through + every value an Ok/Save (data-mock-modal-close)
+        # sets after completing an action.
+        landing = {}
+        defaults = {}
+        sections = _screen_segments(index_text)
+        for sid, tag, _body in sections:
+            am = re.search(r"""data-mock-variant-axes=(['"])(.*?)\1""", tag, re.DOTALL)
+            if am:
+                try:
+                    for ax in json.loads(html.unescape(am.group(2))):
+                        defaults.setdefault(sid, {})[ax.get("key")] = ax.get("default")
+                except ValueError:
+                    pass
+        for sid, _tag, body in sections:
+            for el in re.finditer(r'<[a-z][^>]*\bdata-mock-set-variant="([^"]+)"[^>]*>', body):
+                closes = "data-mock-modal-close" in el.group(0)
+                for one in el.group(1).split(";"):
+                    if ":" not in one or "=" not in one:
+                        continue
+                    target, pair = one.split(":", 1)
+                    axis_key, value = pair.split("=", 1)
+                    target = target.strip()
+                    if target != sid or closes:
+                        landing.setdefault(target, {}).setdefault(axis_key.strip(), set()).add(value.strip())
+        for sid, _tag, body in sections:
+            for dm in re.finditer(r'<div[^>]*\bclass="[^"]*\bo_dialog_backdrop\b[^"]*\bis-open\b[^"]*"[^>]*>', body):
+                if not re.match(r'\s*<div[^>]*\bclass="[^"]*\bo_dialog_(user|validation)_error\b', body[dm.end():dm.end() + 200]):
+                    continue
+                vm = re.search(r'\bdata-mock-variant="([^"]*)"', dm.group(0))
+                spec = vm.group(1) if vm else ""
+                pairs = [p.split("=", 1) for p in spec.split(",") if "=" in p]
+                hit = True
+                for axis_key, values in pairs:
+                    axis_key = axis_key.strip()
+                    can_land = set(landing.get(sid, {}).get(axis_key, set()))
+                    if defaults.get(sid, {}).get(axis_key) is not None:
+                        can_land.add(defaults[sid][axis_key])
+                    if not can_land & {v.strip() for v in values.split("|")}:
+                        hit = False
+                        break
+                if hit:
+                    findings.append(("GUARD-LANDING", f"screen {sid}",
+                        f'error dialog open by default at `{spec or "every state"}`, a state the reader lands on '
+                        '(axis default, a click-through from another screen, or an Ok that completes an action). '
+                        'Make it click-only (drop `mock-blocking-modal is-open`; open it from the gated button with '
+                        '`data-mock-modal-open`), or keep it open by default only on a variant value that names the '
+                        'attempted action itself (interactions.md § UserError / ValidationError dialog).'))
 
         # ---- CLASS-UNKNOWN: every o_*/s_*/oe_* class in index.html must have a
         # CSS rule in one of the package's bundled stylesheets.
@@ -752,6 +1096,13 @@ def lint(package_dir, steps=None):
             "mock-screen", "mock-workflow", "mock-marker", "mock-cover",
             "mock-walkthrough",
         })
+        # Credit every class the catalog's own component fragments use. A class
+        # shipped by a `components/*.html` fragment is legitimate vocabulary even
+        # when the catalog styles it only via a child selector (container classes
+        # like `o-mail-ActivityList`, `o_web_studio_*`). Without this the rule
+        # false-fails a mock composed verbatim from the catalog; WITH it, only
+        # genuinely invented classes (in neither CSS nor any fragment) are flagged.
+        known_classes.update(_catalog_class_tokens())
         for tag_m in re.finditer(r'\bclass=(["\'])([^"\']*)\1', index_text):
             tokens = tag_m.group(2).split()
             for tok in tokens:
@@ -799,7 +1150,7 @@ def lint(package_dir, steps=None):
             "o_list_view", "o_list_table", "o_list_table_ungrouped", "o_data_row",
             "o_kanban_view", "o_kanban_record",
             "o_control_panel", "o_control_panel_main", "o_breadcrumb",
-            "o_main_navbar", "o_menu_brand", "o_menu_sections",
+            "o_navbar", "o_main_navbar", "o_menu_brand", "o_menu_sections",
         )
         for surface in ("o_website", "o_portal"):
             # Depth-balanced extraction of each surface's body (same technique
@@ -813,8 +1164,8 @@ def lint(package_dir, steps=None):
                 i = start
                 end = -1
                 while i < len(index_text):
-                    open_m = re.search(r'<div\b', index_text[i:])
-                    close_m = re.search(r'</div>', index_text[i:])
+                    open_m = re.search(r'<div\b', index_text_nc[i:])
+                    close_m = re.search(r'</div>', index_text_nc[i:])
                     if not close_m:
                         break
                     if open_m and open_m.start() < close_m.start():
@@ -946,12 +1297,70 @@ def lint(package_dir, steps=None):
                     f'missing attrs render as a bare "?" with a blank technical reference.'
                 ))
 
+        # ---- CUSTOM-UNMARKED / CUSTOM-PLACEMENT: custom marking is gated like
+        # the "?" (interactions.md § Custom elements). Every "?" field sits in
+        # a `mock-custom` element or on a `mock-custom` screen; marks never sit
+        # on the cover / workflow overviews, never inside a custom screen, and
+        # never nest. Which non-field elements the solution adds is judged by
+        # the anchors against the spec — the lint cannot see that.
+        scan = _CustomScan()
+        scan.feed(index_text)
+        scan.close()
+        findings.extend(scan.results())
+
     return findings
+
+
+def bundle_notes(path):
+    """Advisory (non-failing): state of the single-file deliverable built by
+    _bundle_mock.py from the _reference/ working package."""
+    pkg = _mock_paths.package_dir(path)
+    if os.path.basename(pkg) != _mock_paths.REF:
+        return []  # legacy flat package — no bundle convention
+    out = _mock_paths.bundle_path(pkg)
+    if not os.path.isfile(out):
+        return [f'no single-file deliverable yet — after the final checks run '
+                f'`_bundle_mock.py "{_mock_paths.mocks_root(pkg)}"`.']
+    # Only what the bundle is built from: index.html + assets/** (dotfiles such
+    # as a Finder .DS_Store, and README.md, are not bundled).
+    sources = [os.path.join(pkg, "index.html")]
+    for d, dirs, fs in os.walk(os.path.join(pkg, "assets")):
+        dirs[:] = [x for x in dirs if not x.startswith(".")]
+        sources += [os.path.join(d, f) for f in fs if not f.startswith(".")]
+    newest = max((os.path.getmtime(f) for f in sources if os.path.isfile(f)), default=0)
+    if newest > os.path.getmtime(out):
+        return [f'"{os.path.basename(out)}" is older than the _reference/ package — '
+                f're-bundle after the final checks.']
+    return []
+
+
+def version_notes(package_dir):
+    """Advisory (non-failing): the cover kicker's "Odoo NN" vs the version the
+    package's assets/odoo.css is calibrated to (its `calibrated to Odoo NN`
+    header stamp). The catalog tracks ONE Odoo version; a mock for another
+    version renders that version's chrome — say so instead of failing."""
+    notes = []
+    try:
+        with open(os.path.join(package_dir, "index.html"), encoding="utf-8") as fh:
+            index_text = fh.read()
+        with open(os.path.join(package_dir, "assets", "odoo.css"), encoding="utf-8") as fh:
+            css_head = fh.read(600)
+    except OSError:
+        return notes
+    km = re.search(r'mock-cover-kicker.*?Odoo\s+(\d+)', index_text, re.DOTALL)
+    cm = re.search(r'calibrated to Odoo (\d+)', css_head)
+    if km and cm and km.group(1) != cm.group(1):
+        notes.append(
+            f'the cover says Odoo {km.group(1)} but assets/odoo.css is calibrated to '
+            f'Odoo {cm.group(1)} — screens render Odoo {cm.group(1)} chrome. Expected '
+            f'when the spec targets an older version (the catalog tracks one version).')
+    return notes
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Lint an odoo-mock-design package.")
-    ap.add_argument("package_dir", help="path to the generated mock package folder")
+    ap.add_argument("package_dir", help="the mocks folder or its _reference/ working package "
+                    "(a legacy flat package resolves too)")
     ap.add_argument("--steps", nargs="*", default=None,
                     help="workflow step names that must each have a screen")
     args = ap.parse_args(argv)
@@ -960,6 +1369,9 @@ def main(argv=None):
     if findings and findings[0][0] == "FATAL":
         print(f"FATAL: {findings[0][2]}", file=sys.stderr)
         return 2
+
+    for note in version_notes(_mock_paths.package_dir(args.package_dir)) + bundle_notes(args.package_dir):
+        print(f"NOTE: {note}")
 
     if not findings:
         print(f"PASS — {args.package_dir} is self-contained and complete.")

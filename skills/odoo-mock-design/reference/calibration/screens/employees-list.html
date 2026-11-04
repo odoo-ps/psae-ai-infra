@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Calibration — employees-list</title>
+<link rel="stylesheet" href="../../catalog/odoo.css">
+<link rel="stylesheet" href="assets/odoo.css">
+</head>
+<body>
+<!-- SPRITE -->
+<div class="o_web_client">
+<header class="o_navbar">
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+    </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-hr"/></svg>
+    <span class="o_menu_brand">Employees</span>
+  </a>
+  <div class="o_menu_sections" role="menu">
+    <a class="o_nav_entry">Management</a>
+    <a class="o_nav_entry">Directory</a>
+    <a class="o_nav_entry">Departments</a>
+    <a class="o_nav_entry">Learning</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
+  </div>
+  <div class="o_menu_systray" role="menu">
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge">6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+      <span class="badge">17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name">YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar o_avatar_c5">M</span>
+    </button>
+  </div>
+</nav>
+</header>
+<div class="o_action_manager">
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-primary o_list_button_add">New</button></div>
+      <div class="o_breadcrumb">
+        <div class="o_last_breadcrumb_item active"><span>Employees</span></div>
+        <div class="o_control_panel_breadcrumbs_actions">
+          <div class="o_cp_action_menus">
+            <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="o_control_panel_actions">
+      <div class="o_cp_searchview input-group rounded-pill" role="search">
+        <div class="o_searchview form-control">
+          <svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg>
+          <div class="o_searchview_input_container">
+            <input type="text" class="o_searchview_input focus" placeholder="Search..."/>
+          </div>
+        </div>
+        <button class="o_searchview_dropdown_toggler btn btn-outline-secondary" title="Toggle Search Panel"></button>
+      </div>
+    </div>
+    <div class="o_control_panel_navigation">
+      <div class="o_cp_pager" role="search">
+        <nav class="o_pager" aria-label="Pager">
+          <span class="o_pager_counter"><span class="o_pager_value">1-26</span><span> / </span><span class="o_pager_limit">26</span></span>
+          <span class="btn-group">
+            <button class="btn btn-secondary o_pager_previous" aria-label="Previous" disabled><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+            <button class="btn btn-secondary o_pager_next" aria-label="Next" disabled><svg class="o_icon"><use href="#o-chevron-right"/></svg></button>
+          </span>
+        </nav>
+      </div>
+      <nav class="o_cp_switch_buttons btn-group o_switcher">
+        <button class="btn btn-secondary o_switch_view o_kanban" title="Kanban"><svg class="o_icon"><use href="#o-view-kanban"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_list active" title="List"><svg class="o_icon"><use href="#o-view-list"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_hierarchy" title="Hierarchy"><svg class="o_icon"><use href="#o-view-hierarchy"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_activity" title="Activity"><svg class="o_icon"><use href="#o-view-activity"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_graph" title="Graph"><svg class="o_icon"><use href="#o-view-graph"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_pivot" title="Pivot"><svg class="o_icon"><use href="#o-view-pivot"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</div>
+<main class="o_content o_component_with_search_panel">
+  <div class="o_search_panel o_search_panel_wrap">
+    <div class="d-flex align-items-center">
+      <button class="btn btn-light btn-sm ms-auto" title="Close sidebar"><svg class="o_icon"><use href="#o-left-panel-close"/></svg></button>
+    </div>
+    <section class="o_search_panel_section o_search_panel_category">
+      <header class="o_search_panel_section_header">
+        <svg class="o_icon o_search_panel_section_icon"><use href="#o-business"/></svg><b>Company</b>
+      </header>
+      <ul class="list-group o_search_panel_field">
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header active">
+            <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title fw-bold">All</span></div>
+          </header>
+        </li>
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header">
+            <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title">YourCompany</span></div>
+            <small class="o_search_panel_counter text-muted">26</small>
+          </header>
+        </li>
+      </ul>
+    </section>
+    <section class="o_search_panel_section o_search_panel_category">
+      <header class="o_search_panel_section_header">
+        <svg class="o_icon o_search_panel_section_icon"><use href="#o-group"/></svg><b>Department</b>
+      </header>
+      <ul class="list-group o_search_panel_field">
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header active">
+            <div class="o_search_panel_label"><span class="o_toggle_fold"></span><span class="o_search_panel_label_title fw-bold">All</span></div>
+          </header>
+        </li>
+        <li class="o_search_panel_category_value list-group-item">
+          <header class="o_search_panel_category_value_header">
+            <div class="o_search_panel_label"><span class="o_toggle_fold o_toggle_fold_with_children"><svg class="o_icon"><use href="#o-caret-right"/></svg></span><span class="o_search_panel_label_title">Management</span></div>
+            <small class="o_search_panel_counter text-muted">23</small>
+          </header>
+        </li>
+      </ul>
+    </section>
+  </div>
+  <div class="o_search_panel_resize"></div>
+  <div class="o_list_view">
+    <table class="o_list_table o_list_table_ungrouped">
+      <thead>
+        <tr>
+          <th class="o_list_record_selector"><input type="checkbox"/></th>
+          <th class="o_image_cell"></th>
+          <th>Name</th>
+          <th>Work Phone</th>
+          <th>Department</th>
+          <th>Job</th>
+          <th>Manager</th>
+          <th class="o_list_actions_header"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c0">A</span></td>
+            <td>Abigail Peterson</td>
+            <td>(555)-233-3393</td>
+            <td>Management / Professional Services</td>
+            <td>Consultant</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">J</span></span><span>Jeffrey Kelly</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c4">A</span></td>
+            <td>Amy Watson</td>
+            <td>(535)-495-4222</td>
+            <td></td>
+            <td>Interior Designer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">J</span></span><span>Jessica Johnson</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c2">A</span></td>
+            <td>Anita Oliver</td>
+            <td>(555)-497-4804</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">K</span></span><span>Keith Byrd</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c7">A</span></td>
+            <td>Audrey Peterson</td>
+            <td>(555)-276-7903</td>
+            <td>Management / Professional Services</td>
+            <td>Consultant</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">J</span></span><span>Jeffrey Kelly</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c1">B</span></td>
+            <td>Barty McBly</td>
+            <td>(555)-234-3424</td>
+            <td>Management / Administration</td>
+            <td>Consultant</td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c5">B</span></td>
+            <td>Beth Evans</td>
+            <td>(555)-532-3841</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">P</span></span><span>Paul Williams</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c2">D</span></td>
+            <td>Doris Cole</td>
+            <td>(555)-331-5378</td>
+            <td>Management / Professional Services</td>
+            <td>Consultant</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">T</span></span><span>Tina Williamson</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c4">E</span></td>
+            <td>Eli Lambert</td>
+            <td>(555)-169-1352</td>
+            <td>Management / Sales</td>
+            <td>Marketing and Community Manager</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">J</span></span><span>Jeffrey Kelly</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c0">E</span></td>
+            <td>Ernest Reed</td>
+            <td>(555)-518-8232</td>
+            <td>Management / Professional Services</td>
+            <td>Consultant</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">T</span></span><span>Tina Williamson</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c3">J</span></td>
+            <td>Jeffrey Kelly</td>
+            <td>(555)-264-7362</td>
+            <td>Management / Sales</td>
+            <td>Marketing and Community Manager</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span>Mitchell Admin</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c5">J</span></td>
+            <td>Jennie Fletcher</td>
+            <td>(555)-363-8229</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">K</span></span><span>Keith Byrd</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c0">J</span></td>
+            <td>Jessica Johnson</td>
+            <td>(535)-495-4164</td>
+            <td></td>
+            <td>Site Manager</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">R</span></span><span>Ronnie Hart</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c5">J</span></td>
+            <td>Justin Smith</td>
+            <td>(535)-495-4444</td>
+            <td></td>
+            <td>Handyman</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">J</span></span><span>Jessica Johnson</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c3">K</span></td>
+            <td>Keith Byrd</td>
+            <td>(555)-505-5146</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">R</span></span><span>Ronnie Hart</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c6">M</span></td>
+            <td>Marc Demo</td>
+            <td>(441)-695-2334</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span>Mitchell Admin</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c5">M</span></td>
+            <td>Mitchell Admin</td>
+            <td>+1 555-555-5555</td>
+            <td>Management</td>
+            <td>Chief Technical Officer</td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c7">M</span></td>
+            <td>Monica Light</td>
+            <td>+32-489-189-562</td>
+            <td>Management / Professional Services</td>
+            <td>Consultant</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span>Mitchell Admin</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c6">P</span></td>
+            <td>Paul Williams</td>
+            <td>(555)-262-1607</td>
+            <td>Management / Research &amp; Development / Long Term Projects</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">M</span></span><span>Marc Demo</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c2">R</span></td>
+            <td>Rachel Perry</td>
+            <td>(555)-267-3735</td>
+            <td>Management / Sales</td>
+            <td>Marketing and Community Manager</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">J</span></span><span>Jeffrey Kelly</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c0">R</span></td>
+            <td>Randall Lewis</td>
+            <td>(555)-775-6660</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">R</span></span><span>Ronnie Hart</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c4">R</span></td>
+            <td>Roger Scott</td>
+            <td>+3282823500</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">T</span></span><span>Tina Williamson</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c6">R</span></td>
+            <td>Ronnie Hart</td>
+            <td>(555)-310-7863</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Chief Technical Officer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">M</span></span><span>Marc Demo</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c7">S</span></td>
+            <td>Sharlene Rhodes</td>
+            <td>(555)-719-4182</td>
+            <td>Management</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">M</span></span><span>Marc Demo</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c3">T</span></td>
+            <td>Tina Williamson</td>
+            <td>(555)-694-7266</td>
+            <td>Management / Administration</td>
+            <td>Human Resources Manager</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span>Mitchell Admin</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c1">T</span></td>
+            <td>Toni Jimenez</td>
+            <td>(555)-707-8451</td>
+            <td>Management / Professional Services</td>
+            <td>Consultant</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">T</span></span><span>Tina Williamson</span></div></div></td>
+            <td></td>
+          </tr>
+          <tr class="o_data_row">
+            <td class="o_list_record_selector"><input type="checkbox"/></td>
+            <td class="o_image_cell"><span class="o_user_avatar o_avatar_c4">W</span></td>
+            <td>Walter Horton</td>
+            <td>(555)-912-1201</td>
+            <td>Management / Research &amp; Development</td>
+            <td>Experienced Developer</td>
+            <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">P</span></span><span>Paul Williams</span></div></div></td>
+            <td></td>
+          </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</div>
+</div>
+</body>
+</html>

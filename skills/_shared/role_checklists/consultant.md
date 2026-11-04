@@ -1,6 +1,6 @@
 # Consultant — Problem Framing
 
-*Calibrated against Odoo 19.0. Re-review on each major version bump.*
+*Calibrated against Odoo 20.0. Re-review on each major version bump — see [release cadence runbook](../release_cadence.md).*
 
 ## Goal
 Make sure the addon solves a real, scoped problem before any code is written. The consultant role is the first line of defence against scope creep and the "build me a Salesforce" anti-pattern.

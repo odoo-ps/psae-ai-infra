@@ -1,39 +1,85 @@
 <!--
-  hierarchy.html — Hierarchy / org-chart view (web_hierarchy; real classes
-  o_hierarchy_renderer / o_hierarchy_container / o_hierarchy_row /
-  o_hierarchy_separator). The separator paints a vertical trunk descending
-  from the parent + a horizontal bus across the children row; each non-root
-  child carries an upward drop to the bus. Render inside the backend shell.
+  hierarchy.html — Hierarchy / org-chart view, Odoo 20 (web_hierarchy:
+  hierarchy_renderer.{xml,scss}, hierarchy_card.{xml,scss}; card body =
+  hr employee "hierarchy-box" template). Render INSIDE .o_action_manager
+  right after the control panel (Employees: beside the search panel).
+
+  STRUCTURE: .o_hierarchy_renderer > .o_hierarchy_container (75% wide,
+  25px between rows) > rows of cards on the gray page:
+    .o_hierarchy_row > .o_hierarchy_node_container (250px, min 130px;
+      +.o_hierarchy_node_unfolded on the node whose children are shown —
+      its row siblings fade to 50%)
+      .o_hierarchy_node_button_container   30px parent-arrow slot
+      .o_hierarchy_node   white, 1px #dee2e6, radius 8
+        .o_hierarchy_node_content
+          .o_hierarchy_node_header.o_hierarchy_node_color_N   30px band,
+              rgba($o-colors[N], .2) (0 = gray-200); the 48px ROUND
+              avatar (.o_hierarchy_node_avatar) is lifted 24px over it
+          .o_hierarchy_node_body   centred bold name + muted job title
+        button.o_hierarchy_node_button.btn.btn-secondary  full width:
+              "▸ N people" folded (#o-caret-right), "▾ N people"
+              unfolded (#o-caret-down)
+  Between a parent row and its children's row:
+    .o_hierarchy_parent_node_container  (24px avatar + parent name; only
+      when the parent row holds more than one card)
+    .o_hierarchy_separator > .o_hierarchy_line_part.o_hierarchy_line_left
+      + .o_hierarchy_line_right  — a 2px #dee2e6 brace with rounded elbows.
+  No root accent border, no count pill, no bus/drop lines.
 -->
 <div class="o_hierarchy_renderer">
   <div class="o_hierarchy_container">
-    <!-- Row 1: root -->
-    <div class="o_hierarchy_row o_hierarchy_row_root">
-      <div class="o_hierarchy_node o_hierarchy_node_root">
-        <div class="o_hierarchy_node_avatar"></div>
-        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Mitchell Admin</div><div class="o_hierarchy_node_title">Chief Executive Officer</div></div>
+    <div class="o_hierarchy_row">
+      <div class="o_hierarchy_node_container">
+        <div class="o_hierarchy_node_button_container"></div>
+        <div class="o_hierarchy_node">
+          <div class="o_hierarchy_node_content">
+            <div class="o_hierarchy_node_header o_hierarchy_node_color_0"><span class="o_hierarchy_node_avatar"></span></div>
+            <div class="o_hierarchy_node_body"><span class="o_hierarchy_node_name">Barty McBly</span><span class="o_hierarchy_node_title">Consultant</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="o_hierarchy_node_container o_hierarchy_node_unfolded">
+        <div class="o_hierarchy_node_button_container"></div>
+        <div class="o_hierarchy_node">
+          <div class="o_hierarchy_node_content">
+            <div class="o_hierarchy_node_header o_hierarchy_node_color_9"><span class="o_hierarchy_node_avatar"></span></div>
+            <div class="o_hierarchy_node_body"><span class="o_hierarchy_node_name">Mitchell Admin</span><span class="o_hierarchy_node_title">Chief Technical Officer</span></div>
+          </div>
+          <button class="o_hierarchy_node_button btn btn-secondary" title="Fold"><span><svg class="o_icon"><use href="#o-caret-down"/></svg>3 people</span></button>
+        </div>
       </div>
     </div>
-    <!-- Bus separator. Connector lines are drawn by CSS:
-           ::before = trunk (from parent down to bus)
-           ::after  = bus (horizontal line)
-         and each child below carries its own drop UP to the bus. -->
-    <div class="o_hierarchy_separator"></div>
-    <!-- Row 2: direct reports -->
+    <div class="o_hierarchy_parent_node_container"><span class="o_user_avatar o_avatar_c1">M</span><span>Mitchell Admin</span></div>
+    <div class="o_hierarchy_separator"><div class="o_hierarchy_line_part o_hierarchy_line_left"></div><div class="o_hierarchy_line_part o_hierarchy_line_right"></div></div>
     <div class="o_hierarchy_row">
-      <div class="o_hierarchy_node">
-        <div class="o_hierarchy_node_avatar"></div>
-        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Marc Demo</div><div class="o_hierarchy_node_title">Sales Manager</div></div>
-        <span class="o_hierarchy_node_button">2</span>
+      <div class="o_hierarchy_node_container">
+        <div class="o_hierarchy_node_button_container"></div>
+        <div class="o_hierarchy_node">
+          <div class="o_hierarchy_node_content">
+            <div class="o_hierarchy_node_header o_hierarchy_node_color_10"><span class="o_hierarchy_node_avatar"></span></div>
+            <div class="o_hierarchy_node_body"><span class="o_hierarchy_node_name">Marc Demo</span><span class="o_hierarchy_node_title">Experienced Developer</span></div>
+          </div>
+          <button class="o_hierarchy_node_button btn btn-secondary" title="Unfold"><span><svg class="o_icon"><use href="#o-caret-right"/></svg>3 people</span></button>
+        </div>
       </div>
-      <div class="o_hierarchy_node">
-        <div class="o_hierarchy_node_avatar"></div>
-        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Joel Willis</div><div class="o_hierarchy_node_title">Warehouse Lead</div></div>
-        <span class="o_hierarchy_node_button">4</span>
+      <div class="o_hierarchy_node_container">
+        <div class="o_hierarchy_node_button_container"></div>
+        <div class="o_hierarchy_node">
+          <div class="o_hierarchy_node_content">
+            <div class="o_hierarchy_node_header o_hierarchy_node_color_3"><span class="o_hierarchy_node_avatar"></span></div>
+            <div class="o_hierarchy_node_body"><span class="o_hierarchy_node_name">Monica Light</span><span class="o_hierarchy_node_title">Consultant</span></div>
+          </div>
+        </div>
       </div>
-      <div class="o_hierarchy_node">
-        <div class="o_hierarchy_node_avatar"></div>
-        <div class="o_hierarchy_node_content"><div class="o_hierarchy_node_name">Audrey Peterson</div><div class="o_hierarchy_node_title">Accountant</div></div>
+      <div class="o_hierarchy_node_container">
+        <div class="o_hierarchy_node_button_container"></div>
+        <div class="o_hierarchy_node">
+          <div class="o_hierarchy_node_content">
+            <div class="o_hierarchy_node_header o_hierarchy_node_color_8"><span class="o_hierarchy_node_avatar"></span></div>
+            <div class="o_hierarchy_node_body"><span class="o_hierarchy_node_name">Tina Williamson</span><span class="o_hierarchy_node_title">Human Resources Manager</span></div>
+          </div>
+          <button class="o_hierarchy_node_button btn btn-secondary" title="Unfold"><span><svg class="o_icon"><use href="#o-caret-right"/></svg>4 people</span></button>
+        </div>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 ---
 name: ux-ui-anchor
-description: Audit a plan file or specification draft against _shared/role_checklists/ux_ui.md. Flags drift in form/list/kanban polish, widget appropriateness, placeholder text, help strings, and status-bar discipline. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
+description: Audit a odoo-plan-development plan file against _shared/role_checklists/ux_ui.md. Flags drift in form/list/kanban polish, widget appropriateness, placeholder text, help strings, and status-bar discipline. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
 tools: Read, Grep, Glob
 ---
 
@@ -110,6 +110,19 @@ Single prompt argument: absolute path to the plan file.
      (`var(--o-text-primary)`, `var(--o-background-color)`). Breaks
      dark mode + theme overrides — `nit`.
 
+   ### Odoo 20+
+
+   - **Renamed widget still in use** — plan or spec names a
+     pre-rename widget that Odoo 20 renamed: `remaining_days`
+     (now `relative_date`) or `badge_selection` (now
+     `badges_selection`). The old name won't resolve against the
+     v20 registry — `blocker`. Cite the new name.
+
+   - **Removed widget still in use** — plan or spec names
+     `badge_selection_with_filter`, which Odoo 20 removed with no
+     replacement — `blocker`. Recommend a supported alternative
+     (e.g. `badges_selection` plus a search-view filter).
+
 ## Output
 
 Return this JSON as your final assistant message — the tool result IS the audit. Do NOT write it to any file (no Write tool, no `> file` redirection via Bash); the calling skill reads your return value, not the filesystem.
@@ -134,7 +147,7 @@ Return this JSON as your final assistant message — the tool result IS the audi
 Aspect values: `help-text`, `placeholder`, `widget`, `statusbar`,
 `button-style`, `list-decorators`, `kanban-cue`, `smart-buttons`,
 `search-view`, `default-context`, `niche-menu`, `column-cap`,
-`chatter-missing`.
+`chatter-missing`, `renamed-widget`, `removed-widget`.
 
 ## Constraints
 

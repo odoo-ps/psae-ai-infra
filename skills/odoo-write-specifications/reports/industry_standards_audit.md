@@ -3,6 +3,7 @@
 **Date:** 2026-06-03
 **Audit subject:** the `odoo-write-specifications` skill as it stood after the Q3↔Q5 reorder commit ([64b8543](../../) in the `skills/` repo).
 **Auditor:** Claude (Opus 4.7)
+**Corpus baseline:** Odoo **20.0** since 2026-09-30 (release-cadence bump). This audit predates that bump and was not re-run for it — industry-standards audits are only lightly version-coupled and stale-tolerant by design; re-run on demand per [`../../_shared/release_cadence.md`](../../_shared/release_cadence.md) (Phase 4).
 **Status:** Reference snapshot. Improvements deferred to future skill iterations, pending user prioritization. Not canonical structure — the canonical structure is [`../reference/content_outline.md`](../reference/content_outline.md).
 
 ## Purpose of this report

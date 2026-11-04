@@ -2,7 +2,7 @@
   cover_callouts.html — CANONICAL TEXT for the cover screen's "How to interact
   with this mock" callout block. SINGLE SOURCE OF TRUTH.
 
-  This file is the canonical wording for the five cover callouts. SKILL.md
+  This file is the canonical wording for the six cover callouts. SKILL.md
   and reference_pattern.md cross-reference this file instead of inlining the
   HTML; _scaffold_mock.py reads + parses this file at runtime to emit the
   appropriate callouts for a generated mock.
@@ -17,13 +17,17 @@
       <!-- CALLOUT: <id> | IF variant_axes -->         emitted only when >= 1
                                                        .mock-screen carries
                                                        data-mock-variant-axes
+      <!-- CALLOUT: <id> | IF custom -->               emitted only when >= 1
+                                                       element or screen
+                                                       carries mock-custom
       <!-- CALLOUT: <id> | IF field_help -->           emitted only when >= 1
                                                        custom-field label
                                                        carries an o_field_help
 
   ORDER MATTERS. Read outside-in: whole mock -> workflows -> screen-state
-  pivots -> element notes -> field-label help. Don't reorder; don't paraphrase
-  the wording. Wording changes here propagate to every consumer in one edit.
+  pivots -> element notes -> custom scope -> field-label help. Don't reorder;
+  don't paraphrase the wording. Wording changes here propagate to every
+  consumer in one edit.
 -->
 
 <!-- CALLOUT: interactive_mock | ALWAYS -->
@@ -58,10 +62,20 @@
   chip at the right of the bar to hide them for a clean view.
 </div>
 
+<!-- CALLOUT: custom | IF custom -->
+<div class="mock-cover-callout">
+  <strong>Custom elements.</strong> What the solution adds or changes is
+  highlighted in <span class="mock-custom-example">pink</span>; a screen that
+  is new from end to end carries a
+  <span class="mock-custom-banner-example">Custom</span> banner in its
+  top-right corner. Use the <strong>Custom</strong> chip at the right of the
+  bar to hide them.
+</div>
+
 <!-- CALLOUT: field_help | IF field_help -->
 <div class="mock-cover-callout">
   <strong>Field help.</strong> Hover the
-  <span class="o_field_help" data-help="A question mark next to a field label opens its help — what the field stores and how it behaves.">?</span>
+  <span class="o_field_help" data-help="A question mark next to a field label opens its help — what the field stores and how it behaves." data-label="Example Field" data-field="example_field" data-model="module.model" data-type="char">?</span>
   next to a field label to see what the field stores and how it behaves —
   the same help text shipped with the module.
 </div>

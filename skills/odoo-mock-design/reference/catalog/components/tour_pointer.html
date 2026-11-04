@@ -1,34 +1,40 @@
 <!--
-  tour_pointer.html — `o_tour_pointer` guided-tour bubble.
-  Source: addons/web_tour/static/src/tour_pointer/tour_pointer.{xml,scss}
+  tour_pointer.html — guided-tour pointer (Odoo 20).
+  Source: addons/web_tour/static/src/tour_pointer/tour_pointer.{js,xml,scss}
 
-  Used by `web_tour`'s tour service to highlight the next step in an
-  onboarding walkthrough. The bubble points at a target element with a
-  directional caret (left / right / top / bottom) and carries a step number
-  + short copy.
+  web_tour's tour service points at the next step with a 28px plum TEARDROP
+  (`.o_tour_pointer > .o_tour_pointer_tip`) that bounces 3px, 10px off the
+  target. Hovering the drop opens a white popover with the instruction
+  (black 14px text, max 270px) and a right-aligned "Stop Tour" link.
 
-  In a mock, drop the pointer next to the element it would teach (a button,
-  a field) and rely on `position:absolute` — its parent should be
-  `position:relative` (.mock-anchor wrapper) so the absolute coords are
-  scoped. The variant class (o_tour_pointer_left / _right / _top / _bottom)
-  controls which side the caret sticks out from.
+  DIRECTION class goes ON THE TIP and names the side the ball hangs on:
+    o_bottom  below the target, points up   (Odoo's default)
+    o_top     above the target, points down
+    o_left    left of the target, points right
+    o_right   right of the target, points left
 
-  This is for ONBOARDING / TOUR steps only — for inline annotations of a
-  solution element, use the standard `.mock-marker` instead (per
-  style_guide.md § Annotations).
+  There are NO step numbers and no purple text bubble — number tour steps
+  with `.mock-marker` (style_guide.md § Annotations). For inline annotation
+  of a solution element use `.mock-marker` too; this is for ONBOARDING /
+  TOUR steps only.
+
+  In a mock, wrap the target in a `.mock-anchor` (position:relative) and
+  place the pointer with inline top/left; show the content popover only
+  when the step's copy must be visible.
 -->
 <!--
-  Example placement: next to the Confirm button on a quote.
+  Example: pointer below a Confirm button, with its hover content open.
   <span class="mock-anchor">
     <button class="btn btn-primary">Confirm</button>
-    <span class="o_tour_pointer o_tour_pointer_left"
-          style="top: 0; left: calc(100% + 12px);">
-      <span class="o_tour_step">3</span>
-      <span>Click Confirm to turn this quote into a Sales Order.</span>
-    </span>
+    <div class="o_tour_pointer" style="top:calc(100% + 10px); left:calc(50% - 15px);">
+      <div class="o_tour_pointer_tip o_bottom"></div>
+    </div>
+    <div class="o_popover popover" data-popper-placement="bottom" style="top:calc(100% + 58px); left:-20px;">
+      <div class="o_tour_pointer o_tour_pointer_content"><span>Click Confirm to turn this quote into a Sales Order.</span><div><button class="btn btn-link">Stop Tour</button></div></div>
+      <div class="popover-arrow"></div>
+    </div>
   </span>
 -->
-<span class="o_tour_pointer o_tour_pointer_left">
-  <span class="o_tour_step"><!-- SLOT: step number, e.g. 1 --></span>
-  <span><!-- SLOT: one-sentence instruction in user voice --></span>
-</span>
+<div class="o_tour_pointer">
+  <div class="o_tour_pointer_tip o_bottom"><!-- direction: o_bottom / o_top / o_left / o_right --></div>
+</div>

@@ -10,21 +10,26 @@ elements. Fidelity/styling is a different anchor's job (`mock-fidelity-anchor`).
 
 ## Input
 
-Single prompt argument: absolute path to the generated mock **package folder**
-(the one containing `index.html` and `assets/`). The source brief/spec is found
-relative to it (Workflow 1: the parent spec folder's `_reference/_build_*.py` or
-`.docx`; Workflow 2: ask via the prompt context or look for the brief path noted
-in the package). If you cannot locate the source artifact, emit one `blocker`
-finding saying so and continue with what you can check structurally.
+Single prompt argument: absolute path to the mock's **working package** — the
+folder containing `index.html` and `assets/`, i.e. `<mocks>/_reference/` (legacy
+mocks: `<mocks>/` itself). You run **before bundling**: audit the package, not
+the single-file `<mocks>/<name> - mock.html` deliverable that `_bundle_mock.py`
+builds from it once the checks pass. If handed `<mocks>/` and it holds a
+`_reference/` folder, audit `_reference/`. The source brief/spec is found
+relative to `<mocks>` (Workflow 1: `<mocks>` is `<spec-folder>/mocks/`, so read
+the spec folder's own `_reference/_build_*.py` or `.docx` — not the mock's
+`_reference/`; Workflow 2: ask via the prompt context or look for the brief path
+noted in the package). If you cannot locate the source artifact, emit one
+`blocker` finding saying so and continue with what you can check structurally.
 
 ## Procedure
 
 1. **Read the source artifact** and extract the intended workflow: the ordered
    steps/states the user moves through, and the key solution elements (models,
    fields, actions, screens) the brief calls out. Prefer the structured
-   `SPEC_DATA` dict in `_reference/_build_<task-code>.py` when present.
+   `SPEC_DATA` dict in `<spec-folder>/_reference/_build_<task-code>.py` when present.
 
-2. **Read `index.html`** and parse every `<section class="mock-screen">`: collect
+2. **Read the package's `index.html`** and parse every `<section class="mock-screen">`: collect
    its `data-screen`, `data-title`, `data-desc`, and the `data-mock-goto` /
    `data-mock-next` / `data-mock-prev` wiring inside it.
 
@@ -55,10 +60,12 @@ finding saying so and continue with what you can check structurally.
    | **In-screen action doesn't advance state** — a Save / Confirm / Validate / similar button that should advance a downstream screen's State (or other axis) only does `data-mock-goto` without a paired `data-mock-set-variant`. The reviewer can't walk the workflow by clicking; they have to manually pivot chrome chips. | `blocker` |
    | **Data multiplicity collapsed into a variant axis** — the brief describes multiple data items (multiple order lines, multiple records, multiple cards) but the mock shows them as one alternated variant. The data should coexist on the screen, not pivot under an axis. | `blocker` |
    | **Cover missing required elements** — no Odoo logo in the cover header, no workflow narrative numbered list, no per-step axis index (when ≥ 1 screen has variant axes), or no variants-overview callout (when ≥ 1 screen has variant axes) | `nit` |
-   | **Cover callouts drift from canonical wording / order** — main cover's "How to interact with this mock" must use the FIVE canonical callouts from `SKILL.md` § Cover discipline, in this fixed order: (a) **Interactive mock** [always], (b) **Multiple workflows** [only when ≥ 2 `.mock-workflow` wrappers], (c) **Variant chips** [only when ≥ 1 screen has `data-mock-variant-axes`], (d) **Numbered markers** [always], (e) **Field help** [only when ≥ 1 screen carries `o_field_help` "?"]. Flag if the strong-tag lead-in text doesn't match (e.g. "Interactive walkthrough" instead of "Interactive mock"), the order is wrong (e.g. Numbered markers before Variant chips — that was the old order, now superseded), a required callout is missing, or a conditional callout is included when its trigger condition isn't met. | `nit` |
+   | **Cover callouts drift from canonical wording / order** — main cover's "How to interact with this mock" must use the SIX canonical callouts from `reference/templates/cover_callouts.html`, in this fixed order: (a) **Interactive mock** [always], (b) **Multiple workflows** [only when ≥ 2 `.mock-workflow` wrappers], (c) **Variant chips** [only when ≥ 1 screen has `data-mock-variant-axes`], (d) **Numbered markers** [always], (e) **Custom elements** [only when ≥ 1 element or screen carries `mock-custom`], (f) **Field help** [only when ≥ 1 screen carries `o_field_help` "?"]. Flag if the strong-tag lead-in text doesn't match (e.g. "Interactive walkthrough" instead of "Interactive mock"), the order is wrong (e.g. Numbered markers before Variant chips — that was the old order, now superseded), a required callout is missing, or a conditional callout is included when its trigger condition isn't met. | `nit` |
    | **Cover-section wrapper drift** — main cover and per-workflow overviews wrap their post-banner content in `<div class="mock-cover-section">` (or `mock-cover-section mock-cover-section-table` for the workflow narrative table). Older mocks shipped `<div class="mock-cover-body">` — that class has NO CSS rule anywhere in the catalog, so the section's grid, padding, callout layout, and step-list axis chips all render as bare-default block layout. Flag any `mock-cover-body` occurrence. | `blocker` |
    | **Markers are not numbered per screen** — `<span class="mock-marker">` text content on a workflow screen is the literal `i` (info-glyph intent) or another non-digit string. Per `style_guide.md` § Annotations — *"Numbered/`i` markers: `<span class="mock-marker" data-note="…">N</span>`"* — and *"Number markers per screen, not globally across the package. Each screen restarts at 1."* The `i` glyph is reserved for the cover's `mock-marker-example` illustrative marker; workflow markers must carry sequential digits. A pattern of `>i<` across every screen is generator drift (using the cover example pattern as a template instead of numbering). Flag every workflow-screen `mock-marker` whose text isn't a digit. | `nit` |
    | **Net-new field rendered without `o_field_help` "?"** — a row in the spec's `new_fields.table` (or `New Fields & Information` subsection) corresponds to a field shown on its screen, but the label doesn't carry `<span class="o_field_help" data-help="..." data-field="..." data-model="..." data-type="...">?</span>`. Per `SKILL.md`:204 — *"every custom field appears on its screen with the `o_field_help` "?" marker"*. The "?" is the field-level developer-facing affordance (technical name + type + key rule); it's distinct from `mock-marker` (workflow context) — a net-new field can carry BOTH. Flag every net-new field whose rendered label lacks a "?". Malformed "?" markup (present but missing data-* attrs) is mechanically caught by `_lint_mock.py`'s `FIELD-HELP-INCOMPLETE` rule — this anchor rule catches the *absent* "?", which lint can't see because there's nothing to match. | `blocker` |
+   | **Spec-added element not marked custom** — something the spec adds or changes is rendered without `mock-custom`: a field (any `new_fields` row, on a form, list column, settings box or search filter / group-by), a new button / action / menu entry, a new tab or setting, a guard message, a notification or chatter note the module posts; or a screen showing a `new_models` model's own view (or a new report / page) lacks `mock-custom` on its `.mock-screen`. The custom mark is as non-negotiable as the "?" (`reference/interactions.md` § Custom elements). `_lint_mock.py` `CUSTOM-UNMARKED` only catches "?" fields left unmarked; this rule catches the rest. | `blocker` |
+   | **Standard element marked custom** — `mock-custom` on an element or screen the spec neither adds nor changes (it would render identically without the addon), or on a container that also holds standard content. It overstates the solution's scope at sign-off. | `blocker` |
 
    **Coverage means the brief's behavior is visible, not that each rule
    has its own slot.** Guard rules typically appear as State-axis values
@@ -73,7 +80,7 @@ finding saying so and continue with what you can check structurally.
    product "can be lot-tracked or serial-tracked," the mock owes BOTH
    renderings on the same screen via the tracking-axis chip — picking
    one and silently dropping the other is a coverage failure that
-   downstream implementation will inherit.
+   downstream consumers (e.g. plan-dev) will inherit.
 
 4. **Click-path — reachability.** Confirm screens connect: each screen (except
    the last) advances via Next or a `data-mock-goto`, and any `data-mock-goto`
@@ -88,7 +95,9 @@ finding saying so and continue with what you can check structurally.
    describes a real solution element from the brief (a named field, action,
    rule, model) — not a generic Odoo description and not something the brief
    never mentions. Flag invented or off-brief notes (`nit`, or `blocker` if it
-   asserts behaviour the brief contradicts).
+   asserts behaviour the brief contradicts — unless the package's
+   `_reference/README.md` lists it under `## Spec departures` with a source
+   `path:line`; a recorded departure is intended).
 
 6. **Step-order sanity.** The screen order should follow the brief's workflow
    order. Flag reordered steps (`nit`) unless the reorder is clearly intentional.
@@ -136,9 +145,11 @@ Aspect values for `tags`:
 - `coverage:no-state-mutation` (in-screen action does goto without paired set-variant)
 - `coverage:data-as-axis` (data multiplicity collapsed into a variant axis instead of shown as data)
 - `coverage:cover-incomplete` (cover missing logo / workflow narrative / variants overview / per-step axis index)
-- `coverage:cover-callout-drift` (cover "How to interact" callouts deviate from the canonical five — wrong wording, wrong order, missing required, or including a conditional one whose trigger isn't met)
+- `coverage:cover-callout-drift` (cover "How to interact" callouts deviate from the canonical six — wrong wording, wrong order, missing required, or including a conditional one whose trigger isn't met)
 - `coverage:cover-section-wrapper` (cover uses the invented `mock-cover-body` class instead of `mock-cover-section`)
 - `coverage:marker-not-numbered` (`<span class="mock-marker">` text content is the literal "i" or another non-digit — markers on workflow screens must be NUMBERED, sequentially per screen restarting at 1, per `style_guide.md` § Number markers per screen. The `i` example is reserved for the cover's `mock-marker-example` illustrative marker only.)
+- `coverage:custom-unmarked` (an element or screen the spec adds or changes is rendered without `mock-custom` — per `reference/interactions.md` § Custom elements)
+- `coverage:custom-overmarked` (`mock-custom` on something standard, or on a container that also holds standard content)
 - `coverage:new-field-no-help` (a net-new field in the spec's `new_fields.table` is rendered on its screen WITHOUT an `o_field_help` "?" marker next to its label — per `SKILL.md`:204 "every custom field appears on its screen with the `o_field_help` "?" marker". The "?" is the developer-facing field-attribute panel; net-new fields can also carry a `mock-marker` for workflow context, the two are not mutually exclusive.)
 
 ## Constraints

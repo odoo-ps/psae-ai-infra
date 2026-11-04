@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2fc7f7bc-2758-43e7-833d-c3f5ffff49ec" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchor_pass.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/business-analyst-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/business-analyst-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/consultant-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/consultant-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/data-migration-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/data-migration-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/devops-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/devops-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/documentation-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/documentation-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/localization-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/localization-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/mock-coverage-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/mock-coverage-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/mock-fidelity-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/mock-fidelity-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/performance-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/performance-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/plan-structure-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/plan-structure-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/principles-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/principles-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/qa-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/qa-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/security-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/security-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/solution-architect-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/solution-architect-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/troubleshooting-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/troubleshooting-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/anchors/ux-ui-anchor.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/anchors/ux-ui-anchor.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/odoo_runtime_idioms.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/principles.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/principles.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/business_analyst.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/business_analyst.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/consultant.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/consultant.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/data_migration.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/data_migration.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/devops.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/devops.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/documentation.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/documentation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/localization.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/localization.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/performance.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/performance.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/qa.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/qa.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/security.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/security.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/solution_architect.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/solution_architect.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/role_checklists/ux_ui.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/role_checklists/ux_ui.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/scripts/_check_odoo_source.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/scripts/_check_odoo_source.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/scripts/_lint_troubleshooting.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/_shared/scripts/_lint_troubleshooting.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/troubleshooting-archive.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/_shared/troubleshooting.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/SKILL.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/SKILL.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/agents/odoo-mock-design.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/agents/odoo-mock-design.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/REFRESH.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/REFRESH.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/_gallery.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/_gallery.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/annotations.css" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/annotations.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/app-icons.svg" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/app-icons.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/account_report.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/account_report.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/activity.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/activity_list.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/activity_list.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/activity_matrix.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/activity_matrix.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/apps_menu.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/apps_menu.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/calendar_week.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/calendar_week.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/chart_views.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/chart_views.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/chatter.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/chatter.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/cohort.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/cohort.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/command_palette.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/command_palette.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/control_panel.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/control_panel.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/custom_field_widget.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/custom_field_widget.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/dashboard.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/dashboard_sidebar.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/dashboard_sidebar.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/dialog.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/dialog.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/discuss.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/discuss.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/form_view.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/form_view.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/gantt.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/gantt.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/grid.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/grid.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/hierarchy.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/hierarchy.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/kanban.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/kanban.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/list_view.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/list_view.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/map.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/map.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/navbar.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/navbar.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/no_content.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/no_content.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/onboarding.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/onboarding.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/page_skeleton.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/page_skeleton.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/search_panel.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/search_panel.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/settings.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/settings.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/spreadsheet.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/spreadsheet.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/studio.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/studio.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/tour_pointer.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/tour_pointer.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/walkthrough_bar.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/components/walkthrough_bar.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/icons.svg" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/icons.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/odoo.css" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/odoo.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/walkthrough.js" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog/walkthrough.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog_chrome.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/catalog_chrome.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/checklist.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/checklist.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/cover_discipline.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/cover_discipline.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/field_placement.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/field_placement.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/interactions.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/interactions.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/samples/reference_pattern.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/samples/reference_pattern.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_lint_mock.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_lint_mock.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_refresh_assets.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_refresh_assets.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_render_mock_screens.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_render_mock_screens.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_scaffold_mock.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/scripts/_scaffold_mock.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/style_guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/style_guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/templates/cover_callouts.html" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/templates/cover_callouts.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reference/view_types.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reference/view_types.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reports/industry_standards_audit.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reports/industry_standards_audit.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-mock-design/reports/skill_audit.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-mock-design/reports/skill_audit.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/SKILL.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/SKILL.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/agents/odoo-spreadsheet-report.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/agents/odoo-spreadsheet-report.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/reference/scripts/_sync_o_spreadsheet_source.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/reference/scripts/_sync_o_spreadsheet_source.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/reference/troubleshooting.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/reference/troubleshooting.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/reports/industry_standards_audit.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-spreadsheet-report/reports/industry_standards_audit.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-write-specifications/SKILL.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-write-specifications/SKILL.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-write-specifications/agents/odoo-write-specifications.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-write-specifications/agents/odoo-write-specifications.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-write-specifications/reference/content_outline.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-write-specifications/reference/content_outline.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-write-specifications/reference/scripts/_build_spec.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-write-specifications/reference/scripts/_build_spec.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-write-specifications/reference/scripts/_lint_spec.py" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-write-specifications/reference/scripts/_lint_spec.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-write-specifications/reports/industry_standards_audit.md" beforeDir="false" afterPath="$PROJECT_DIR$/skills/odoo-write-specifications/reports/industry_standards_audit.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/skills/odoo-write-specifications/requirements.txt" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="5033" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 5,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3LarKzGuZeuYRBX8MbtuA5P78GI" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "staging-hmd",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/home/hmd/developments/trash/psae-ai-infra",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-821f704e66d9-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.9437.214" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2fc7f7bc-2758-43e7-833d-c3f5ffff49ec" name="Changes" comment="" />
+      <created>1793702959677</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1793702959677</updated>
+      <workItem from="1793702960723" duration="879000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

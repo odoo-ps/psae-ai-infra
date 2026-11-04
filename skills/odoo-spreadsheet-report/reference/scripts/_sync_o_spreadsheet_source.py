@@ -38,10 +38,46 @@ from pathlib import Path
 REPO_URL = "https://github.com/odoo/o-spreadsheet.git"
 
 
+def _version_dirs(root: Path) -> list[str]:
+    """Bare names of `versions/v<major>/` folders under root, ascending by major.
+
+    Version stacks live under `<root>/versions/v<major>/`; the returned names are
+    the bare `v<major>` (e.g. "v19", "v20") — callers join under `versions/`.
+    """
+    try:
+        base = root / "versions"
+        return sorted(
+            (p.name for p in base.iterdir() if p.is_dir() and re.fullmatch(r"v\d+", p.name)),
+            key=lambda n: int(n[1:]),
+        )
+    except OSError:
+        return []
+
+
+def resolve_odoo_dir(repo_root: Path, version: str | None = None) -> Path:
+    """Return the odoo checkout whose spreadsheet bundle to read.
+
+    Supports the legacy flat layout (`<root>/odoo`) and the version-folder layout
+    (`<root>/versions/v<major>/odoo`). `version` (a bare major like "20") selects a
+    stack; default is the newest `versions/v<major>/` folder, else the flat `odoo/`.
+    """
+    if version:
+        vf = f"v{str(version).lstrip('v')}"
+        if not (repo_root / "versions" / vf / "odoo").is_dir():
+            raise SystemExit(f"No versions/{vf}/odoo under {repo_root}")
+        return repo_root / "versions" / vf / "odoo"
+    vdirs = _version_dirs(repo_root)
+    if vdirs:
+        return repo_root / "versions" / vdirs[-1] / "odoo"
+    return repo_root / "odoo"
+
+
 def find_repo_root(start: Path) -> Path:
     cur = start.resolve()
     for _ in range(10):
-        if all((cur / d).is_dir() for d in ("odoo", "enterprise", "skills")):
+        # Root has `skills/` plus either a flat `odoo/` (legacy layout) or one or
+        # more `versions/v<major>/odoo` stacks (version-folder layout).
+        if (cur / "skills").is_dir() and ((cur / "odoo" / "addons").is_dir() or _version_dirs(cur)):
             return cur
         if cur.parent == cur:
             break
@@ -49,7 +85,7 @@ def find_repo_root(start: Path) -> Path:
     raise RuntimeError(f"Could not locate repo root above {start}")
 
 
-def detect_runtime_version(repo_root: Path) -> str | None:
+def detect_runtime_version(odoo_dir: Path) -> str | None:
     """Return the bundle's full semver from its JSDoc `@version` header.
 
     The header looks like:
@@ -65,7 +101,7 @@ def detect_runtime_version(repo_root: Path) -> str | None:
     minified code contains many migration-target literals (`"15.4.1"`,
     `"18.5.1"`, ...) that have nothing to do with the bundle's own version.
     """
-    bundle = repo_root / "odoo/addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js"
+    bundle = odoo_dir / "addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js"
     if not bundle.is_file():
         return None
     try:
@@ -150,14 +186,18 @@ def main() -> int:
     ap.add_argument("--target", default=None,
                     help="Override the local clone path "
                          "(default: skills/odoo-spreadsheet-report/reference/o-spreadsheet-source).")
+    ap.add_argument("--version", default=None,
+                    help="Odoo major whose bundle to read (e.g. 20). Default: the "
+                         "newest versions/v<major>/ stack, else the flat odoo/ layout.")
     args = ap.parse_args()
 
     repo_root = find_repo_root(Path(__file__).parent)
+    odoo_dir = resolve_odoo_dir(repo_root, args.version)
     target = Path(args.target) if args.target else (
         repo_root / "skills/odoo-spreadsheet-report/reference/o-spreadsheet-source"
     )
 
-    semver = detect_runtime_version(repo_root)
+    semver = detect_runtime_version(odoo_dir)
     branch = args.branch or (stable_branch_for(semver) if semver else None)
     if not branch:
         raise SystemExit(
@@ -166,6 +206,7 @@ def main() -> int:
         )
 
     print(f"--- o-spreadsheet source sync")
+    print(f"  odoo checkout   : {odoo_dir}")
     print(f"  runtime semver  : {semver or '(unknown)'}")
     print(f"  stable branch   : {branch}")
     print(f"  target dir      : {target}")

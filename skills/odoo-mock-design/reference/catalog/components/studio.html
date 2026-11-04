@@ -1,43 +1,81 @@
 <!--
-  studio.html — Odoo Studio editor (enterprise web_studio).
+  studio.html — Odoo 20 Studio editor (enterprise web_studio), form view.
   Ported from:
     enterprise/web_studio/static/src/client_action/navbar/navbar.{xml,scss}
-    enterprise/web_studio/static/src/client_action/view_editor/
+    enterprise/web_studio/static/src/client_action/editor/ (editor + editor_menu)
+    enterprise/web_studio/static/src/client_action/view_editor/ (sidebar, renderer,
+      snackbar, hooks, form_editor_renderer, properties)
+    enterprise/web_studio/static/src/client_action/studio_sidebar.scss
 
   Real Studio key visual cues to keep:
-   - Top NAVBAR is DARK (real Odoo uses `$o-web-studio-bg-dark`, a near-
-     black purple). Replaces the standard white enterprise navbar; that's
-     what makes the user know they're in Studio.
-   - Navbar carries (left to right): apps-launcher, app brand, menu
-     sections (inactive when in form editor), then `Edit Menu` and
-     `Create New Model` text buttons (`.o-studio--menu`), then a
-     prominent dark-orange `Close` button (`.o_studio_buttons`).
-   - View renderer area gets a brand-tinted bg with the form inside.
-     Every label has a tiny pencil hint on hover; fields have dashed
-     outlines (`.o_web_studio_hook` highlights drop zones).
-   - Right sidebar tabs: Add · View · Properties — with a section header
-     band per group (New Fields, Existing Fields, Sub-views, Studio
-     Approvals, …).
+   - Top NAVBAR is DARK (`$o-web-studio-bg-dark` #262c34, hover
+     `$o-web-studio-bg-medium` #3a3f46). It replaces the transparent
+     Enterprise navbar; that's what makes the user know they're in Studio.
+   - Navbar = the Enterprise navbar (StudioNavbar inherits it): app icon +
+     app name in `.o_menu_toggle.hasImage`, menu sections, then `Edit Menu`
+     and `New Model` text buttons (`.o-studio--menu`), then a full-height
+     `Close` button (`.o_studio_buttons`). No systray.
+   - EDITOR MENU BAR (.o_web_studio_menu, 36px, #3a3f46 + 3px #262c34 rule):
+     uppercase breadcrumb `VIEWS > FORM` (current crumb lighter), then
+     UNDO | REDO and `✓ Saved` (.o_web_studio_snackbar), then right-aligned
+     tab buttons Views · Reports · Automations · Actions · Webhooks · Security ·
+     Filter Rules, then the action's view-type icons behind a 2px dark rule.
+     Never "ACL", "Access Control", "Filters" or "Properties" tabs.
+   - SIDEBAR is on the LEFT: 300px, dark gray #3a3f46, 3px #262c34 right
+     border. A notebook Add · View · Properties (icon + label); Properties is
+     li.disabled (30% opacity) until a node is selected.
+   - ADD tab palette, in this order: h3 Components (Tabs, Column), h3 New
+     Fields (the 20 types below, exact labels), h3 Existing Fields FOLDED
+     (caret right). Tiles are WHITE chips (bold 11px dark text, #eaeaea 33px
+     icon band, shadow), two per row. Never "New Structure", "Separator",
+     "Smart Button" or technical-name captions.
+   - The FORM under edit sits on the gray web-client background with NO
+     control panel. Order inside .o_form_sheet_bg: the button-box row (the
+     record's visible smart buttons + an "Add button" stat hook), then the
+     statusbar (its buttons end with "Add button"), then the sheet ("Add
+     Picture" 90x90 slot floated right when the form has no avatar; notebook
+     tabs 3px apart, last tab = add_box). A chatter goes BELOW the sheet,
+     full width — never the .o_content_with_chatter side layout.
+   - Selected node: label cell gets o-web-studio-editor--element-clicked and
+     the value cell is its o-web-studio-element-ghost sibling → two 2px plum
+     boxes. A selected group / title field gets the clicked class on itself.
+     Hover = 1px dashed plum. No pencil icons, no background tint.
+   - Drop hooks are INVISIBLE at rest. Only a "dragging" screen shows them
+     (see VARIANT A). Hooks never carry text ("Drop a field here" is wrong).
 
   Compose the screen by:
-   1. wrapping in `.o_web_client.o_in_studio` (engages dark-navbar override)
-   2. emitting a `.o_main_navbar.o_studio_navbar` (DARK background)
-   3. then `.o_web_studio_editor` body = view renderer + sidebar
+   1. wrapping in `.o_web_client` (height:100vh for a fixed-height editor)
+   2. emitting a `header.o_navbar > nav.o_main_navbar.o_studio_navbar` (DARK background)
+   3. then `.o_web_studio_editor` = `.o_web_studio_menu` + `.o_action_manager >
+      .o_web_studio_editor_manager` = [sidebar FIRST, then .o_web_studio_view_renderer]
+   4. inside the renderer, `.o_form_view.o_web_studio_form_view_editor` with the
+      regular form markup (components/form_view.html), plus the Studio-only
+      affordances shown below. Mark each field: label →
+      o-web-studio-editor--element-clickable, widget → o-web-studio-element-ghost.
+
+  Tile icons: real Studio paints a raster sprite (img/ui/studio_icons.png) in
+  ::after; the mock uses <svg class="o_icon"><use href="#o-studio-field-<type>"/>
+  (approximations). Tile class = o_web_studio_field_<name>: char text integer
+  float html monetary date datetime boolean selection file lines one2many
+  many2one many2many picture tags priority signature related, components tabs
+  columns; Existing Fields tiles use the field's type (File uses the binary glyph).
 -->
+<header class="o_navbar">
 <nav class="o_main_navbar o_studio_navbar">
-  <a class="o_menu_toggle" title="Home menu">
-    <svg class="o_menu_toggle_icon" width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-      <g fill="currentColor"><rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/></g>
-      <g fill="currentColor"><rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/></g>
-      <g fill="currentColor"><rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/></g>
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
     </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-sales"/></svg>
     <span class="o_menu_brand">Sales</span>
   </a>
   <div class="o_menu_sections">
-    <span class="o_nav_entry">Orders</span>
-    <span class="o_nav_entry">Products</span>
-    <span class="o_nav_entry">Reporting</span>
-    <span class="o_nav_entry">Configuration</span>
+    <a class="o_nav_entry">Orders</a>
+    <a class="o_nav_entry">Products</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
   </div>
   <div class="o-studio--menu">
     <span class="o_web_edit_menu">Edit Menu</span>
@@ -47,97 +85,256 @@
     <a class="btn o_studio_close_btn">Close</a>
   </div>
 </nav>
+</header>
 <div class="o_web_studio_editor">
-  <!-- Editor top bar: view-type switcher + breadcrumb of the customised
-       view. Tabs: Views / Reports / Automations / ACL / Filters /
-       Properties / Translations — real Studio exposes them as a row of
-       buttons across the top of the editor area. -->
-  <div class="o_web_studio_top_bar">
-    <div class="o_web_studio_breadcrumb">Studio / sale.order / <strong>Form</strong></div>
-    <div class="o_web_studio_top_tabs">
-      <span class="active">Views</span>
-      <span>Reports</span>
-      <span>Automations</span>
-      <span>ACL</span>
-      <span>Filters</span>
-      <span>Properties</span>
+  <!-- Editor menu bar (editor_menu.xml). Breadcrumb = Studio tab > edited view;
+       the snackbar (Undo | Redo · Saved) follows it. Undo is .o_web_studio_active
+       once something was changed; an inactive one reads gray. Snackbar states:
+       ✓ Saved (#o-check) · Saving · Error. -->
+  <div class="o_web_studio_menu">
+    <div class="o_web_studio_breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item o_back_button">Views</li>
+        <li class="breadcrumb-item active">Form</li>
+      </ol>
+    </div>
+    <div class="o_web_studio_menu_undo_redo">
+      <button class="btn o_web_studio_undo o_web_studio_active"><svg class="o_icon"><use href="#o-ms-undo"/></svg>Undo</button>
+      <div></div>
+      <button class="btn o_web_studio_redo"><svg class="o_icon"><use href="#o-ms-redo"/></svg>Redo</button>
+    </div>
+    <div class="o_web_studio_snackbar">
+      <span><svg class="o_icon"><use href="#o-check"/></svg>Saved</span>
+    </div>
+    <!-- div.ms-auto (mock helper .o_web_studio_menu_tabs): Studio tabs, then one
+         icon per view type the edited action has, in this order — Form
+         #o-contact-mail · List #o-view-list-alt · Kanban #o-view-kanban ·
+         Map #o-view-map · Calendar #o-view-calendar · Graph #o-area-chart ·
+         Pivot #o-view-pivot · Gantt #o-view-gantt · Cohort #o-view-cohort ·
+         Activity #o-view-activity · Search #o-search. -->
+    <div class="ms-auto o_web_studio_menu_tabs">
+      <div class="o_menu_sections">
+        <button class="btn">Views</button>
+        <button class="btn">Reports</button>
+        <button class="btn">Automations</button>
+        <button class="btn">Actions</button>
+        <button class="btn">Webhooks</button>
+        <button class="btn">Security</button>
+        <button class="btn">Filter Rules</button>
+      </div>
+      <div class="o_web_studio_views_icons">
+        <a title="Form"><svg class="o_icon"><use href="#o-contact-mail"/></svg></a>
+        <a title="List"><svg class="o_icon"><use href="#o-view-list-alt"/></svg></a>
+        <a title="Kanban"><svg class="o_icon"><use href="#o-view-kanban"/></svg></a>
+        <a title="Calendar"><svg class="o_icon"><use href="#o-view-calendar"/></svg></a>
+        <a title="Graph"><svg class="o_icon"><use href="#o-area-chart"/></svg></a>
+        <a title="Pivot"><svg class="o_icon"><use href="#o-view-pivot"/></svg></a>
+        <a title="Activity"><svg class="o_icon"><use href="#o-view-activity"/></svg></a>
+        <a title="Search"><svg class="o_icon"><use href="#o-search"/></svg></a>
+      </div>
     </div>
   </div>
-  <div class="o_web_studio_editor_body">
-    <div class="o_web_studio_view_renderer">
-      <div class="o_form_sheet" style="margin:16px;">
-        <div class="oe_title"><h1 class="o_form_title">S00078</h1></div>
-        <div class="o_group">
-          <div class="o_inner_group">
-            <div class="o_field_row o_web_studio_editable_field">
-              <label class="o_form_label">Customer <span class="o_web_studio_edit_pencil">✎</span></label>
-              <div class="o_field_widget"><a class="o_form_link">Deco Addict</a></div>
-            </div>
-            <div class="o_field_row o_web_studio_hook">
-              <label class="o_form_label">Lot Allocations</label>
-              <div class="o_field_widget o_web_studio_widget_empty">Drop a field here</div>
-            </div>
-            <div class="o_field_row o_web_studio_editable_field">
-              <label class="o_form_label">Expected Closing <span class="o_web_studio_edit_pencil">✎</span></label>
-              <div class="o_field_widget">06/14/2026</div>
-            </div>
-          </div>
-          <div class="o_inner_group">
-            <div class="o_field_row o_web_studio_editable_field">
-              <label class="o_form_label">Salesperson <span class="o_web_studio_edit_pencil">✎</span></label>
-              <div class="o_field_widget"><a class="o_form_link">Mitchell Admin</a></div>
-            </div>
-            <div class="o_field_row o_web_studio_editable_field">
-              <label class="o_form_label">Pricelist <span class="o_web_studio_edit_pencil">✎</span></label>
-              <div class="o_field_widget"><a class="o_form_link">USD — Default</a></div>
-            </div>
-            <div class="o_web_studio_add_element">+ Add a field</div>
-          </div>
-        </div>
-        <!-- Studio shows ghost "+ Add" buttons for sections, notebooks,
-             buttons. Render them after the main form to demonstrate. -->
-        <div class="o_web_studio_add_row">
-          <button class="o_web_studio_add_btn">+ Add a notebook</button>
-          <button class="o_web_studio_add_btn">+ Add a button</button>
-          <button class="o_web_studio_add_btn">+ Add a tab</button>
-        </div>
-      </div>
-    </div>
+
+  <!-- StudioActionContainer (.o_action_manager) > view_editor.xml:
+       sidebar FIRST (left), renderer second -->
+  <div class="o_action_manager">
+  <div class="o_web_studio_editor_manager">
     <aside class="o_web_studio_sidebar">
-      <div class="o_web_studio_sidebar_header">
-        <span class="active">Add</span>
-        <span>View</span>
-        <span>Properties</span>
-      </div>
-      <div class="o_web_studio_sidebar_section">New Fields</div>
-      <div class="o_web_studio_field_type_container">
-        <div class="o_web_studio_field_type" title="Char">Text</div>
-        <div class="o_web_studio_field_type" title="Integer">Integer</div>
-        <div class="o_web_studio_field_type" title="Decimal">Decimal</div>
-        <div class="o_web_studio_field_type" title="HTML">Html</div>
-        <div class="o_web_studio_field_type" title="Date">Date</div>
-        <div class="o_web_studio_field_type" title="DateTime">Datetime</div>
-        <div class="o_web_studio_field_type" title="Many2one">Many2one</div>
-        <div class="o_web_studio_field_type" title="One2many">One2many</div>
-        <div class="o_web_studio_field_type" title="Many2many">Many2many</div>
-        <div class="o_web_studio_field_type" title="Checkbox">Checkbox</div>
-        <div class="o_web_studio_field_type" title="Selection">Selection</div>
-        <div class="o_web_studio_field_type" title="Tags">Tags</div>
-      </div>
-      <div class="o_web_studio_sidebar_section">New Structure</div>
-      <div class="o_web_studio_field_type_container">
-        <div class="o_web_studio_field_type">Tabs</div>
-        <div class="o_web_studio_field_type">Columns</div>
-        <div class="o_web_studio_field_type">Separator</div>
-        <div class="o_web_studio_field_type">Smart Button</div>
-      </div>
-      <div class="o_web_studio_sidebar_section">Existing Fields</div>
-      <div class="o_web_studio_field_type_container">
-        <div class="o_web_studio_field_type">Salesperson</div>
-        <div class="o_web_studio_field_type">Warehouse</div>
-        <div class="o_web_studio_field_type">Payment Term</div>
-        <div class="o_web_studio_field_type">Tags</div>
+      <div class="o_notebook horizontal">
+        <div class="o_notebook_headers">
+          <ul class="nav nav-tabs">
+            <li class="nav-item"><button class="nav-link active o_web_studio_new"><svg class="o_icon"><use href="#o-plus"/></svg>Add</button></li>
+            <li class="nav-item"><button class="nav-link o_web_studio_view"><svg class="o_icon"><use href="#o-tv"/></svg>View</button></li>
+            <!-- Properties is .disabled (30% opacity) until a node is selected -->
+            <li class="nav-item disabled"><button class="nav-link o_web_studio_properties"><svg class="o_icon"><use href="#o-dns"/></svg>Properties</button></li>
+          </ul>
+        </div>
+        <div class="o_notebook_content tab-content">
+          <div class="tab-pane active">
+            <div class="o_web_studio_field_type_container o_web_studio_new_components">
+              <h3>Components</h3>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_tabs"><svg class="o_icon"><use href="#o-studio-field-tabs"/></svg>Tabs</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_columns"><svg class="o_icon"><use href="#o-studio-field-columns"/></svg>Column</div>
+            </div>
+            <h3 class="my-3">New Fields</h3>
+            <div class="o_web_studio_field_type_container o_web_studio_new_fields">
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_char"><svg class="o_icon"><use href="#o-studio-field-char"/></svg>Text</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_text"><svg class="o_icon"><use href="#o-studio-field-text"/></svg>Multiline Text</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_integer"><svg class="o_icon"><use href="#o-studio-field-integer"/></svg>Integer</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_float"><svg class="o_icon"><use href="#o-studio-field-float"/></svg>Decimal</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_html"><svg class="o_icon"><use href="#o-studio-field-html"/></svg>HTML</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_monetary"><svg class="o_icon"><use href="#o-studio-field-monetary"/></svg>Monetary</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_date"><svg class="o_icon"><use href="#o-studio-field-date"/></svg>Date</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_datetime"><svg class="o_icon"><use href="#o-studio-field-datetime"/></svg>Datetime</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_boolean"><svg class="o_icon"><use href="#o-studio-field-boolean"/></svg>CheckBox</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_selection"><svg class="o_icon"><use href="#o-studio-field-selection"/></svg>Selection</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_file"><svg class="o_icon"><use href="#o-studio-field-binary"/></svg>File</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_lines"><svg class="o_icon"><use href="#o-studio-field-lines"/></svg>Lines</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_one2many"><svg class="o_icon"><use href="#o-studio-field-one2many"/></svg>One2Many</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_many2one"><svg class="o_icon"><use href="#o-studio-field-many2one"/></svg>Many2One</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_many2many"><svg class="o_icon"><use href="#o-studio-field-many2many"/></svg>Many2Many</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_picture"><svg class="o_icon"><use href="#o-studio-field-picture"/></svg>Image</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_tags"><svg class="o_icon"><use href="#o-studio-field-tags"/></svg>Tags</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_priority"><svg class="o_icon"><use href="#o-studio-field-priority"/></svg>Priority</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_signature"><svg class="o_icon"><use href="#o-studio-field-signature"/></svg>Signature</div>
+              <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_related"><svg class="o_icon"><use href="#o-studio-field-related"/></svg>Related Field</div>
+            </div>
+            <!-- Folded by default (caret right). Unfolded (caret #o-caret-down):
+              <h6 class="small">The following fields are currently not in the view.</h6>
+              <input class="o_web_studio_sidebar_search_input" placeholder="Search..."/>
+              <div class="o_web_studio_field_type_container o_web_studio_existing_fields">
+                <div class="o_web_studio_component o_web_studio_icon_container o_web_studio_field_many2one"><svg class="o_icon"><use href="#o-studio-field-many2one"/></svg>Warehouse</div>
+                … one full-width tile per field not in the view, class = the field's type
+              </div> -->
+            <h3 class="o_web_studio_existing_fields_header my-3">Existing Fields<svg class="o_icon"><use href="#o-caret-right"/></svg></h3>
+          </div>
+        </div>
       </div>
     </aside>
+
+    <div class="o_web_studio_view_renderer">
+      <div class="o_form_view o_web_studio_form_view_editor">
+        <div class="o_form_sheet_bg">
+          <!-- Button box, re-added INTO the form (the control panel is hidden in
+               Studio): the record's VISIBLE smart buttons (control_panel.html
+               .oe_stat_button markup) then the "Add button" stat hook. -->
+          <div class="o_web_studio_buttonbox_row">
+            <div class="o-form-buttonbox">
+              <!-- SLOT: visible .oe_stat_button(s), if any -->
+              <div class="o_web_studio_buttonbox_add">
+                <button class="btn btn-secondary oe_stat_button o_web_studio_button_hook">Add button</button>
+              </div>
+            </div>
+          </div>
+          <!-- Statusbar = the form's (form_view.html); Studio appends "Add button"
+               (AddButtonAction — its plus icon renders blank in v20). -->
+          <div class="o_form_statusbar">
+            <div class="o_statusbar_buttons">
+              <button class="btn btn-primary">Send</button>
+              <button class="btn btn-secondary">Download</button>
+              <button class="btn btn-secondary">Confirm</button>
+              <button class="btn btn-secondary">Preview</button>
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-secondary o-web-studio-editor--add-button-action">Add button</button>
+            </div>
+            <div class="o_field_widget o_field_statusbar o_readonly_modifier">
+              <div class="o_statusbar_status" role="radiogroup">
+                <button class="btn btn-secondary o_arrow_button o_arrow_button_current" disabled aria-current="step">Quotation</button>
+                <button class="btn btn-secondary o_arrow_button" disabled>Quotation Sent</button>
+                <button class="btn btn-secondary o_arrow_button" disabled>Sales Order</button>
+              </div>
+            </div>
+            <!-- VARIANT D — form WITHOUT a statusbar field: Studio appends a faded
+                 fake pipeline here as a drop target, no text label (no statusbar
+                 at all → it becomes the first child of .o_form_sheet_bg):
+            <div class="o_web_studio_statusbar_hook o_web_studio_hook_special">
+              <div class="o_field_statusbar">
+                <div class="o_statusbar_status">
+                  <button class="btn btn-secondary o_arrow_button text-bg-400">Stage 1</button>
+                  <button class="btn btn-secondary o_arrow_button text-bg-300">Stage 2</button>
+                </div>
+              </div>
+            </div> -->
+          </div>
+          <div class="o_form_sheet">
+            <!-- "Add Picture" (AvatarHook): on every form whose title has no avatar -->
+            <button class="o_web_studio_add_element btn btn-secondary oe_avatar o_web_studio_avatar">Add Picture</button>
+            <div class="oe_title"><h1 class="o_form_title">S00078</h1></div>
+            <div class="o_group">
+              <div class="o_inner_group">
+                <div class="o_field_row">
+                  <label class="o_form_label o-web-studio-editor--element-clickable">Customer</label>
+                  <div class="o_field_widget o-web-studio-element-ghost"><a class="o_form_link">Deco Addict</a></div>
+                </div>
+              </div>
+              <div class="o_inner_group">
+                <div class="o_field_row">
+                  <label class="o_form_label o-web-studio-editor--element-clickable">Expiration</label>
+                  <div class="o_field_widget o-web-studio-element-ghost">Jun 30</div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label o-web-studio-editor--element-clickable">Payment Terms</label>
+                  <div class="o_field_widget o-web-studio-element-ghost"><span class="o_input_placeholder">Immediate</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- Notebook = the form notebook; Studio spaces the tabs 3px apart and
+                 adds an add_box tab last (.o_web_studio_add_form_page). -->
+            <div class="o_notebook">
+              <div class="o_notebook_headers">
+                <span class="nav-link active">Order Lines</span>
+                <span class="nav-link">Other Info</span>
+                <span class="nav-link o_web_studio_add_form_page"><svg class="o_icon"><use href="#o-add-box"/></svg></span>
+              </div>
+              <div class="o_notebook_content">
+                <!-- SLOT: open page content, as in form_view.html -->
+              </div>
+            </div>
+          </div>
+          <!-- Chatter (if the model has one): AFTER .o_form_sheet, full width —
+               <div class="o-mail-Form-chatter"><div class="o-mail-Chatter">…</div></div> -->
+        </div>
+      </div>
+    </div>
+  </div>
   </div>
 </div>
+<!--
+  VARIANT A — DRAGGING a tile (Add tab): add o_web_studio_hook-highlight to EVERY
+  .o_inner_group of the sheet (and to the open notebook page), then put ONE
+  nearest-hook slot at the drop point, between two rows:
+    <div class="o_inner_group o_web_studio_hook-highlight"> …rows…
+      <div class="o_web_studio_hook o_web_studio_nearest_hook"><span class="o_web_studio_hook_separator"></span></div>
+    … </div>
+  A resting screen has no highlight and no visible hook.
+
+  VARIANT B — a FIELD SELECTED (Properties tab). Field cells:
+    <label class="o_form_label o-web-studio-editor--element-clickable o-web-studio-editor--element-clicked">Payment Terms</label>
+    <div class="o_field_widget o-web-studio-element-ghost">…</div>
+  Sidebar: drop `disabled` from the Properties li, move `active` to its nav-link,
+  and replace the .tab-pane content with the node-type h3 + ONE d-flex
+  flex-column wrapper holding the properties (its margins must not collapse):
+    <h3 class="o_web_studio_icon_container o_web_studio_field_many2one">field<svg class="o_icon"><use href="#o-studio-field-many2one"/></svg></h3>
+    <div class="d-flex flex-column">
+    <div class="o_web_studio_property o_web_studio_property_class">
+      <div class="o_web_studio_sidebar_text"><label for="class">Class<sup>?</sup></label><input id="class"/></div>
+    </div>
+    <div class="o_web_studio_property o_web_studio_sidebar_checkbox">
+      <div class="o-checkbox form-check"><input type="checkbox" class="form-check-input" id="invisible"/><label class="form-check-label" for="invisible">Invisible</label></div>
+      <a class="btn btn-link o_web_studio_attrs">Conditional</a>
+    </div>
+    … same for Required, Readonly (checked = green #21B799 box) …
+    <div class="o_web_studio_property o_web_studio_property_string">
+      <div class="o_web_studio_sidebar_text"><label for="string">Label</label><input id="string" value="Payment Terms"/></div>
+    </div>
+    <div class="o_web_studio_property o_web_studio_property_help">
+      <div class="o_web_studio_sidebar_text"><label for="help">Help Tooltip</label><input id="help"/></div>
+    </div>
+    <div class="o_web_studio_property o_web_studio_property_tracking">
+      <div class="o_web_studio_sidebar_checkbox"><div class="o-checkbox form-check"><input type="checkbox" class="form-check-input" id="tracking"/><label class="form-check-label" for="tracking">Track in chatter</label></div></div>
+    </div>
+    <div class="o_web_studio_property o_web_studio_property_widget">
+      <div class="o_web_studio_sidebar_select"><label for="widget">Widget</label><div class="o_select_menu"><input class="o_input o_select_menu_toggler" id="widget" value="Many2one"/></div></div>
+    </div>
+    … widget options as o_web_studio_sidebar_checkbox rows (e.g. Disable opening, Disable creation) …
+    <div class="o_limit_group_visibility o_web_studio_sidebar_tags">
+      <label for="group_ids">Allow visibility to groups</label>
+      <div class="o_field_widget o_field_many2many_tags"><div class="o_multi_record_selector"><span class="o_tag o_badge badge rounded-pill o_tag_color_0"><div class="o_tag_badge_text">Sales / Administrator</div><a class="o_delete" title="Remove"><svg class="o_icon"><use href="#o-close-small"/></svg></a></span><input class="o_input"/></div></div>
+      <label for="negated_groups_id">Forbid visibility to groups</label>
+      <div class="o_field_widget o_field_many2many_tags"><div class="o_multi_record_selector"><input class="o_input"/></div></div>
+    </div>
+    <div class="o_web_studio_sidebar_toolbox"><button class="btn btn-danger btn-lg o_web_studio_remove">Remove from View</button></div>
+    </div>
+
+  VARIANT C — a BUTTON selected: its Properties start with the approvals block:
+    <div class="o_web_studio_sidebar_approval">
+      <div class="d-flex align-items-center"><h6>Approvals</h6></div>
+      <div class="o_studio_sidebar_approval_rule">
+        <label>Approvers<sup>?</sup></label>
+        <div class="o_field_widget o_web_studio_sidebar_tags"><span class="o_tag o_badge badge rounded-pill o_tag_color_0"><div class="o_tag_badge_text">Mitchell Admin</div></span></div>
+        <label>Approver Group<sup>?</sup></label>
+        <input class="o_input" value="Sales / Administrator"/>
+      </div>
+      <a class="o_web_studio_sidebar_btn_link"><svg class="o_icon"><use href="#o-plus"/></svg> Add an approval step</a>
+    </div>
+-->

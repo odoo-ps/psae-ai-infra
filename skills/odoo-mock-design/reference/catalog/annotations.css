@@ -15,6 +15,15 @@
 :root {
   --mock-wt-bar-height: 80px;
   --mock-wt-clearance: 24px;   /* breathing room below screen content */
+  /* Custom-element identification — Odoo's own pink (tag colour 9 in
+     odoo.css: #fec5d9 fill, #671d3f text). The element highlight is that
+     fill at 50% on white, multiplied over the page. The banner band is 60%
+     opaque, its base chosen so it reads as the fill itself over white: what
+     is under it still shows, softened. */
+  --mock-custom-highlight: #ffe2ec;
+  --mock-custom-banner-bg: #fec5d9;
+  --mock-custom-banner-band: rgba(253, 158, 192, .6);
+  --mock-custom-banner-ink: #671d3f;
 }
 
 /* ---- Screen container: one screen visible at a time --------------------- */
@@ -125,6 +134,105 @@ body.mock-annotations-off .mock-float.is-from-example.is-shown { display: block 
 /* Optional highlight ring around an annotated element */
 .mock-highlight { outline: 2px dashed #017e84; outline-offset: 2px; border-radius: 4px; }
 body.mock-annotations-off .mock-highlight { outline: none; }
+
+/* ---- Custom elements (.mock-custom) -------------------------------------
+   What the solution adds or changes, shown by the Custom chip in the bar
+   (Hide adds `mock-custom-off` to <body>). See interactions.md § Custom
+   elements. Two renderings of the same class:
+   - On an element: a light-pink highlight, painted like a highlighter pen —
+     walkthrough.js appends one `.mock-custom-overlay` to the element, a pink
+     layer MULTIPLIED over the element and everything inside it, with a 3px
+     ring of the same pink (none on table cells, whose highlights meet edge to
+     edge). walkthrough.js sizes it to what the element actually paints —
+     its box plus any child that bleeds past it, such as an x2many list pulled
+     up to the tabs and out to the sheet edges — and re-fits it when the
+     element is shown or resized. White and see-through areas (field rows,
+     list cells, tab panels with their lists, menu entries, cards) turn light
+     pink; coloured ones (a primary button, a status badge, an alert) keep
+     their colour, slightly deepened, and text stays legible. A child
+     element, not ::before/::after — catalog components already use those
+     (the active tab's bar, kanban colour stripes, selected-item checks).
+     The overlay is absolutely positioned, so toggling reflows nothing.
+   - On a .mock-screen: no highlight; walkthrough.js adds
+     `mock-screen-custom` to <body> while that screen is active and the
+     corner banner shows. */
+.mock-custom-overlay {
+  position: absolute;
+  inset: 0;                          /* until walkthrough.js fits it */
+  z-index: 3;                        /* above sticky list headers (2), below markers (5) */
+  border-radius: inherit;
+  background: var(--mock-custom-highlight);
+  box-shadow: 0 0 0 3px var(--mock-custom-highlight);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+/* No ring on table cells: a column's cells meet edge to edge, and rings
+   overlapping the neighbouring cells and row lines would stripe it. */
+th > .mock-custom-overlay,
+td > .mock-custom-overlay { box-shadow: none; }
+body.mock-custom-off .mock-custom-overlay { display: none; }
+/* The cover's inline sample is a word in a sentence: the same pink as a
+   padded background (a ring would cover the neighbouring characters), shown
+   whatever the chip says. */
+.mock-custom-example {
+  padding: 1px 2px;
+  border-radius: 2px;
+  background-color: var(--mock-custom-highlight);
+}
+
+/* Corner banner — the web_ribbon geometry (odoo.css § .ribbon) at a
+   smaller size, pinned to the viewport's top-right like the walkthrough
+   bar is pinned to its bottom. Partly see-through: the band is 60% opaque,
+   so the company name, avatar and view switcher under it still show,
+   softened, while its text stays solid. pointer-events:none so the chrome
+   under it stays clickable. z-index 999: above sticky headers, below
+   dropdowns and dialogs (1000+). */
+.mock-custom-banner {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 999;
+  width: 140px;
+  height: 140px;
+  overflow: hidden;
+  pointer-events: none;
+  display: none;
+}
+body.mock-screen-custom:not(.mock-custom-off) .mock-custom-banner { display: block; }
+.mock-custom-banner span {
+  position: absolute;
+  left: 20px;
+  top: -26px;
+  /* √2 × (box − left): the band runs exactly from the top edge to the right
+     edge, so the centred word sits in the middle of what is visible (the
+     full-box 141.421% of web_ribbon overshoots the right edge and pushes the
+     word down-right by left/√2). */
+  width: calc((100% - 20px) * 1.41421);
+  height: 26px;
+  line-height: 26px;
+  transform: rotate(45deg);
+  transform-origin: left bottom;
+  text-align: center;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--mock-custom-banner-ink);
+  background-color: var(--mock-custom-banner-band);
+}
+/* Inline sample of the banner for the cover's Custom callout — always
+   visible, whatever the Custom chip says. */
+.mock-custom-banner-example {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--mock-custom-banner-ink);
+  background-color: var(--mock-custom-banner-bg);
+}
 
 /* ---- Walkthrough bar (fixed bottom) ------------------------------------- */
 .mock-walkthrough {
@@ -398,7 +506,8 @@ body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)
   box-sizing: border-box;
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
-.mock-cover h1 { font-family: "SF Pro Display", -apple-system, sans-serif; margin: 0 0 8px; }
+.mock-cover h1 { font-family: "SF Pro Display", -apple-system, sans-serif; margin: 0 0 8px;
+  color: inherit; /* the catalog sets a global heading colour; cover titles sit on the dark gradient */ }
 .mock-cover p { margin: 0; opacity: 0.9; max-width: 720px; }
 
 /* Kicker = small icon + version label at the top-left of the cover.
@@ -921,8 +1030,10 @@ body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)
 }
 .mock-wt-workflow .mock-wt-chip-button .o_icon_xs {
   flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
+  /* caret = arrow_drop_down, whose glyph fills only the middle half of the
+     em: keep it at 14px (1em) or it shrinks to a speck. */
+  width: 14px;
+  height: 14px;
   color: var(--o-gray-600, #6c757d);
 }
 /* Menu styling — match the control cluster's chip menus (z-index above
@@ -1000,7 +1111,7 @@ body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)
 }
 .mock-wt-chip-button:hover { color: #5b3c53; }
 .mock-wt-chip-button .o_icon_xs {
-  width: 8px; height: 8px;
+  width: 14px; height: 14px;   /* arrow_drop_down caret at 1em */
 }
 
 .mock-wt-chip-menu {
@@ -1205,18 +1316,19 @@ body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)
 
 /* ---- Control cluster ---------------------------------------------------
    Mirror of the nav cluster: same bordered-block treatment, same flex-fill
-   pattern. Chips on top, annotations toggle on bottom. Both halves use
-   `flex: 1 1 0` so they each take 50% of cluster height when visible —
-   and when chips row is hidden (screen has no variant axes), the toggle
-   grows to fill 100%. Fixed 290px wide so the bar's right edge is in the
-   same x-position on every screen. */
+   pattern. Variant chips on top, the Annotations + Custom chips on the
+   bottom. Both halves use `flex: 1 1 0` so they each take 50% of cluster
+   height when visible — and when chips row is hidden (screen has no variant
+   axes), the toggle grows to fill 100%. Fixed 340px wide so the bar's right
+   edge is in the same x-position on every screen, and so each half of the
+   bottom row fits "ANNOTATIONS: Show" / "CUSTOM: Show" untruncated. */
 .mock-wt-control-cluster {
   /* Same cluster-half discipline as nav cluster: both halves visible →
      `flex: 1 1 0` splits 50/50; one half visible → that half drops to
      `flex: 0 0 auto` (via :has below) and `justify-content: center`
-     centers it in the 80px cluster. Fixed 290px wide so the bar's right
+     centers it in the 80px cluster. Fixed 340px wide so the bar's right
      edge is in the same x-position on every screen. */
-  flex: 0 0 290px;
+  flex: 0 0 340px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1285,6 +1397,12 @@ body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)
 }
 /* Reset the catalog's default toggle styling (was a checkbox + text label) */
 .mock-wt-control-cluster .mock-wt-toggle input { display: none; }
+/* Annotations + Custom chips share the row as two halves, divided like two
+   variant chips (the Custom chip renders only when the package marks
+   something custom). */
+.mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip + .mock-wt-chip {
+  border-left: 1px solid #d2c4cd;
+}
 /* Annotations chip — same internal pattern as the variant chips above. */
 .mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip {
   display: flex;
@@ -1336,8 +1454,10 @@ body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)
 }
 .mock-wt-control-cluster .mock-wt-toggle .mock-wt-chip-button .o_icon_xs {
   flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
+  /* caret = arrow_drop_down, whose glyph fills only the middle half of the
+     em: keep it at 14px (1em) or it shrinks to a speck. */
+  width: 14px;
+  height: 14px;
   color: var(--o-gray-600, #6c757d);
 }
 /* When the chips row is hidden, the cluster ITSELF shrinks to the
@@ -1424,8 +1544,10 @@ body { padding-bottom: calc(var(--mock-wt-bar-height) + var(--mock-wt-clearance)
 }
 .mock-wt-control-cluster .mock-wt-chips .mock-wt-chip-button .o_icon_xs {
   flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
+  /* caret = arrow_drop_down, whose glyph fills only the middle half of the
+     em: keep it at 14px (1em) or it shrinks to a speck. */
+  width: 14px;
+  height: 14px;
   color: var(--o-gray-600, #6c757d);
 }
 

@@ -15,7 +15,7 @@ Walks the docx (or the SPEC_DATA Python file the builder consumes) and checks:
 Exit 0 if clean; non-zero on any error. Warnings are reported but don't fail.
 
 Usage:
-    python3 _lint_spec.py path/to/spec.docx
+    ./versions/v<major>/odoo/.venv/bin/python _lint_spec.py path/to/spec.docx   # any existing versions/v*/odoo/.venv
 """
 from __future__ import annotations
 
@@ -27,9 +27,7 @@ try:
     from docx import Document
 except ImportError:
     sys.stderr.write(
-        "python-docx is not available on this build. It is declared in the "
-        "Project Repo's requirements.txt and installed by the platform — ask "
-        "the technical consultant to add it and rebuild the branch.\n"
+        f"python-docx not installed; run: {sys.executable} -m pip install python-docx\n"
     )
     sys.exit(2)
 
@@ -109,9 +107,9 @@ CASUAL_HEDGING = [
     r"\bsort of\b",
 ]
 
-# Body prose should lean business-language. These Odoo-internal terms are
-# fine inside the Glossary appendix; in body prose they trip a tone-drift
-# warning. See content_outline.md § Style principles.
+# Body prose should lean business-language. These Odoo-internal terms trip
+# a tone-drift warning (the docx has no Glossary to park them in). See
+# content_outline.md § Style principles.
 TECHNICAL_JARGON_IN_BODY = [
     r"\b_inherit\b",
     r"\b_inherits\b",
@@ -232,14 +230,12 @@ def lint(docx_path: Path) -> tuple[list[str], list[str]]:
         for m in re.finditer(pat, all_text, re.IGNORECASE):
             warnings.append(f"Casual hedging: {m.group(0)!r} — prefer concrete claim")
 
-    # Technical jargon leaking into body prose (Glossary appendix is exempt
-    # because the linter walks all paragraphs uniformly; the worst offenders
-    # cluster in the body and trigger here)
+    # Technical jargon leaking into body prose
     for pat in TECHNICAL_JARGON_IN_BODY:
         for m in re.finditer(pat, all_text):
             warnings.append(
                 f"Technical jargon in prose: {m.group(0)!r} — soften to "
-                "business language; technical term belongs in the Glossary"
+                "business language (technical name in parentheses at most once per section)"
             )
 
     # "What's new only" — flag enumeration of existing behaviour

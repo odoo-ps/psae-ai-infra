@@ -1,42 +1,177 @@
 <!--
-  no_content.html — Odoo "no records yet" empty state (web.ActionHelper).
-  Source: addons/web/static/src/views/action_helper.{xml,js}
+  no_content.html — Odoo 20 empty state (web.ActionHelper) + sample-data state.
+  Source: web/static/src/views/action_helper.xml, views/no_content_helpers.xml;
+          views/view.scss:7-59; scss/utils.scss:290-333;
+          sale/static/src/scss/services_and_material.scss:1-5 (800px text block);
+          list/list_renderer.xml:11-13 + 220-224; list_renderer.js:2313-2316;
+          kanban/kanban_renderer.xml:103-125; kanban_header.xml:30;
+          pivot_controller.xml:34-36; graph_controller.xml:86-88.
 
-  Render this INSIDE the view body when the workflow shows an empty list,
-  empty kanban, empty calendar, etc. — typically the "before any record exists"
-  step of a workflow, or a filtered view that returned nothing.
+  The helper is an OVERLAY, not a block in the flow: .o_view_nocontent is
+  absolute over the whole view body (everything under the control panel,
+  search panel included) and centres .o_nocontent_help both ways. Only the
+  text block is clickable. The view keeps rendering underneath:
+    - list: header row stays, body is empty white. The helper is the FIRST
+      child of .o_list_view, before the <table>.
+    - grouped kanban: columns keep their header (title, +, progress track,
+      aggregate "0"); the column gets .o_kanban_no_records and its counter
+      row .opacity-25. The helper goes after the last .o_kanban_group,
+      inside .o_kanban_renderer.
+    - ungrouped kanban / pivot / graph: only the helper on the body (pivot /
+      graph: a direct child of main.o_content).
+  Never place it in the page flow between the control panel and the view.
 
-  Real Odoo composes the helper from two paragraphs: a bold title and a
-  one-sentence hint. The model's own `_get_view` can replace both with a
-  richer custom helper string (e.g. "Create your first quotation" + tips).
-  Keep the wording grounded in the brief — same body-copy rules apply.
+  Title = the FIRST <p> directly inside .o_nocontent_help (bold black 20px);
+  every other <p> = 16px body text. The title <p>'s class picks the
+  illustration; inline the matching sprite symbol as its first child (real
+  Odoo paints it as p::before). Never use a generic glyph in a grey circle.
+    o_view_nocontent_smiling_face  #o-nocontent-smiling-face  most model helpers ("Create your first …")
+    o_view_nocontent_neutral_face  #o-nocontent-neutral-face  "nothing matches" (account reports — see
+                                                               account_report.html — payment transactions)
+    o_view_nocontent_empty_folder  #o-nocontent-empty-folder  the DEFAULT helper (block 2)
+  Use the model's real help text when the model exists (Employee Tags:
+  "No Tags found ! Let's create one" / "Use tags to categorize your
+  Employees."; My Timesheets: "No timesheets found. Let's create one!" /
+  "Keep track of your working hours by project every day and bill your
+  customers for that time.").
 
-  Two shapes:
-   1. The DEFAULT helper (showDefaultHelper) — "No data to display / Try to
-      add some records, or make sure there is no active filter."
-   2. A MODEL-CUSTOM helper (props.noContentHelp HTML) — usually with an
-      illustration glyph above and an "+ Add" CTA below.
+  No CTA button by default — the control panel's New button is the CTA
+  (clicking the helper bounces it). Add a button ONLY where the real helper
+  has one, exactly as real: e.g. Payroll ▸ Payslips
+  (hr_payroll.PayslipActionHelper): title <p class="o_view_nocontent_smiling_face">No Payslips.</p>,
+  then <p>The Payslip is the computation of the pay based on a period of time
+  for an employee. It computes the Net salary according to the Salary Rules
+  you've defined in the configuration.<br/><br/><a class="btn btn-secondary">Create a Payslip</a></p>.
+  Inside a pay run the second <p> has no button.
+
+  DEFAULT helper (action without help): every view EXCEPT the list — kanban,
+  pivot, graph, and Enterprise grid / cohort (gantt shows a helper only in
+  sample mode). A LIST without help shows NO helper — header + 4 blank rows
+  (<tr><td colspan="N">&#8203;</td></tr>, 38px, white, 1px gray-300 bottom
+  border; block 6).
+  Enterprise grid (web_grid grid_controller.{js,xml,scss}): the helper is
+  pinned 225px from the viewport top (position: fixed), not centred — put it
+  as the last child of .o_grid_view (the CSS places it at the same spot).
+  A grid without display_empty and without data shows ONLY the helper (no
+  grid). Timesheet grids carry display_empty="1": a search that finds
+  nothing keeps the empty grid and shows NO helper; the helper appears only
+  in sample mode (no timesheet at all) over the faded grid
+  (.o_grid_view.o_view_sample_data).
+
+  SAMPLE DATA (view sample="1" on an empty model): add .o_view_sample_data to
+  the view body (.o_list_view / .o_kanban_view / .o_grid_view; pivot / graph:
+  a <main class="o_content o_view_sample_data"> wrapping buttons + body;
+  gantt, whose helper shows ONLY in sample mode: the same <main> +
+  .o_sample_data_disabled on each row header and row cell — gantt_renderer.xml)
+  and render 4-10 believable records normally. CSS fades rows, footer, group
+  headers, cards, counters, grid cells, the pivot table and the graph canvas
+  to opacity .06; headers and pivot/graph buttons stay opaque; the helper
+  sits on top.
+
+  Sales (sale.SaleActionHelper — js_class sale_onboarding_list / _kanban):
+  div.o_view_nocontent.flex-wrap > div.container > div.o_nocontent_help > div >
+  [a.o_sale_action_preview 400×225 video thumbnail, radius 12px, mb-2; then
+  the action help].
+    Quotations (/odoo/sales): help is <br/><h2>Beat competitors with stunning
+      quotations!</h2><p>Boost sales with online payments or signatures,
+      upsells, and a great customer portal.</p> — NO illustration; h2
+      21px/500 black.
+    Sales Orders (/odoo/orders): <p class="o_view_nocontent_smiling_face">Create
+      a new quotation, the first step of a new sale!</p><p>Once the quotation
+      is confirmed, it becomes a sales order.<br/> You will be able to create
+      an invoice and collect the payment.</p> — smiling face, title NOT bold
+      (16.1px/400) because the <p>s sit inside the <div>.
+  The catalog cannot ship the video thumbnail image: omit it and say so in
+  an annotation; keep the inner <div> so the title stays non-bold.
 -->
+
+<!-- 1. Model helper over an empty list (helper FIRST, then the table) -->
+<div class="o_list_view">
+  <div class="o_view_nocontent">
+    <div class="o_nocontent_help">
+      <p class="o_view_nocontent_smiling_face"><svg class="o_nocontent_img"><use href="#o-nocontent-smiling-face"/></svg><!-- SLOT: title, e.g. No Tags found ! Let's create one --></p>
+      <p><!-- SLOT: one-sentence hint, e.g. Use tags to categorize your Employees. --></p>
+    </div>
+  </div>
+  <table class="o_list_table o_list_table_ungrouped">
+    <thead>
+      <tr>
+        <th class="o_list_record_selector"><input type="checkbox"/></th>
+        <!-- SLOT: column headers, exactly as in list_view.html -->
+        <th class="o_list_actions_header"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- 2. Default helper (action without help) — kanban / pivot / graph /
+        grid / cohort body. Fixed wording, from action_helper.xml. -->
 <div class="o_view_nocontent">
   <div class="o_nocontent_help">
-    <!-- Optional: a simple decorative circle. Drop this block when the
-         helper is purely text. -->
-    <div class="o_nocontent_illustration">
-      <svg class="o_icon"><use href="#o-folder"/></svg>
-    </div>
-    <p class="o_view_nocontent_empty_folder">
-      <!-- SLOT: title — what's missing in the user's words.
-           E.g. "No quotations yet", "No timesheet entries this week" -->
-    </p>
-    <p>
-      <!-- SLOT: one-sentence hint — what the user can do next.
-           E.g. "Create your first quotation to start building the sales pipeline." -->
-    </p>
-    <!-- Optional CTA — Odoo helpers often include one. -->
-    <!--
-    <p>
-      <a class="btn btn-primary" data-mock-goto="...">Create</a>
-    </p>
-    -->
+    <p class="o_view_nocontent_empty_folder"><svg class="o_nocontent_img"><use href="#o-nocontent-empty-folder"/></svg>No data to display</p>
+    <p>Try to add some records, or make sure that there is no active filter in the search bar.</p>
   </div>
+</div>
+
+<!-- 3. Sample data — the model helper of 1 over faded sample records -->
+<div class="o_list_view o_view_sample_data">
+  <div class="o_view_nocontent"><!-- helper as in 1 --></div>
+  <table class="o_list_table o_list_table_ungrouped">
+    <thead><!-- column headers, as in 1 --></thead>
+    <tbody>
+      <!-- SLOT: 4-10 believable sample rows; render normally, CSS fades them -->
+      <tr class="o_data_row"><td class="o_list_record_selector"><input type="checkbox"/></td><td>…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 4. Grouped kanban, every column empty: headers stay, counter rows fade -->
+<div class="o_kanban_view">
+  <div class="o_kanban_renderer o_kanban_grouped">
+    <div class="o_kanban_group o_kanban_no_records">
+      <!-- The column header exactly as in kanban.html (title, quick-add +),
+           with its counter row faded (kanban_header.xml:30): grey track
+           only (no bar widths) and the aggregate 0. -->
+      <div class="o_kanban_header">
+        <!-- … title row from kanban.html … -->
+        <div class="o_kanban_counter opacity-25">
+          <div class="o_column_progress w-50"></div>
+          <div class="o_animated_number"><b class="fw-medium">0</b></div>
+        </div>
+      </div>
+    </div>
+    <!-- … one .o_kanban_group.o_kanban_no_records per stage … -->
+    <div class="o_view_nocontent"><!-- helper as in 1 --></div>
+  </div>
+</div>
+
+<!-- 5. Grouped kanban with ZERO columns (e.g. a new project's tasks by
+        stage): the open column quick-create from kanban.html, then this
+        helper instead of the model one (kanban_renderer.xml:103-112). The
+        "See examples" <p> only when the view has column examples. -->
+<div class="o_kanban_view">
+  <div class="o_kanban_renderer o_kanban_grouped">
+    <!-- … .o_column_quick_create (open) from kanban.html … -->
+    <div class="o_view_nocontent o_kanban_group_nocontent">
+      <div class="o_nocontent_help">
+        <p class="o_view_nocontent_smiling_face"><svg class="o_nocontent_img"><use href="#o-nocontent-smiling-face"/></svg>No <!-- SLOT: group-by field label, lower case, e.g. stage --> yet, let's create some!</p>
+        <p>Lack of inspiration? <button type="button" class="btn btn-link o_kanban_examples p-0">See examples</button></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. List whose action has NO help: no helper at all — header + 4 blank
+        filler rows (list_renderer.xml:220-224) -->
+<div class="o_list_view">
+  <table class="o_list_table o_list_table_ungrouped">
+    <thead><!-- column headers, as in 1 --></thead>
+    <tbody>
+      <tr><td colspan="3">&#8203;</td></tr>
+      <tr><td colspan="3">&#8203;</td></tr>
+      <tr><td colspan="3">&#8203;</td></tr>
+      <tr><td colspan="3">&#8203;</td></tr>
+    </tbody>
+  </table>
 </div>

@@ -1,72 +1,84 @@
 <!--
-  navbar.html — Odoo top navbar (navbar.scss .o_main_navbar).
-  Ported from: odoo/addons/web/static/src/webclient/navbar/navbar.{xml,scss} +
+  navbar.html — Odoo 20 Enterprise top navbar (header.o_navbar > nav.o_main_navbar).
+  Ported from: odoo/addons/web/static/src/webclient/navbar/navbar.{xml,scss,variables.scss} +
                enterprise/web_enterprise/static/src/webclient/navbar/navbar.{xml,scss,variables.scss}
 
-  Odoo 19 ENTERPRISE: white background, dark text, 46px tall. The brand
-  purple (#714B67) appears as an ACCENT (buttons / active state) — NOT
-  the navbar background (that's the older 15-17 community-purple chrome).
-  Community keeps the dark purple navbar via the body.o-community
-  override in odoo.css.
+  Odoo 20 ENTERPRISE: TRANSPARENT over the gray-100 page (no white bar, NO
+  bottom border), 46px tall, every entry a 26px pill with a 6px radius.
+  Community: add class="o-community" on <body> (purple bar, white entries,
+  grid glyph instead of the app icon, green badges) — same markup.
 
-  Composition per real Odoo:
-    [.o_menu_toggle: 4-square icon + brand name][.o_menu_sections: app top-menu dropdowns]
-    [.o_menu_systray, margin-left:auto:
-       liveness dot · chat (with badge) · clock · X-close · company dropdown · avatar]
+  Left:  a.o_menu_toggle.hasImage = [3x3 grid][current app's colour icon][app name].
+         The grid (#714B67) only appears on hover. Drop the icon AND "hasImage"
+         to show the bare grid (screens with no app context only).
+  Middle: the app's REAL top-level menus as plain 14px text — NO carets. Leaf
+         menus and dropdown parents look identical when closed. Add "show" to
+         the entry whose dropdown is drawn open (teal outline) and paste the
+         optional .o-dropdown--menu block below as a direct child of the nav.
+  Right: the systray, left to right (registry sequence). Keep the order:
+           [timesheet timer — Timesheets installed only]
+           [Ask AI — ai module installed only]
+           Messages (forum + badge) · Activities (schedule + badge) ·
+           Studio (crossed tools, NOT a "close" X) · company name (no caret) ·
+           user avatar (26px rounded square, ONE initial, green online dot).
+         Omit a badge <span> when its count is 0.
+
+  Inside .o_home_menu_background (apps_menu.html) the left side and the
+  sections hide automatically; only the systray shows.
 
   Put at the top of every backend screen's .o_web_client.
 -->
+<header class="o_navbar">
 <nav class="o_main_navbar">
-  <a class="o_menu_toggle" title="Home menu">
-    <!-- Odoo 19 uses a 3x3 dot grid for the apps-launcher icon, not th-large.
-         Inline SVG so it doesn't depend on font glyphs. -->
-    <svg class="o_menu_toggle_icon" width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-      <g fill="currentColor"><rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/></g>
-      <g fill="currentColor"><rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/></g>
-      <g fill="currentColor"><rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/></g>
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
     </svg>
-    <!-- SLOT (optional): app brand icon. Include when the screen sits inside
-         a specific app and you want the brand mark visible next to the name.
-         Real Odoo swaps the 3x3 grid for this icon on hover; we just show
-         it static.
-      <img class="o_menu_brand_icon" src="…" alt="" />
-    -->
-    <span class="o_menu_brand"><!-- SLOT: App name, e.g. Sales --></span>
+    <!-- SLOT: the current app's o-app-* symbol from app-icons.svg (real
+         multi-colour artwork, never tinted): #o-app-sales, #o-app-hr, … -->
+    <svg class="o_menu_brand_icon"><use href="#o-app-sales"/></svg>
+    <span class="o_menu_brand"><!-- SLOT: App name -->Sales</span>
   </a>
-  <div class="o_menu_sections">
-    <!-- SLOT: top menu entries for this app. Each is a dropdown trigger —
-         render the caret so the affordance reads. Omit entirely when the
-         app exposes its sub-nav via the breadcrumb row instead (e.g. CRM
-         in Odoo 19 has no inline menu sections — its Pipeline / Customers
-         / Reporting items live under the breadcrumb dropdown). -->
-    <span class="o_nav_entry">Orders <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
-    <span class="o_nav_entry">Products <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
-    <span class="o_nav_entry">Reporting <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
-    <span class="o_nav_entry">Configuration <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg></span>
+  <div class="o_menu_sections" role="menu">
+    <!-- SLOT: the app's top-level menus (plain text, no caret). -->
+    <a class="o_nav_entry">Orders</a>
+    <a class="o_nav_entry">Products</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
   </div>
-  <div class="o_menu_systray">
-    <!-- Real Odoo 19 systray, left-to-right:
-           Liveness indicator → unread chat badge → clock (activities) →
-           X-close (collapse all menus) → company switcher → user avatar.
-         Keep the order — readers recognize it. -->
-    <span class="o_systray_item o_status_systray" title="Realtime status">
-      <span class="o_status_dot"></span>
-    </span>
-    <span class="o_systray_item o_chat_systray" title="Messages">
-      <svg class="o_icon"><use href="#o-comment"/></svg>
-      <!-- SLOT: unread chat count. Omit the <span> entirely when zero. -->
-      <span class="o_systray_badge">4</span>
-    </span>
-    <span class="o_systray_item" title="Activities">
+  <div class="o_menu_systray" role="menu">
+    <!-- OPTIONAL (Timesheets installed): timer, filled play_circle, red.
+         With only Attendances it is #o-circle with text-success / text-danger. -->
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <!-- OPTIONAL (ai module installed): Ask AI mark, 18px. -->
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge"><!-- SLOT: unread count -->6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
       <svg class="o_icon"><use href="#o-clock"/></svg>
-    </span>
-    <span class="o_systray_item" title="Close all menus">
-      <svg class="o_icon"><use href="#o-times"/></svg>
-    </span>
-    <span class="o_systray_item o_company_switcher">
-      <!-- SLOT: current company name -->My Company
-      <svg class="o_icon o_icon_xs"><use href="#o-caret-down"/></svg>
-    </span>
-    <span class="o_user_avatar"><!-- SLOT: user initials, e.g. AB --></span>
+      <span class="badge"><!-- SLOT: activity count -->17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name"><!-- SLOT: current company name -->YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar"><!-- SLOT: ONE initial; optional o_avatar_c0..c7 colour -->M</span>
+    </button>
   </div>
+  <!-- OPTIONAL open section menu: pair with class="o_nav_entry show" above and
+       set `left` to that entry's x offset (right:4px for the user menu).
+  <div class="o-dropdown--menu dropdown-menu" style="left:324px">
+    <a class="dropdown-item">Settings</a>
+    <a class="dropdown-item">Teams</a>
+    <a class="dropdown-item">Payments</a>
+    <div class="dropdown-header">Sales Orders</div>
+    <a class="dropdown-item o_dropdown_menu_group_entry">Templates</a>
+  </div>
+  -->
 </nav>
+</header>

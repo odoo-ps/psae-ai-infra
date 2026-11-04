@@ -1,58 +1,59 @@
 <!--
   activity_list.html — Activity LIST view (mail; the global "Activities"
-  action opens this). A flat list of every pending activity for the user,
-  with: Summary · Activity Type · Assigned to · Linked to · Due Date +
-  per-row Reschedule / Done / Cancel actions. Render inside the backend
-  shell (navbar + control panel above; this fills the action area).
+  action mail.mail_activity_action opens it; arch mail/views/
+  mail_activity_views.xml:295-320). A plain Odoo 20 list (list_view.html
+  rules apply) with: Summary · Document · Assigned to (many2one_avatar_user)
+  · Role · Due Date (relative_date) + two row actions:
+    Reschedule  mail_activity_list_reschedule_dropdown widget — dark
+                btn-link, calendar_today (filled) + "Reschedule"
+                (menu: Today / Tomorrow / Next Week)
+    Done        arch button — teal btn-link, check + "Done"
+  There is NO Cancel button and no Activity Type column (optional, hidden).
+  Document is plain text (res_name), not a link. Due Date: overdue
+  `fw-bold text-danger`, today `fw-bold text-warning`, future plain.
+  Render inside the backend shell. It is a standalone action (no app), so
+  the navbar shows NO app brand / menus (only the apps toggle); control panel = New + "Activity Overview" ⋮ · search · pager
+  (list is the only view: no view switcher).
 
   This is distinct from `activity_matrix.html` (records × activity-types
-  matrix shown when you group by record). Real Odoo:
-    mail.mail_activity_action               -> opens this list view
-    mail_activity_view (per-model activity) -> opens the matrix view
-
-  Ref: odoo/addons/mail/static/src/views/web_activity/
+  matrix of the per-model Activity view).
 -->
-<div class="o_activity_list_view">
+<div class="o_list_view">
   <table class="o_list_table o_list_table_ungrouped">
     <thead>
       <tr>
         <th class="o_list_record_selector"><input type="checkbox"/></th>
         <th>Summary</th>
-        <th>Activity Type</th>
+        <th>Document</th>
         <th>Assigned to</th>
-        <th>Linked to</th>
+        <th>Role</th>
         <th>Due Date</th>
-        <th style="width:200px;"></th>
-        <th style="width:28px;"><svg class="o_icon o_optional_columns_toggle"><use href="#o-cog"/></svg></th>
+        <th></th>
+        <th></th>
+        <th class="o_list_actions_header"><svg class="o_icon o_optional_columns_dropdown_toggle"><use href="#o-settings-adjust"/></svg></th>
       </tr>
     </thead>
     <tbody>
       <tr class="o_data_row">
         <td class="o_list_record_selector"><input type="checkbox"/></td>
         <td>Grant Approval</td>
-        <td>To-Do</td>
-        <td><span class="o_user_avatar" style="background:#017e84;color:#fff;">M</span> Manager</td>
-        <td><span class="o_list_link">Draft Invoice</span></td>
-        <td><span class="o_activity_due_overdue">Last month</span></td>
-        <td>
-          <button class="o_activity_action o_btn_outline_sm"><svg class="o_icon o_icon_xs"><use href="#o-clock"/></svg> Reschedule</button>
-          <button class="o_activity_action o_activity_action_done"><svg class="o_icon o_icon_xs"><use href="#o-check"/></svg> Done</button>
-          <button class="o_activity_action o_activity_action_cancel"><svg class="o_icon o_icon_xs"><use href="#o-times"/></svg> Cancel</button>
-        </td>
+        <td>Draft Invoice</td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span><span>Mitchell Admin</span></div></div></td>
+        <td></td>
+        <td><div class="fw-bold text-danger">Last month</div></td>
+        <td><div class="o_widget o_widget_mail_activity_list_reschedule_dropdown"><button class="btn btn-link p-0 text-dark"><svg class="o_icon"><use href="#o-calendar-fill"/></svg> Reschedule</button></div></td>
+        <td class="o_list_button"><button class="btn btn-link"><svg class="o_icon"><use href="#o-check"/></svg><span>Done</span></button></td>
         <td></td>
       </tr>
       <tr class="o_data_row">
         <td class="o_list_record_selector"><input type="checkbox"/></td>
         <td>Grant Approval</td>
-        <td>To-Do</td>
-        <td><span class="o_user_avatar" style="background:#017e84;color:#fff;">M</span> Manager</td>
-        <td><span class="o_list_link">P00001</span></td>
-        <td><span class="o_activity_due_overdue">29 days ago</span></td>
-        <td>
-          <button class="o_activity_action o_btn_outline_sm"><svg class="o_icon o_icon_xs"><use href="#o-clock"/></svg> Reschedule</button>
-          <button class="o_activity_action o_activity_action_done"><svg class="o_icon o_icon_xs"><use href="#o-check"/></svg> Done</button>
-          <button class="o_activity_action o_activity_action_cancel"><svg class="o_icon o_icon_xs"><use href="#o-times"/></svg> Cancel</button>
-        </td>
+        <td>P00001</td>
+        <td><div class="o_field_widget o_field_many2one_avatar"><div class="d-flex align-items-center gap-1"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span><span>Mitchell Admin</span></div></div></td>
+        <td></td>
+        <td><div class="fw-bold text-warning">Today</div></td>
+        <td><div class="o_widget o_widget_mail_activity_list_reschedule_dropdown"><button class="btn btn-link p-0 text-dark"><svg class="o_icon"><use href="#o-calendar-fill"/></svg> Reschedule</button></div></td>
+        <td class="o_list_button"><button class="btn btn-link"><svg class="o_icon"><use href="#o-check"/></svg><span>Done</span></button></td>
         <td></td>
       </tr>
     </tbody>

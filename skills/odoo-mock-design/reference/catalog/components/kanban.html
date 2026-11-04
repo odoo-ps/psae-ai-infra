@@ -1,98 +1,439 @@
 <!--
-  kanban.html — Odoo kanban view (kanban_controller.scss .o_kanban_renderer).
-  Grouped (columns) below — the common case for a pipeline/stages workflow.
-  For an ungrouped card grid, use .o_kanban_ungrouped on .o_kanban_renderer and
-  drop the .o_kanban_group wrappers.
+  kanban.html — Odoo 20 Enterprise kanban view.
+  Sources: web/static/src/views/kanban/{kanban_controller.scss,kanban_header.xml,
+  kanban_record.xml,kanban_column_quick_create.xml,kanban_record_quick_create.xml},
+  web_enterprise/static/src/views/kanban/{kanban_controller.scss,kanban_header.xml},
+  web/static/src/views/card/card.scss + web_enterprise/static/src/views/card/card.scss.
+
+  RECORD = <article class="o_card_record o_kanban_record">, never a <div> (only
+  the trailing .o_kanban_ghost placeholders are divs; the stacked-column corner
+  rounding relies on article :first-of-type / :last-of-type). 10px 14px
+  padding, 13px text, 1px border, no shadow, darker border on hover. The card
+  body is arch-driven: no fixed field classes. Top to bottom:
+    title       <span class="fw-bold fs-5"> (15.4px / 500); project cards fs-4
+    lines       plain 13px <div>s (amount, partner with 22px avatar + ms-2 name);
+                meta lines text-muted with a leading 13px icon
+    tags        .o_field_many2many_tags > .d-flex.flex-wrap.gap-1 > .o_tag.o_tag_color_N
+    <footer>    LEFT: priority (.o_priority, 17.5px #o-star set / #o-star-o unset),
+                activity button; RIGHT (.ms-auto): badges, 24px avatar, state circle
+    ⋮ menu      .o_dropdown_kanban, LAST child, visible on card hover only
+  Footer spacing follows the arch: default 10px top padding; CRM footer
+  class="pt-1"; task footer class="mt-1 p-0".
+  Activity button: the next activity's TYPE glyph, filled, coloured by state —
+  #o-phone (Call) / #o-envelope (Email) / #o-check (To-Do) / #o-calendar-fill
+  (Meeting) / #o-upload (Document) / #o-warning-fill (Exception) /
+  #o-checklist (type without icon) in text-success (planned) / text-warning
+  (today) / text-danger (overdue); no activity = outline #o-clock text-dark.
+  Never a coloured dot. Colour tag = o_kanban_record_colored o_kanban_color_N
+  (3px band on the LEFT edge). Avatars: .o_user_avatar.o_avatar_cN inside
+  span.o_avatar.o_m2o_avatar (sized by the card).
+
+  LAYOUTS (one .o_kanban_view each, pick one):
+    1. GROUPED (stages): transparent columns, cards STACKED (shared 1px
+       borders, no gaps, only the stack's outer corners rounded 8px). Header =
+       row 1 title + hover-only cog (#o-cog) + circle Quick add (#o-add-2);
+       row 2 .o_kanban_counter = progress bar (w-75; CRM w-50; bg-success /
+       bg-warning / bg-danger / bg-300 slivers, widths = % of the column count)
+       [+ CRM "Rotting" pill, only when the stage holds rotting records:
+       <div class="badge rounded-pill text-bg-danger ms-3" title="Rotting"><b>1</b></div>]
+       + aggregate. No progressbar in the view = no counter row; write the
+       count in the title: <span>New</span><span>(2)</span>.
+       Add .o_kanban_small_column on .o_kanban_view where the real view has it
+       (CRM pipeline, Project tasks): 332px columns instead of 352px. End with the ">>" Add column
+       control only when users can create stages.
+    2. GROUPED with a FOLDED column (Project tasks: Done / Cancelled fold).
+    3. UNGROUPED tiles (Projects): 16px gap, 320px-basis cards that grow, 8px
+       corners, end with 2-3 .o_kanban_ghost divs. Beside a search panel
+       (search_panel.html) the view supplies the 0 16px 16px 0 padding.
+    4. Image card (Employees): article.flex-row > aside.o_card_aside_full +
+       div.o_record_main.ms-2.
+    5. ROW-STYLE (Time Off, Surveys): .o_kanban_view.o_kanban_list,
+       ungrouped renderer, full-width stacked rows, no ghosts.
+    6. PAY RUNS (hr_payroll): its own renderer, .o_payrun_kanban — 4% side
+       margins, square rows 2px apart, name · centred KPIs · state badge ·
+       right-aligned actions. Not layout 5.
+  There is no standalone "card" view in Odoo 20 (card = the record template
+  inlined into kanban / popovers); for summary tiles use layout 3.
+  Snippets at the end: Lost/Won ribbon card, record quick create, open column
+  quick create, drag-over column.
 -->
-<div class="o_kanban_view">
+
+<!-- 1. GROUPED pipeline (CRM) -->
+<div class="o_kanban_view o_kanban_small_column">
   <div class="o_kanban_renderer o_kanban_grouped">
 
-    <!-- SLOT: one .o_kanban_group per column (stage). The header carries a
-         small colored progress-bar above the title in real Odoo CRM — the
-         bar shows the breakdown of records in the column by state (won
-         green / lost red / in-progress amber / new gray). Render a 1-3
-         segment bar via .o_kanban_progressbar; omit for non-staged models. -->
+    <!-- SLOT: one .o_kanban_group per stage -->
     <div class="o_kanban_group">
-      <div class="o_kanban_progressbar">
-        <span class="o_kanban_progressbar_seg" style="width:50%; background:var(--o-warning);"></span>
-        <span class="o_kanban_progressbar_seg" style="width:30%; background:var(--o-success);"></span>
-        <span class="o_kanban_progressbar_seg" style="width:20%; background:var(--o-gray-400);"></span>
-      </div>
       <div class="o_kanban_header">
-        <span class="o_kanban_header_title">New <span class="o_kanban_counter">2</span></span>
-        <span class="o_kanban_header_amount">2.4k</span>
-        <svg class="o_icon"><use href="#o-plus"/></svg>
+        <div class="o_kanban_header_title">
+          <div class="o_column_title"><span>New</span></div>
+          <div class="o_group_config"><button class="o_btn_circle btn btn-secondary" title="Settings"><svg class="o_icon"><use href="#o-cog"/></svg></button></div>
+          <button class="o_kanban_quick_add o_btn_circle btn btn-secondary" title="Quick add"><svg class="o_icon"><use href="#o-add-2"/></svg></button>
+        </div>
+        <div class="o_kanban_counter">
+          <div class="o_column_progress progress w-50">
+            <div class="progress-bar bg-success" style="width:50%"></div>
+            <div class="progress-bar bg-300" style="width:50%"></div>
+          </div>
+          <div class="o_animated_number"><b class="fw-medium">$ 80,000</b></div>
+        </div>
       </div>
 
-      <!-- SLOT: cards in this column. A record carries:
-             * priority stars (top-left, click to set 0/1/2/3)
-             * 3-dot context menu (top-right)
-             * title + subtitle (amount + customer / date)
-             * bottom row: tags, status dot, days-old badge, salesperson avatar
-           When the record's lost field is true, decorate the card with the
-           diagonal LOST ribbon (.o_kanban_ribbon_lost). Equivalent for
-           WON state: .o_kanban_ribbon_won (green). -->
-      <div class="o_kanban_record">
-        <div class="o_kanban_record_topbar">
-          <span class="o_priority"><svg class="o_icon o_icon_xs o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg></span>
-          <svg class="o_icon o_icon_xs o_kanban_record_menu"><use href="#o-ellipsis-v"/></svg>
-        </div>
-        <div class="o_kanban_record_title">Deco Addict</div>
-        <div class="o_kanban_record_subtitle">SO0042 · $ 1,250.00</div>
-        <div class="o_kanban_record_bottom">
-          <span class="o_tag">Furniture</span>
-          <span class="o_kanban_record_right">
-            <span class="o_activity_dot o_activity_filter_today" title="Activity due today"></span>
-            <span class="o_kanban_age_badge" title="Days since creation">3d</span>
-            <span class="o_user_avatar" style="background:#714B67;color:#fff;">MA</span>
-          </span>
-        </div>
-      </div>
-      <!-- LOST card example: the ribbon overlays the card top-right. -->
-      <div class="o_kanban_record">
-        <div class="o_kanban_ribbon o_kanban_ribbon_lost">Lost</div>
-        <div class="o_kanban_record_topbar">
-          <span class="o_priority"><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg></span>
-          <svg class="o_icon o_icon_xs o_kanban_record_menu"><use href="#o-ellipsis-v"/></svg>
-        </div>
-        <div class="o_kanban_record_title">Gemini Furniture</div>
-        <div class="o_kanban_record_subtitle">SO0039 · $ 870.00</div>
-        <div class="o_kanban_record_bottom">
-          <span class="o_tag">Services</span>
-          <span class="o_kanban_record_right">
-            <span class="o_kanban_age_badge">12d</span>
-            <span class="o_user_avatar" style="background:#017e84;color:#fff;">JD</span>
-          </span>
-        </div>
-      </div>
+      <!-- SLOT: cards -->
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Quote for 12 Tables</span>
+        <div>$ 40,000.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c4">O</span></span><span class="ms-2 text-truncate">OpenWood</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_1"><div class="o_tag_badge_text">Product</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Office Chairs Renewal</span>
+        <div>$ 40,000.00</div>
+        <div>Will McEncroe</div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_1"><div class="o_tag_badge_text">Product</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
     </div>
 
     <div class="o_kanban_group">
-      <div class="o_kanban_progressbar">
-        <span class="o_kanban_progressbar_seg" style="width:100%; background:var(--o-info);"></span>
-      </div>
       <div class="o_kanban_header">
-        <span class="o_kanban_header_title">In Progress <span class="o_kanban_counter">1</span></span>
-        <span class="o_kanban_header_amount">2.4k</span>
-        <svg class="o_icon"><use href="#o-plus"/></svg>
-      </div>
-      <div class="o_kanban_record">
-        <div class="o_kanban_record_topbar">
-          <span class="o_priority"><svg class="o_icon o_icon_xs o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_icon_xs o_priority_star"><use href="#o-star"/></svg></span>
-          <svg class="o_icon o_icon_xs o_kanban_record_menu"><use href="#o-ellipsis-v"/></svg>
+        <div class="o_kanban_header_title">
+          <div class="o_column_title"><span>Proposition</span></div>
+          <div class="o_group_config"><button class="o_btn_circle btn btn-secondary" title="Settings"><svg class="o_icon"><use href="#o-cog"/></svg></button></div>
+          <button class="o_kanban_quick_add o_btn_circle btn btn-secondary" title="Quick add"><svg class="o_icon"><use href="#o-add-2"/></svg></button>
         </div>
-        <div class="o_kanban_record_title">Ready Mat</div>
-        <div class="o_kanban_record_subtitle">SO0040 · $ 2,400.00</div>
-        <div class="o_kanban_record_bottom">
-          <span class="o_tag">Furniture</span>
-          <span class="o_kanban_record_right">
-            <span class="o_activity_dot o_activity_filter_planned" title="Activity planned"></span>
-            <span class="o_kanban_age_badge">7d</span>
-            <span class="o_user_avatar" style="background:#714B67;color:#fff;">MA</span>
-          </span>
+        <div class="o_kanban_counter">
+          <div class="o_column_progress progress w-50">
+            <div class="progress-bar bg-success" style="width:50%"></div>
+            <div class="progress-bar bg-warning" style="width:25%"></div>
+            <div class="progress-bar bg-danger" style="width:25%"></div>
+          </div>
+          <div class="badge rounded-pill text-bg-danger ms-3" title="Rotting"><b>1</b></div>
+          <div class="o_animated_number"><b class="fw-medium">$ 14,600</b></div>
         </div>
       </div>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">Office Design and Architecture</span>
+        <div>$ 9,000.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c3">R</span></span><span class="ms-2 text-truncate">Ready Mat</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_7"><div class="o_tag_badge_text">Consulting</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <!-- overdue email activity + "rotting" badge (only when the lead is stuck
+           in the stage; never an age badge on every card) -->
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <span class="fw-bold fs-5">5 VP Chairs</span>
+        <div>$ 5,600.00</div>
+        <div class="d-flex align-items-center"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c0">A</span></span><span class="ms-2 text-truncate">Azure Interior</span></div>
+        <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_3"><div class="o_tag_badge_text">Services</div></span></div></div>
+        <footer class="pt-1">
+          <div class="d-flex align-items-center">
+            <div class="o_field_widget o_field_priority me-2"><div class="o_priority"><svg class="o_icon o_priority_star o_priority_on"><use href="#o-star"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Email"><svg class="o_icon o_icon_lg text-danger"><use href="#o-envelope"/></svg></button></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <span class="badge rounded-pill text-bg-danger" title="Stuck in this stage for 6 days">6d</span>
+            <span class="badge rounded-pill text-bg-300 fw-bold">Sales</span>
+            <span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span>
+          </div>
+        </footer>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+    </div>
+
+    <!-- "Add column": after the last column, only where users create stages -->
+    <div class="o_column_quick_create o_quick_create_folded">
+      <div><button class="o_quick_create_button btn" title="Add column"><svg class="o_icon"><use href="#o-double-arrow-right"/></svg></button></div>
     </div>
 
   </div>
 </div>
+
+<!-- 2. GROUPED tasks with a FOLDED column. Task card: muted meta lines with a
+        leading icon (#o-user customer, #o-calendar-clock deadline, #o-timer
+        remaining hours: text-success / text-warning / text-danger), colour
+        tag stripe, footer class="mt-1 p-0": activity first, priority, then
+        assignee avatars (many2many: 20.6px, span.o_avatar.o_m2m_avatar) and
+        the state circle (.o_status: gray = in progress, o_status_green
+        approved, o_status_red cancelled, o_status_changes_requested amber). -->
+<div class="o_kanban_view o_kanban_small_column">
+  <div class="o_kanban_renderer o_kanban_grouped">
+    <div class="o_kanban_group">
+      <div class="o_kanban_header">
+        <div class="o_kanban_header_title">
+          <div class="o_column_title"><span>In Progress</span></div>
+          <div class="o_group_config"><button class="o_btn_circle btn btn-secondary" title="Settings"><svg class="o_icon"><use href="#o-cog"/></svg></button></div>
+          <button class="o_kanban_quick_add o_btn_circle btn btn-secondary" title="Quick add"><svg class="o_icon"><use href="#o-add-2"/></svg></button>
+        </div>
+        <div class="o_kanban_counter">
+          <div class="o_column_progress progress">
+            <div class="progress-bar bg-success" style="width:15%"></div>
+            <div class="progress-bar bg-warning" style="width:8%"></div>
+            <div class="progress-bar bg-300" style="width:77%"></div>
+          </div>
+          <div class="o_animated_number"><b class="fw-medium">13</b></div>
+        </div>
+      </div>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_9">
+        <div class="o_record_main row-gap-1">
+          <div class="d-flex align-items-baseline me-4 pe-2"><span class="fw-bold fs-5">Chair Cabinet</span></div>
+          <div class="d-flex flex-column text-muted">
+            <span class="d-flex gap-1 align-items-baseline"><svg class="o_icon"><use href="#o-user"/></svg><span>Joel Willis</span></span>
+            <span class="d-flex gap-1 align-items-baseline"><svg class="o_icon"><use href="#o-calendar-clock"/></svg><span>In 6 days</span></span>
+            <span class="d-flex gap-1 align-items-baseline"><svg class="o_icon"><use href="#o-timer"/></svg><span class="text-success">24h</span></span>
+          </div>
+          <footer class="mt-1 p-0">
+            <div class="o_field_widget o_field_kanban_activity me-1"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div>
+            <div class="o_field_widget o_field_priority"><div class="o_priority"><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2m_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span></div>
+            <span class="o_status" title="In Progress"></span>
+          </footer>
+        </div>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+      <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+        <div class="o_record_main row-gap-1">
+          <div class="d-flex align-items-baseline me-4 pe-2"><span class="fw-bold fs-5">Room 1: Decoration</span></div>
+          <div class="d-flex flex-column text-muted">
+            <span class="d-flex gap-1 align-items-baseline"><svg class="o_icon"><use href="#o-user"/></svg><span>Joel Willis</span></span>
+            <span class="d-flex gap-1 align-items-baseline"><svg class="o_icon"><use href="#o-calendar-clock"/></svg><span class="text-warning">Today</span></span>
+          </div>
+          <div class="o_field_widget o_field_many2many_tags"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_4"><div class="o_tag_badge_text">New Feature</div></span></div></div>
+          <footer class="mt-1 p-0">
+            <div class="o_field_widget o_field_kanban_activity me-1"><button class="o-mail-ActivityButton btn btn-link" title="Call"><svg class="o_icon o_icon_lg text-warning"><use href="#o-phone"/></svg></button></div>
+            <div class="o_field_widget o_field_priority"><div class="o_priority"><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg><svg class="o_icon o_priority_star"><use href="#o-star-o"/></svg></div></div>
+            <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2m_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span></div>
+            <span class="o_status o_status_green" title="Approved"></span>
+          </footer>
+        </div>
+        <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+      </article>
+    </div>
+
+    <!-- folded column: 44px strip, rotated "Name(N)", click to unfold -->
+    <div class="o_kanban_group o_column_folded">
+      <div class="o_kanban_header">
+        <div class="o_kanban_header_title">
+          <div class="o_column_title">Done<span>(6)</span></div>
+          <button class="o_column_unfold btn" title="Unfold"><svg class="o_icon"><use href="#o-caret-left"/></svg><svg class="o_icon"><use href="#o-caret-right"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. UNGROUPED tiles (Projects). Project card: favourite star (#o-star
+        text-favourite set / #o-star-o text-muted unset) + fs-4 title; muted
+        lines with an 8px icon gap (me-2); the tags field (my-2) stays even
+        when empty; footer = activity + milestone button left, manager avatar
+        + status circle right.
+        Milestone button (only when the project has milestones; "reached/total"):
+          <a class="o_project_milestone_btn btn btn-light text-danger" role="button" title="1 Milestones reached out of 3"><svg class="o_icon"><use href="#o-flag"/></svg><span>1/3</span></a>
+          text-danger = a deadline is exceeded, text-success = one can be
+          marked done, text-body otherwise (the plain btn-light text colour).
+        Status circle (last update): <span class="o_status o_status_bubble o_color_bubble_N">
+          20 On Track (green) · 21 On Hold (info teal) · 22 At Risk (amber) ·
+          23 Off Track (red) · 24 Complete (plum); plain .o_status = not set. -->
+<div class="o_kanban_view">
+  <div class="o_kanban_renderer o_kanban_ungrouped">
+    <!-- SLOT: cards -->
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Remove from Favorites"><svg class="o_icon text-favourite"><use href="#o-star"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">Office Design</span>
+        </div>
+        <span class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-user"/></svg><span class="text-truncate">Joel Willis</span></span>
+        <div class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-clock"/></svg><span class="d-flex gap-2 align-items-center"><span>Aug 4</span><svg class="o_icon"><use href="#o-arrow-right"/></svg><span>Oct 16</span></span></div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>18 Tasks</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_10"><div class="o_tag_badge_text">External</div></span></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div><a class="o_project_milestone_btn btn btn-light text-danger" role="button" title="1 Milestones reached out of 3"><svg class="o_icon"><use href="#o-flag"/></svg><span>1/3</span></a></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c1">M</span></span><span class="o_status o_status_bubble o_color_bubble_20" title="On Track"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Add to Favorites"><svg class="o_icon text-muted"><use href="#o-star-o"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">After-Sales Services</span>
+        </div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>3 Tasks</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_status" title="Set Status"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+    <!-- trailing ghosts: zero-height, keep the last row's card widths -->
+    <div class="o_kanban_record o_kanban_ghost"></div>
+    <div class="o_kanban_record o_kanban_ghost"></div>
+    <div class="o_kanban_record o_kanban_ghost"></div>
+  </div>
+</div>
+
+<!-- 4. Image card (Employees): the aside image fills the card's full height
+        on the left (photo-less mock = the .o_user_avatar tile with the initial);
+        info lines lead with a primary-coloured fixed-width icon. -->
+<div class="o_kanban_view">
+  <div class="o_kanban_renderer o_kanban_ungrouped">
+    <article class="o_card_record o_kanban_record flex-row">
+      <aside class="o_card_aside_full"><div class="o_field_widget o_field_background_image"><span class="o_user_avatar o_avatar_c1">A</span></div></aside>
+      <div class="o_record_main ms-2">
+        <div><span class="fw-bold fs-5">Abigail Peterson</span></div>
+        <div class="text-truncate"><svg class="o_icon o_icon_fw me-2 text-primary"><use href="#o-work"/></svg><span>Consultant</span></div>
+        <div class="text-truncate"><svg class="o_icon o_icon_fw me-2 text-primary"><use href="#o-envelope"/></svg><span>abigail.peterson39@example.com</span></div>
+        <div class="text-truncate"><svg class="o_icon o_icon_fw me-2 text-primary"><use href="#o-phone"/></svg><span>(555)-233-3393</span></div>
+        <footer class="py-0">
+          <div class="d-flex ms-auto"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div></div>
+        </footer>
+      </div>
+    </article>
+    <!-- SLOT: more cards, then the ghosts -->
+    <div class="o_kanban_record o_kanban_ghost"></div>
+    <div class="o_kanban_record o_kanban_ghost"></div>
+  </div>
+</div>
+
+<!-- 5. ROW-STYLE kanban (o_kanban_list): full-width stacked rows -->
+<div class="o_kanban_view o_kanban_list">
+  <div class="o_kanban_renderer o_kanban_ungrouped">
+    <!-- SLOT: one article per record; the card body follows the view's arch -->
+    <article class="o_card_record o_kanban_record flex-row align-items-center">
+      <div class="o_record_main"><span class="fw-bold fs-5"><!-- SLOT: record name --></span><span class="text-muted"><!-- SLOT: detail line --></span></div>
+      <span class="badge rounded-pill text-bg-info"><!-- SLOT: state --></span>
+    </article>
+  </div>
+</div>
+
+<!-- 6. PAY RUNS (hr_payroll payslip_run_kanban; hr_payslip_run_kanban.xml +
+        payrun_card.scss): the view's OWN renderer, div.o_payrun_kanban (4%
+        side padding), square full-width rows 2px apart. Each row's
+        .o_payrun_card = name block (fs-4 title + 12px/500 dark period line:
+        start → end | N Employees) · centred KPIs (Total Cost / Net, 24px
+        amounts with .6em muted decimals) · state badge (Draft / Ready
+        text-bg-info, Done text-bg-success, Paid text-bg-primary) ·
+        .o_payrun_menu (min 12rem, right-aligned): borderless buttons for the
+        state (Draft: Work times · Done: Pay [btn-primary] + Mark as Paid ·
+        Paid: Mark as Unpaid) then the ⋮. -->
+<div class="o_kanban_view o_payslip_run_kanban_view">
+  <div class="o_payrun_kanban o_kanban_ungrouped">
+    <article class="o_card_record o_kanban_record o_payrun_card_root flex-row align-items-center">
+      <div class="o_payrun_card">
+        <div class="o_payrun_name">
+          <div class="fs-4 fw-bold text-truncate"><span>Oct 2026</span></div>
+          <div class="o_payrun_period"><span>Oct 1</span><svg class="o_icon"><use href="#o-east"/></svg><span>Oct 31</span><span class="o_payrun_sep text-muted">|</span><span class="text-black">2 Employees</span></div>
+        </div>
+        <div class="o_payrun_kpis">
+          <div class="o_payrun_metrics">
+            <div><div class="o_payrun_metric_label small text-muted">Total Cost</div><div class="o_payrun_metric_value"><span class="o_payrun_kpi_symbol">$</span><span>0</span><span class="o_payrun_kpi_decimals text-muted">.00</span></div></div>
+            <div><div class="o_payrun_metric_label small text-muted">Net</div><div class="o_payrun_metric_value"><span class="o_payrun_kpi_symbol">$</span><span>0</span><span class="o_payrun_kpi_decimals text-muted">.00</span></div></div>
+          </div>
+        </div>
+        <div class="o_field_widget o_field_badge"><span class="badge rounded-pill text-bg-info">Draft</span></div>
+        <div class="o_payrun_menu"><div><button class="btn btn-secondary border-0">Work times</button><button class="btn p-0 border-0" title="More"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div></div>
+      </div>
+    </article>
+    <article class="o_card_record o_kanban_record o_payrun_card_root flex-row align-items-center">
+      <div class="o_payrun_card">
+        <div class="o_payrun_name">
+          <div class="fs-4 fw-bold text-truncate"><span>Sep 2026</span></div>
+          <div class="o_payrun_period"><span>Sep 1</span><svg class="o_icon"><use href="#o-east"/></svg><span>Oct 1</span><span class="o_payrun_sep text-muted">|</span><span class="text-black">2 Employees</span></div>
+        </div>
+        <div class="o_payrun_kpis">
+          <div class="o_payrun_metrics">
+            <div><div class="o_payrun_metric_label small text-muted">Total Cost</div><div class="o_payrun_metric_value"><span class="o_payrun_kpi_symbol">$</span><span>0</span><span class="o_payrun_kpi_decimals text-muted">.00</span></div></div>
+            <div><div class="o_payrun_metric_label small text-muted">Net</div><div class="o_payrun_metric_value"><span class="o_payrun_kpi_symbol">$</span><span>0</span><span class="o_payrun_kpi_decimals text-muted">.00</span></div></div>
+          </div>
+        </div>
+        <div class="o_field_widget o_field_badge"><span class="badge rounded-pill text-bg-success">Done</span></div>
+        <div class="o_payrun_menu"><div><button class="btn btn-primary border-0">Pay</button><button class="btn btn-secondary border-0">Mark as Paid</button><button class="btn p-0 border-0" title="More"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div></div>
+      </div>
+    </article>
+  </div>
+</div>
+
+<!-- SNIPPETS
+
+  Lost / Won card (CRM): the form's ribbon widget as the FIRST child of the
+  article (text-bg-success for Won); the card grows to the 104px ribbon.
+    <article class="o_card_record o_kanban_record">
+      <div class="o_widget o_widget_web_ribbon"><div class="ribbon ribbon-top-right"><span class="text-bg-danger">Lost</span></div></div>
+      <span class="fw-bold fs-5">Quote for 600 Chairs</span>
+      <div>$ 22,500.00</div>
+      … footer …
+    </article>
+
+  Record quick create (column "+" clicked): first child of the column, after
+  the header. Labels above inputs (xxs form); CRM-like forms use a leading
+  icon per row instead of a label.
+    <div class="o_kanban_quick_create o_field_highlight shadow">
+      <div class="o_form_view o_kanban_quick_create_form">
+        <div class="o_inner_group">
+          <div class="o_wrap_label"><label class="o_form_label">Task Title</label></div>
+          <div class="o_wrap_input"><div class="o_field_widget o_required_modifier o_field_char"><input class="o_input" placeholder="e.g. Send Invitations"/></div></div>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-1">
+        <button class="btn btn-primary o_kanban_add me-1">Add</button>
+        <button class="btn btn-secondary o_kanban_edit me-1">Edit</button>
+        <span class="flex-grow-1"></span>
+        <button class="btn btn-secondary o_kanban_cancel" title="Discard"><svg class="o_icon"><use href="#o-trash-fill"/></svg></button>
+      </div>
+    </div>
+
+  Open column quick create (">>" clicked, or a grouped kanban with no
+  columns yet): replaces the folded "Add column" control.
+    <div class="o_column_quick_create o_quick_create_unfolded">
+      <div>
+        <div class="o_kanban_header">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Stage..."/>
+            <button class="btn btn-secondary text-success o_kanban_add" title="Add"><svg class="o_icon"><use href="#o-check"/></svg></button>
+            <button class="btn btn-secondary text-danger o_kanban_remove" title="Cancel"><svg class="o_icon"><use href="#o-times"/></svg></button>
+          </div>
+        </div>
+        <div class="o_kanban_muted_record opacity-75"></div>
+        <div class="o_kanban_muted_record opacity-50"></div>
+        <div class="o_kanban_muted_record opacity-25"></div>
+      </div>
+    </div>
+
+  Drag-over column (a card dragged into it): add o_kanban_hover to the
+  .o_kanban_group (teal tint + 1px teal side rules).
+-->

@@ -1,11 +1,12 @@
 # Industry Standards Audit — `odoo-mock-design` skill
 
-> ⚠ **STALE SNAPSHOT (2026-06-13).** Authoritative current state is
+> ⚠ **STALE SNAPSHOT (2026-06-13; corpus baseline is now Odoo 20.0 as of 2026-09-30, catalog refreshed to v20).** Authoritative current state is
 > [`../SKILL.md`](../SKILL.md) and the reference docs under
 > [`../reference/`](../reference/). Several descriptions below predate the
 > Coverage-level gate, the 8-dimension coverage floor, the
-> reference-material migration out of SKILL.md, and the templates
-> single-source-of-truth pattern. Treat this file as a frame-of-reference
+> reference-material migration out of SKILL.md, the templates
+> single-source-of-truth pattern, and the single-file deliverable (the
+> `<mocks>/_reference/` package bundled into `<name> - mock.html`). Treat this file as a frame-of-reference
 > baseline against external frameworks, not a current-state description.
 > Re-run if the skill structure changes materially. The companion
 > [`skill_audit.md`](skill_audit.md) carries the current structural audit.
@@ -154,12 +155,14 @@ These frameworks are widely-recognized by designers + front-end engineers. They'
 
 ## Tiered improvement backlog
 
+> **Status reconciled 2026-10-08** (see `reports/skill_audit.md` for the current full audit). Per-item `[done]/[pending]` markers added below.
+
 ### Tier 1 — low cost, immediate clarity
 
-- Add a one-paragraph cross-reference to WCAG + Atomic Design + Nielsen heuristics in `style_guide.md` for readers who already know those frameworks.
-- Add an `aria-label` / `title=` check to `mock-fidelity-anchor` for icon-only buttons in the rendered mock.
-- Add a "last refreshed against Odoo X.Y" line at the top of the catalog's `odoo.css` for traceability.
-- Add `role="tab"` to variant-switcher pills (the container already has `role="tablist"`) so screen readers announce them correctly.
+- `[pending]` Add a one-paragraph cross-reference to WCAG + Atomic Design + Nielsen heuristics in `style_guide.md` for readers who already know those frameworks.
+- `[pending]` Add an `aria-label` / `title=` check to `mock-fidelity-anchor` for icon-only buttons in the rendered mock.
+- `[done]` Add a "last refreshed against Odoo X.Y" line at the top of the catalog's `odoo.css` for traceability. — shipped: `odoo.css` line 1 carries the machine-read stamp "calibrated to Odoo 20 Enterprise (2026-10-07)".
+- `[pending]` Add `role="tab"` to variant-switcher pills (the container already has `role="tablist"`) so screen readers announce them correctly.
 
 ### Tier 2 — moderate
 

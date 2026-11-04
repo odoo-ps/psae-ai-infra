@@ -10,9 +10,11 @@ rule catches the drift via SHA-256 diff.
 This script is the documented fix path. It overwrites the asset files only;
 it never touches `index.html`. Safe to run repeatedly; safe to run on any
 mock package regardless of how it was built (`_scaffold_mock.py` or by hand).
+A refresh makes the single-file bundle stale: then re-run `_lint_mock.py` and
+re-bundle with `_bundle_mock.py`.
 
 Usage:
-    python3 _refresh_assets.py <package_dir>
+    python3 _refresh_assets.py <mocks-dir | _reference-dir>
 
     # Example:
     python3 skills/odoo-mock-design/reference/scripts/_refresh_assets.py \
@@ -28,6 +30,9 @@ import hashlib
 import os
 import shutil
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _mock_paths  # noqa: E402
 
 CATALOG_ASSETS = (
     "odoo.css",
@@ -50,6 +55,7 @@ def _sha256(path):
 
 
 def refresh(package_dir):
+    package_dir = _mock_paths.package_dir(package_dir)
     if not os.path.isdir(package_dir):
         print(f"ERROR: package dir does not exist: {package_dir}", file=sys.stderr)
         return 2
@@ -70,13 +76,16 @@ def refresh(package_dir):
         if os.path.isfile(dst) and _sha256(src) == _sha256(dst):
             fresh.append(name)
             continue
-        shutil.copy2(src, dst)
+        # copy, not copy2: a fresh mtime lets the lint flag the bundle as stale.
+        shutil.copy(src, dst)
         refreshed.append(name)
 
     if refreshed:
         print(f"Refreshed {len(refreshed)} asset(s) in {assets_dir}/:")
         for name in refreshed:
             print(f"  - {name}")
+        print("Re-run _lint_mock.py, then re-bundle with _bundle_mock.py "
+              f'"{_mock_paths.mocks_root(package_dir)}".')
     if fresh:
         print(f"Already fresh: {', '.join(fresh)}")
     if not refreshed and not fresh:
@@ -86,7 +95,7 @@ def refresh(package_dir):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
-    ap.add_argument("package_dir", help="path to the mock package (the dir containing index.html + assets/)")
+    ap.add_argument("package_dir", help="the mocks folder or its _reference/ working package (index.html + assets/)")
     args = ap.parse_args(argv)
     return refresh(args.package_dir)
 

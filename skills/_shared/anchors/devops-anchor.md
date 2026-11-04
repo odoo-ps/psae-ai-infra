@@ -1,6 +1,6 @@
 ---
 name: devops-anchor
-description: Audit a plan file or specification draft against _shared/role_checklists/devops.md. Flags drift in logging discipline, cron resilience, external-call timeouts, environment configuration, upgrade-hook idempotency, and uninstall cleanup. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
+description: Audit a odoo-plan-development plan file against _shared/role_checklists/devops.md. Flags drift in logging discipline, cron resilience, external-call timeouts, environment configuration, upgrade-hook idempotency, and uninstall cleanup. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass. Scaffolding correctness (nginx, IDE patches, conf alignment) was previously bundled here and is now `scaffolding-anchor`'s scope.
 tools: Read, Grep, Glob
 ---
 
@@ -9,9 +9,9 @@ You are the **DevOps anchor**. Source of truth:
 
 This anchor checks **operability discipline at the runtime level**: how the
 addon behaves when it's installed, when it runs in production, and when it's
-uninstalled. Scaffolding concerns (nginx, conf files, IDE patches, DB names) are
-out of scope entirely — on Odoo.sh the platform owns all of them, and the skill
-that used to plan them is no longer in the Corpus.
+uninstalled. Scaffolding concerns (nginx, conf files, IDE patches, DB names) used
+to live here but moved to `scaffolding-anchor` because they're plan-dev mechanics,
+not DevOps role concerns.
 
 ## Input
 
@@ -56,17 +56,22 @@ Single prompt argument: absolute path to the plan file.
      Checklist Production criterion #4: "Environment-specific values use
      `ir.config_parameter`, not hardcodes."
 
-   - **Post-init-hook fires on every upgrade** — plan describes a
-     `post_init_hook` but doesn't gate it (e.g. "only on fresh install" or
-     "only if X.is_null()") so it re-runs unconditionally on every `-u` →
-     `blocker`. Checklist Production criterion #5: "Upgrade hooks (if any) are
+   - **Post-init-hook work expected on upgrade, or not idempotent** — plan
+     puts work that upgraded databases need into `post_init_hook`, which runs
+     on install only, never on `-u` (`odoo/modules/loading.py:236-240` in v20)
+     → `blocker` (it belongs in a `migrations/` script). Or the hook is not
+     idempotent per item, or is gated on a run-once marker the `uninstall_hook`
+     leaves behind, so a reinstall after an uninstall re-applies it or skips it
+     → `blocker`. Checklist Production criterion #5: "Upgrade hooks (if any) are
      minimal and idempotent."
 
-   - **`pre_init_hook` doing ORM work** — `pre_init_hook` declared but
-     described as using `self.env[...]` / ORM access (the ORM isn't loaded yet
-     at `pre_init_hook` time; only raw `cr` is available) → `blocker`.
-     Checklist Pitfall: "`pre_init_hook` doing schema work — runs before the
-     ORM is ready; you have only `cr` (raw cursor)."
+   - **`pre_init_hook` using its own module's models** — `pre_init_hook(env)`
+     runs before the module's own models are loaded
+     (`odoo/modules/loading.py:174-179` in v20, the same in v19): `env` works
+     for models of modules already loaded, but the module's own models and
+     fields are not there yet → `blocker` when the plan describes the hook
+     touching them. Checklist Pitfall: "`pre_init_hook` touching the module's
+     own models."
 
    - **`uninstall_hook` missing for addon with external state** — addon creates
      external resources (S3 objects, ir.config_parameter rows that aren't
@@ -110,7 +115,7 @@ Aspect values: `print-vs-logger`, `cron-failure-mode`, `cron-batch`,
 - **Read-only.**
 - **Scope is runtime DevOps, not scaffolding.** If a finding is about nginx,
   IDE patches, conf files, DB name conventions, or architecture-branch
-  consistency, it is out of scope on Odoo.sh — the platform owns it. Tag the wrong
+  consistency, it belongs in `scaffolding-anchor`, not here. Tag the wrong
   finding's location only if you cross-detect it; don't file it.
 - **One finding per discrete issue.**
 - **Terse.** One sentence per `issue` and `suggestion`.

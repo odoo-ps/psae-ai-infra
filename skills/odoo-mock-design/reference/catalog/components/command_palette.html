@@ -1,52 +1,58 @@
 <!--
-  command_palette.html — Ctrl+K global command/search modal.
-  Source: addons/web/static/src/core/commands/command_palette.{xml,scss}
+  command_palette.html — Ctrl+K global command / search palette (Odoo 20).
+  Source: web/static/src/core/commands/command_palette.{xml,scss},
+  command_items.xml (DefaultCommandItem / HotkeyCommandItem / DefaultFooter).
 
-  An on-demand modal listing commands, app links, and recent records,
-  driven by a search input at the top. Real Odoo opens this on Ctrl+K
-  (or Cmd+K on macOS). The palette is built on top of the standard
-  Dialog — same backdrop, same close behaviour — with `size="md"` and
-  no header.
+  A standard Dialog of size md (620px) with NO header, NO footer and no body
+  padding, pinned 120px from the top of the screen. Render it as an in-place
+  dialog (data-mock-modal="cmdk") opened from a Ctrl+K affordance. Use it when
+  a workflow step is "the user searches / jumps via the command palette"
+  rather than browsing menus.
 
-  Render this as an in-place dialog (data-mock-modal="cmdk") triggered
-  from the navbar's search icon or a Ctrl+K affordance on the cover
-  screen. Use it when a workflow step is "the user searches/jumps via
-  the command palette" rather than browsing menus.
-
-  Sections (Categories) carry their name as a small uppercase header.
-  Each command row has an icon glyph + text + optional hotkey badge.
-  The CURRENT row gets `.focused` (matches `state.selectedCommand`).
+  LOOK (default namespace — what Ctrl+K opens):
+  - Search row: borderless input FIRST ("Search for a command..."), the
+    search glyph at the RIGHT; 16px 24px padding, a rule below.
+  - Rows are TEXT ONLY: no icons, no "Apps" / "Recent" labels. Hotkey
+    commands show `CONTROL` + key chips at the right (monospace <kbd>).
+    Groups are split by `<hr>`; category names stay blank here.
+  - The current row gets `.focused` (light teal tint).
+  - Footer: "TIP — search for /menus and @conversations".
+  Namespaced palettes ("/" menus, "@" users, "#" channels, "?" help) show
+  the prefix as `<span class="o_namespace">/</span>` before the input and
+  MAY carry a category name: `<span>Sales</span>` first in .o_command_category.
 -->
 <div class="o_dialog_backdrop" data-mock-modal="cmdk">
-  <div class="o_dialog o_command_palette">
+  <div class="o_dialog modal-md o_command_palette">
     <div class="o_dialog_body">
       <div class="o_command_palette_search">
-        <svg class="o_icon"><use href="#o-search"/></svg>
-        <input type="text" placeholder="Search commands, records, apps…"/>
+        <!-- namespaced palette only: <span class="o_namespace">/</span> -->
+        <input type="text" placeholder="Search for a command..."/>
+        <div class="input-group-text"><svg class="o_icon"><use href="#o-search"/></svg></div>
       </div>
-      <div class="o_command_palette_listbox">
+      <div class="o_command_palette_listbox" role="listbox">
         <div class="o_command_category">
-          <span>Apps</span>
-          <div class="o_command focused">
-            <svg class="o_icon"><use href="#o-app-sales"/></svg>
-            <span class="o_command_name"><!-- SLOT: e.g. Sales --></span>
-            <span class="o_command_hotkey"><kbd>G</kbd><kbd>S</kbd></span>
-          </div>
-          <div class="o_command">
-            <svg class="o_icon"><use href="#o-app-inventory"/></svg>
-            <span class="o_command_name"><!-- SLOT: e.g. Inventory --></span>
-          </div>
+          <div class="o_command focused" role="option"><a><div class="o_command_hotkey">
+            <span class="o_command_name"><!-- SLOT: e.g. New -->New</span>
+            <span><kbd>CONTROL</kbd> + <kbd>C</kbd></span>
+          </div></a></div>
+          <div class="o_command" role="option"><a><div class="o_command_hotkey">
+            <span class="o_command_name">Actions</span>
+            <span><kbd>CONTROL</kbd> + <kbd>U</kbd></span>
+          </div></a></div>
         </div>
+        <hr/>
         <div class="o_command_category">
-          <span>Recent</span>
-          <div class="o_command">
-            <svg class="o_icon"><use href="#o-folder"/></svg>
-            <span class="o_command_name"><!-- SLOT: e.g. SO0042 — Deco Addict --></span>
-          </div>
+          <div class="o_command" role="option"><a><div class="o_command_hotkey">
+            <span class="o_command_name">Activity</span>
+            <span><kbd>CONTROL</kbd> + <kbd>SHIFT</kbd> + <kbd>A</kbd></span>
+          </div></a></div>
+          <div class="o_command" role="option"><a><div class="o_command_default">
+            <span class="o_command_name"><!-- SLOT: a command without a hotkey -->Show My Activities</span>
+          </div></a></div>
         </div>
       </div>
       <div class="o_command_palette_footer">
-        <kbd>↑</kbd> <kbd>↓</kbd> to navigate, <kbd>⏎</kbd> to select, <kbd>Esc</kbd> to dismiss
+        <span><span class="fw-bolder text-primary">TIP</span> — search for <span class="o_namespace btn-link text-primary"><span class="fw-bolder text-primary">/</span>menus</span> and <span class="o_namespace btn-link text-primary"><span class="fw-bolder text-primary">@</span>conversations</span></span>
       </div>
     </div>
   </div>

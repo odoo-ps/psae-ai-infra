@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Calibration — project-kanban</title>
+<link rel="stylesheet" href="../../catalog/odoo.css">
+<link rel="stylesheet" href="assets/odoo.css">
+</head>
+<body>
+<!-- SPRITE -->
+<div class="o_web_client">
+<header class="o_navbar">
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+    </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-project"/></svg>
+    <span class="o_menu_brand">Project</span>
+  </a>
+  <div class="o_menu_sections" role="menu">
+    <a class="o_nav_entry">Projects</a>
+    <a class="o_nav_entry">Tasks</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
+  </div>
+  <div class="o_menu_systray" role="menu">
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge">6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+      <span class="badge">17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name">YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar o_avatar_c5">M</span>
+    </button>
+  </div>
+</nav>
+</header>
+<div class="o_action_manager">
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-primary o-kanban-button-new">New<svg class="o_icon o_caret"><use href="#o-caret-down"/></svg></button></div>
+      <div class="o_breadcrumb">
+        <div class="o_last_breadcrumb_item active"><span>Projects</span></div>
+        <div class="o_control_panel_breadcrumbs_actions">
+          <div class="o_cp_action_menus">
+            <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="o_control_panel_actions">
+      <div class="o_cp_searchview input-group rounded-pill" role="search">
+        <div class="o_searchview form-control">
+          <svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg>
+          <div class="o_searchview_input_container">
+            <input type="text" class="o_searchview_input focus" placeholder="Search..."/>
+          </div>
+        </div>
+        <button class="o_searchview_dropdown_toggler btn btn-outline-secondary" title="Toggle Search Panel"></button>
+      </div>
+    </div>
+    <div class="o_control_panel_navigation">
+      <div class="o_cp_pager" role="search">
+        <nav class="o_pager" aria-label="Pager">
+          <span class="o_pager_counter"><span class="o_pager_value">1-8</span><span> / </span><span class="o_pager_limit">8</span></span>
+          <span class="btn-group">
+            <button class="btn btn-secondary o_pager_previous" aria-label="Previous" disabled><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+            <button class="btn btn-secondary o_pager_next" aria-label="Next" disabled><svg class="o_icon"><use href="#o-chevron-right"/></svg></button>
+          </span>
+        </nav>
+      </div>
+      <nav class="o_cp_switch_buttons btn-group o_switcher">
+        <button class="btn btn-secondary o_switch_view o_kanban active" title="Kanban"><svg class="o_icon"><use href="#o-view-kanban"/></svg></button>
+        <button class="btn btn-secondary o_switch_view o_list" title="List"><svg class="o_icon"><use href="#o-view-list"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</div>
+<main class="o_content">
+<div class="o_kanban_view">
+  <div class="o_kanban_renderer o_kanban_ungrouped">
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Remove from Favorites"><svg class="o_icon text-favourite"><use href="#o-star"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">AGR - S00023 - Acme Corporation - Sales Order</span>
+        </div>
+        <span class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-user"/></svg><span class="text-truncate">Acme Corporation</span></span>
+        <div class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-clock"/></svg><span class="d-flex gap-2 align-items-center"><span>Sep 21</span><svg class="o_icon"><use href="#o-arrow-right"/></svg><span>Nov 16</span></span></div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>11 Tasks</span></div>
+        <div class="text-danger d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-timer"/></svg><span>-184h 30m</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Review progress with the customer"><svg class="o_icon o_icon_lg text-success"><use href="#o-phone"/></svg></button></div><a class="o_project_milestone_btn btn btn-light text-danger" role="button" title="1 Milestones reached out of 3"><svg class="o_icon"><use href="#o-flag"/></svg><span>1/3</span></a></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span class="o_status" title="Set Status"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_5">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Remove from Favorites"><svg class="o_icon text-favourite"><use href="#o-star"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">Home Construction</span>
+        </div>
+        <span class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-user"/></svg><span class="text-truncate">Acme Corporation</span></span>
+        <div class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-clock"/></svg><span class="d-flex gap-2 align-items-center"><span>Aug 6</span><svg class="o_icon"><use href="#o-arrow-right"/></svg><span>Oct 1</span></span></div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>8 Tasks</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_7"><div class="o_tag_badge_text">Architecture</div></span><span class="o_tag o_badge badge rounded-pill o_tag_color_2"><div class="o_tag_badge_text">Construction</div></span><span class="o_tag o_badge badge rounded-pill o_tag_color_4"><div class="o_tag_badge_text">Design</div></span><span class="o_tag o_badge badge rounded-pill o_tag_color_10"><div class="o_tag_badge_text">Interior</div></span></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div><a class="o_project_milestone_btn btn btn-light text-danger" role="button" title="1 Milestones reached out of 3"><svg class="o_icon"><use href="#o-flag"/></svg><span>1/3</span></a></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">M</span></span><span class="o_status o_status_bubble o_color_bubble_20" title="On Track"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_3">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Remove from Favorites"><svg class="o_icon text-favourite"><use href="#o-star"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">Office Design</span>
+        </div>
+        <span class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-user"/></svg><span class="text-truncate">Joel Willis</span></span>
+        <div class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-clock"/></svg><span class="d-flex gap-2 align-items-center"><span>Aug 4</span><svg class="o_icon"><use href="#o-arrow-right"/></svg><span>Oct 16</span></span></div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>18 Tasks</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_7"><div class="o_tag_badge_text">External</div></span></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div><a class="o_project_milestone_btn btn btn-light text-body" role="button" title="1 Milestones reached out of 3"><svg class="o_icon"><use href="#o-flag"/></svg><span>1/3</span></a></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">M</span></span><span class="o_status o_status_bubble o_color_bubble_20" title="On Track"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_4">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Remove from Favorites"><svg class="o_icon text-favourite"><use href="#o-star"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">Renovations</span>
+        </div>
+        <div class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-clock"/></svg><span class="d-flex gap-2 align-items-center"><span>Aug 6</span><svg class="o_icon"><use href="#o-arrow-right"/></svg><span>Oct 1</span></span></div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>3 Tasks</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_8"><div class="o_tag_badge_text">Experiment</div></span><span class="o_tag o_badge badge rounded-pill o_tag_color_9"><div class="o_tag_badge_text">Internal</div></span></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span class="o_status o_status_bubble o_color_bubble_24" title="Complete"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Remove from Favorites"><svg class="o_icon text-favourite"><use href="#o-star"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">Research &#38; Development</span>
+        </div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>6 Tasks</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"><span class="o_tag o_badge badge rounded-pill o_tag_color_9"><div class="o_tag_badge_text">Internal</div></span></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Examine project status"><svg class="o_icon o_icon_lg text-success"><use href="#o-calendar-fill"/></svg></button></div></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span class="o_status o_status_bubble o_color_bubble_21" title="On Hold"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Add to Favorites"><svg class="o_icon text-muted"><use href="#o-star-o"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">ACME - S00025 - Acme Corporation - Sales Order</span>
+        </div>
+        <span class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-user"/></svg><span class="text-truncate">Acme Corporation</span></span>
+        <div class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-clock"/></svg><span class="d-flex gap-2 align-items-center"><span>Oct 12</span><svg class="o_icon"><use href="#o-arrow-right"/></svg><span>Oct 26</span></span></div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>2 Tasks</span></div>
+        <div class="text-success d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-timer"/></svg><span>25h</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c6">M</span></span><span class="o_status" title="Set Status"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Add to Favorites"><svg class="o_icon text-muted"><use href="#o-star-o"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">After-Sales Services</span>
+        </div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>3 Services</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_status o_status_bubble o_color_bubble_22" title="At Risk"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <article class="o_card_record o_kanban_record o_kanban_record_colored o_kanban_color_0">
+      <div class="o_record_main">
+        <div class="d-flex align-items-baseline gap-1 min-w-0 pe-4">
+          <div class="o_field_widget o_field_project_is_favorite"><button class="o_favorite btn btn-link" title="Add to Favorites"><svg class="o_icon text-muted"><use href="#o-star-o"/></svg></button></div>
+          <span class="text-truncate d-block fs-4 fw-bold">DPC - S00024 - Ready Mat - Sales Order</span>
+        </div>
+        <span class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-user"/></svg><span class="text-truncate">Ready Mat</span></span>
+        <div class="text-muted d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-clock"/></svg><span class="d-flex gap-2 align-items-center"><span>Sep 7</span><svg class="o_icon"><use href="#o-arrow-right"/></svg><span>Nov 2</span></span></div>
+        <div class="d-flex gap-2 align-items-baseline text-muted"><svg class="o_icon"><use href="#o-task"/></svg><span>9 Tasks</span></div>
+        <div class="text-danger d-flex align-items-baseline"><svg class="o_icon me-2"><use href="#o-timer"/></svg><span>-4h</span></div>
+        <div class="o_field_widget o_field_many2many_tags my-2"><div class="d-flex flex-wrap gap-1"></div></div>
+      </div>
+      <footer>
+        <div class="d-flex align-items-center gap-1"><div class="o_field_widget o_field_kanban_activity"><button class="o-mail-ActivityButton btn btn-link" title="Show activities"><svg class="o_icon o_icon_lg text-dark"><use href="#o-clock"/></svg></button></div><a class="o_project_milestone_btn btn btn-light text-body" role="button" title="0 Milestones reached out of 2"><svg class="o_icon"><use href="#o-flag"/></svg><span>0/2</span></a></div>
+        <div class="d-flex align-items-center gap-1 ms-auto"><span class="o_avatar o_m2o_avatar"><span class="o_user_avatar o_avatar_c5">M</span></span><span class="o_status o_status_bubble o_color_bubble_23" title="Off Track"></span></div>
+      </footer>
+      <div class="o_dropdown_kanban"><button class="btn btn-light" title="Dropdown menu"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button></div>
+    </article>
+
+    <div class="o_kanban_record o_kanban_ghost"></div>
+    <div class="o_kanban_record o_kanban_ghost"></div>
+    <div class="o_kanban_record o_kanban_ghost"></div>
+  </div>
+</div>
+</main>
+</div>
+</div>
+</body>
+</html>

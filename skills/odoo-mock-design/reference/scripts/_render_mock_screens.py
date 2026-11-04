@@ -21,13 +21,16 @@ Catches things lint + anchors miss:
     width pressure) that lint is intentionally blind to.
 
 Usage:
-    python3 reference/scripts/_render_mock_screens.py <mock-dir> [<screen-id> ...]
-                                                      [--out DIR]
+    python3 reference/scripts/_render_mock_screens.py <mocks | mocks/_reference | <name> - mock.html>
+                                                      [<screen-id> ...] [--out DIR]
                                                       [--width N] [--height N]
 
+    The mocks folder or its _reference/ renders the working package; a
+    bundled `<name> - mock.html` renders the single-file deliverable.
     Default screen-ids: every `<section class="mock-screen">` declared in
-    `<mock-dir>/index.html` (cover + every workflow step).
-    Default --out: /tmp/mock_renders/<mock-name>/
+    the page (cover + every workflow step).
+    Default --out: /tmp/mock_renders/<mock-name>/ (package) or
+    /tmp/mock_renders/<mock-name>-bundle/ (bundle), so both can be compared.
     Default --width / --height: 1440 / 900 (matches MBA / typical monitor)
 
 Exit 0 on success, 2 if no Chrome/Chromium binary is found.
@@ -38,6 +41,9 @@ import re
 import subprocess
 import shutil
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _mock_paths  # noqa: E402
 
 # Same lookup chain as `_render_catalog.py` — keep them in sync so a
 # Chrome install that works for one works for the other.
@@ -62,8 +68,12 @@ def find_chrome():
 def discover_screens(index_html):
     """Return list of `data-screen` IDs in document order."""
     text = open(index_html, encoding="utf-8", errors="replace").read()
+    # Ignore inlined <script>/<style> and comments: a bundled single-file mock
+    # carries walkthrough.js, whose comments contain example markup.
+    text = re.sub(r"<(script|style)\b.*?</\1>|<!--.*?-->", "", text, flags=re.S | re.I)
+    # Tolerant of extra classes on the section (`mock-screen mock-custom`).
     return re.findall(
-        r'<section class="mock-screen"[^>]*\bdata-screen="([^"]+)"',
+        r'<section\b[^>]*\bclass="[^"]*\bmock-screen\b[^"]*"[^>]*\bdata-screen="([^"]+)"',
         text,
     )
 
@@ -76,7 +86,7 @@ def _mock_name(mock_dir):
     interesting name is the spec folder. For specless mocks under
     `<repo>/mocks/<name>/` the name is the leaf directory.
     """
-    mock_dir = os.path.abspath(mock_dir).rstrip("/")
+    mock_dir = _mock_paths.mocks_root(mock_dir).rstrip("/")
     parent = os.path.dirname(mock_dir)
     leaf = os.path.basename(mock_dir)
     if leaf == "mocks":
@@ -86,7 +96,13 @@ def _mock_name(mock_dir):
 
 
 def render(mock_dir, screen_ids=None, out_dir=None, width=1440, height=900):
-    index = os.path.join(mock_dir, "index.html")
+    is_bundle = os.path.isfile(mock_dir) and mock_dir.endswith(".html")
+    if is_bundle:
+        # A bundled single-file mock (<mocks>/<name> - mock.html).
+        index, mock_dir = os.path.abspath(mock_dir), os.path.dirname(os.path.abspath(mock_dir))
+    else:
+        mock_dir = _mock_paths.package_dir(mock_dir)
+        index = os.path.join(mock_dir, "index.html")
     if not os.path.isfile(index):
         sys.stderr.write(f"No index.html in {mock_dir}\n")
         return 2
@@ -102,7 +118,7 @@ def render(mock_dir, screen_ids=None, out_dir=None, width=1440, height=900):
         return 2
 
     if out_dir is None:
-        out_dir = f"/tmp/mock_renders/{_mock_name(mock_dir)}"
+        out_dir = f"/tmp/mock_renders/{_mock_name(mock_dir)}" + ("-bundle" if is_bundle else "")
     os.makedirs(out_dir, exist_ok=True)
 
     base = "file://" + os.path.abspath(index)
@@ -114,9 +130,9 @@ def render(mock_dir, screen_ids=None, out_dir=None, width=1440, height=900):
                "--hide-scrollbars",
                f"--window-size={width},{height}",
                # Give walkthrough.js time to swap to the hash screen +
-               # resolve variant axes + position absolute markers before
-               # the screenshot fires.
-               "--virtual-time-budget=2000",
+               # resolve variant axes + position markers AND let the
+               # screen fade-in finish (2s often caught it washed-out).
+               "--virtual-time-budget=6000",
                f"--screenshot={out_png}", url]
         subprocess.run(cmd, check=False,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -131,9 +147,10 @@ def render(mock_dir, screen_ids=None, out_dir=None, width=1440, height=900):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("mock_dir", help="path to the mock package (the dir with index.html)")
+    ap.add_argument("mock_dir", help="the mocks folder, its _reference/ package, or a bundled '<name> - mock.html'")
     ap.add_argument("screen_ids", nargs="*", help="optional: render only these data-screen IDs")
-    ap.add_argument("--out", default=None, help="output directory (default: /tmp/mock_renders/<mock-name>/)")
+    ap.add_argument("--out", default=None, help="output directory (default: /tmp/mock_renders/<mock-name>/, "
+                    "or <mock-name>-bundle/ for a bundled file)")
     ap.add_argument("--width", type=int, default=1440)
     ap.add_argument("--height", type=int, default=900)
     args = ap.parse_args(argv)

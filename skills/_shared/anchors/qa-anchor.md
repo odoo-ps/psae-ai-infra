@@ -1,6 +1,6 @@
 ---
 name: qa-anchor
-description: Audit a plan file or specification draft against _shared/role_checklists/qa.md. Flags drift in Stage 3 smoke coverage, test-trigger discipline, and failure-case coverage. Read-only. Use during a skill's Anchor Pass (see _shared/anchor_pass.md).
+description: Audit a odoo-plan-development plan file against _shared/role_checklists/qa.md. Flags drift in Stage 3 smoke coverage, test-trigger discipline, and failure-case coverage. Read-only. Use during odoo-plan-development's pre-ExitPlanMode anchor pass.
 tools: Read, Grep, Glob
 ---
 
@@ -104,6 +104,15 @@ Single prompt argument: absolute path to the plan file.
      record from scratch. → `nit` tagged `fixture-priming`.
      Suggestion: pull the fixture into a `setUpClass` (TransactionCase)
      or a parametrised helper.
+   - **Test phase left to the default on v19.** Plan's tests need other
+     modules' data or a fully loaded registry, target v19, and declare no
+     `post_install` tag (v19's default is `at_install`; v20's is
+     `post_install`) → `blocker` tagged `test-tags`. A plan naming
+     `SavepointCase` → `blocker` (removed; use `TransactionCase` with
+     `setUpClass`).
+   - **Test that would silently not run.** Plan's test files are not
+     named `test_*.py`, not imported from `tests/__init__.py`, or rely on
+     inherited `test_*` methods → `nit` tagged `test-collection`.
 
    The lesson behind the rule is the recurring "test fails on a
    framework NOT NULL before reaching the @api.constrains under

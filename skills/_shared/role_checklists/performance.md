@@ -1,6 +1,6 @@
 # Performance Engineer
 
-*Calibrated against Odoo 19.0. Re-review on each major version bump.*
+*Calibrated against Odoo 20.0. Re-review on each major version bump — see [release cadence runbook](../release_cadence.md).*
 
 ## Goal
 Anticipate dataset growth and avoid the common Odoo performance traps before they reach production.
@@ -14,25 +14,33 @@ Anticipate dataset growth and avoid the common Odoo performance traps before the
 - What's the **acceptable latency** for the user-visible operations? Sub-second / under-5s / batch-only? Frame as P50 / P95 latency targets — most reads should land at P50; the worst case (P95 / P99) is what users perceive as "slow."
 
 ## Mechanisms / Tools
-- **Index** any field used in search/filter/group/sort domains: `fields.Char(..., index=True)`. Indexes cost write speed and disk; only add for actually-queried fields.
+- **Index fields that are searched *and* selective** (many distinct values): `fields.Char(..., index=True)`. An index on a boolean or a `state` is wasted space and slows every write. Typed indexes: `index='trigram'` for `ilike` search, `index='btree_not_null'` for mostly-empty columns; multi-column indexes are model attributes (`_x_idx = models.Index('(a, b)')`).
 - **`store=True` for computed fields** that are searched, grouped, or used in views as filterable columns. Without it, every view render recomputes.
 - **`@api.depends` accuracy** — list every field the compute reads, including chains (`partner_id.name`, not just `partner_id`).
-- **`read_group()` over Python loops** for aggregations. A `read_group` over 100k records takes seconds; a Python loop takes minutes.
+- **One ORM call for the whole collection.** An ORM call inside a loop over records or values is a query per iteration: `create(vals_list)` once (overrides decorated `@api.model_create_multi`), never `create` per row; one `_read_group(domain, groupby, aggregates)` mapped into a dict, never `search_count` per record. Iterate a recordset (or `browse(ids)` once) so prefetch reads each field for the whole set; a `browse(id)` loop defeats it.
+- **`_read_group` for aggregations** (v19 and v20, same signature: `_read_group(domain, groupby=[...], aggregates=['amount:sum', '__count'])`, returning tuples). The public `read_group` is deprecated in v19 and takes the `_read_group` signature in v20, so don't build on it.
 - **`prefetch_fields=False`** on `with_context()` when reading many fields you'll never use — Odoo's auto-prefetch helps the common case but can hurt batch-reads.
-- **Cron batching** — never `search([])` a model that grows. Use `search([], limit=N)` and process in chunks, committing between batches: `self.env.cr.commit()`.
+- **Cron batching** — never `search([])` a model that grows. Use `search([], limit=N)` and process in chunks, recording progress with `self.env['ir.cron']._commit_progress(processed, remaining=…)` (v19 and v20): it commits safely between batches and lets the scheduler resume. A raw `self.env.cr.commit()` on the framework's cursor is not the pattern (and raises inside tests).
 - **Profile with `--log-sql=debug`** during smoke testing if you suspect N+1 queries.
 - **Push filters into domain, not into `.filtered()`** — `search([("state", "=", "open")])` runs in PostgreSQL; `search([]).filtered(lambda r: r.state == "open")` loads every row into Python first. Use `.filtered()` only when the predicate genuinely can't be expressed as a domain (rare).
 - **Volume assumption per extended large-model field** — when extending `account.move.line`, `stock.move.line`, `mail.message`, `pos.order.line`, or other known-large tables, state the expected row count in the plan. Without this, indexing decisions are guesswork.
 - **SQL views (`_auto = False`) — pre-aggregate, don't `COUNT(DISTINCT)` at scale** — a report model defined as a SQL view is cheap if it counts/sums over a bounded join. The trap is `COUNT(DISTINCT)` or `GROUP BY` over an unbounded table (`mail.message`, audit logs) — these get slower linearly with data growth. For those, materialize via a periodic cron into a real table, or pre-aggregate via `read_group`.
 - **`_log_access = True` (default) adds 4 implicit columns** — `create_date`, `write_date`, `create_uid`, `write_uid` — each with an index. Useful for audit but adds 4 indexes per model. On high-write tables where the audit columns aren't read, set `_log_access = False` and skip the index cost. Don't do this casually — losing the audit columns has compliance implications.
-- **`read_group(lazy=False)`** when bucketing data — `lazy=True` (the default) returns only the first groupby level and a list of folded record-IDs for the rest; `lazy=False` returns the full breakdown across all groupbys. Lazy is faster for kanban / pivot lazy-load; non-lazy is correct for reports that need the full breakdown in one query.
+- **Reduce complexity in Python** — pre-map query results into a dict (`{r.id: r}`) instead of nested loops; test membership against a `set` (or use recordset arithmetic, `records - done`), not a list.
 - **PostgreSQL query plans** — `EXPLAIN ANALYZE <query>` before shipping any non-trivial report query. Look for `Seq Scan` on tables > 10k rows (means missing index), nested loops over large sets (means N+1 or missing join optimisation), `Sort` on un-indexed columns (means the planner can't use an index for ordering). Odoo's `--log-sql` shows every query; pipe slow ones into `EXPLAIN ANALYZE` to see why.
 - **Production sizing flags** — `--workers <N>` (HTTP worker count, ~2× CPU cores for I/O-heavy), `--cron-threads <N>` (cron worker count, default 2), `--limit-time-cpu <s>` and `--limit-time-real <s>` (per-request budget — workers get killed and respawned on overrun), `--limit-memory-hard <bytes>` (memory bound). Default `--workers=0` is single-process; under multi-user load that's a brick wall.
 - **Profiling tools** — `--log-sql` for query inspection during smoke; `--dev=all` for assets-debug-mode (don't run in prod). For Python-side hot paths, the `odoo.tools.profiler.Profiler` decorator is available.
 - **Availability / contention computes must be batched.** An "available", "soft-held", or "exception" figure that calls `stock.quant._get_available_quantity` per row, or does a per-line cross-document lookup, is N+1 across a recordset. Compute it once with a single `read_group` (grouped by lot / product / location) and map back; for a non-stored status field, cache the lookup per parent within the compute so it fires once, not per row, and gate it to only the records that actually need it.
 
+### Odoo 20+
+- **`compute_sql` field attribute** — a computed field can now emit SQL instead of per-record Python (`orm/fields.py`). A non-stored compute that is SQL-representable via `compute_sql` becomes searchable / sortable / group-able in-DB without the write-amplification of `store=True`. Prefer `compute_sql` (or `store=True`) for any compute used in a search domain, `_order`, or group-by; a plain-Python non-stored compute in those paths is still the classic full-scan / N+1 trap.
+- **Non-stored RELATED fields auto-resolve via JOIN** — a non-stored `related=` field that is SQL-representable now auto-assigns `compute_sql=_compute_sql_related` (`orm/fields.py`) and resolves through a JOIN rather than N+1 per-record Python reads, mitigating a class of the related-field N+1 concern. The win holds only while the field stays SQL-representable — a related chain routed through a non-stored Python compute falls back to per-record reads.
+- **`CachedModel` mixin + named ormcache** — stable reference-data read hot-paths can use the new `CachedModel` mixin with named caches (`cache='stable'`; `orm/models_cached.py`, `orm/cache.py`) instead of a hand-rolled `@ormcache`. Use for small, rarely-changing lookup tables read on nearly every request; never for transactional data.
+- **`TableSQL` / `FieldSQL` join API** — the performant, index-friendly way to build joins (`orm/query.py`); the old string / `Query.where` join forms are deprecated Since 20.0. Prefer the typed join API for any hand-built query in a report model or search override.
+
 ## Common Pitfalls
-- **N+1 queries in compute methods** — calling `record.partner_id.name` inside a loop without prefetch. Use `read_group` or pre-fetch via `mapped`.
+- **N+1 queries in compute methods** — an ORM call per record inside the compute loop. Use one `_read_group` mapped into a dict, or `mapped` on the whole set.
+- **`create()` or `search_count()` inside a `for` loop** — O(n) round-trips where one batched call does; the most common performance defect in addon code.
 - **Storing a compute that depends on a relational field's history** — when the related record changes, the dependent compute may not re-trigger because `@api.depends` doesn't follow indirect chains.
 - **Cron with `limit=False`** that processes a growing table — performance degrades linearly with data growth.
 - **Searching on an unindexed `Text` field** — full table scan every time. Either index (rarely the right call for `Text`), use `like` only with anchored prefixes, or denormalise into a `Char` summary field.

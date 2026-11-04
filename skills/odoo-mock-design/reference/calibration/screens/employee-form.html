@@ -1,0 +1,293 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Calibration — employee-form</title><link rel="stylesheet" href="../../catalog/odoo.css"><link rel="stylesheet" href="assets/odoo.css"></head><body>
+<!-- SPRITE -->
+<!-- Calibration page: real Odoo 20 Enterprise /odoo/employees/7 (Abigail Peterson),
+     composed only from catalog/components/{navbar,control_panel,form_view,chatter}.html
+     (form_view EMPLOYEE HEADER + statusbar user-status pill). Not reproducible
+     with the catalog (left out / approximated here): the versions-timeline
+     underline, the selection carets (Wage Type / month), the div.o_row inline
+     field widths (Contract dates, Wage / month, Employer Cost / year: real
+     8rem hr narrow fields, approximated with d-flex gap-3) and the OdooBot
+     avatar art (CSS stand-in for mail/static/src/img/odoobot.webp). -->
+<div class="o_web_client">
+<header class="o_navbar">
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+    </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-hr"/></svg>
+    <span class="o_menu_brand">Employees</span>
+  </a>
+  <div class="o_menu_sections" role="menu">
+    <a class="o_nav_entry">Management</a>
+    <a class="o_nav_entry">Directory</a>
+    <a class="o_nav_entry">Departments</a>
+    <a class="o_nav_entry">Learning</a>
+    <a class="o_nav_entry">Reporting</a>
+    <a class="o_nav_entry">Configuration</a>
+  </div>
+  <div class="o_menu_systray" role="menu">
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge">6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+      <span class="badge">17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name">YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar o_avatar_c1">M</span>
+    </button>
+  </div>
+</nav>
+</header>
+<div class="o_action_manager">
+
+<div class="o_control_panel">
+  <div class="o_control_panel_main">
+
+    <div class="o_control_panel_breadcrumbs">
+      <div class="o_control_panel_main_buttons"><button class="btn btn-outline-primary o_form_button_create">New</button></div>
+      <div class="o_breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item o_back_button"><a href="#">Employees</a></li>
+        </ol>
+        <div>
+          <div class="o_last_breadcrumb_item active"><span>Abigail Peterson</span></div>
+          <div class="o_control_panel_breadcrumbs_actions">
+            <div class="o_cp_action_menus">
+              <button class="btn o_btn_circle btn-light" title="Actions"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="o_form_status_indicator">
+        <div class="o_form_status_indicator_buttons invisible">
+          <button class="o_form_button_save btn btn-light" title="Save manually"><svg class="o_icon o_icon_fw"><use href="#o-save"/></svg></button>
+          <button class="o_form_button_cancel btn btn-light" title="Discard all changes"><svg class="o_icon o_icon_fw"><use href="#o-times"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="o_control_panel_actions">
+      <div class="o-form-buttonbox oe_button_box">
+        <button class="oe_stat_button">
+          <svg class="o_stat_icon o_icon"><use href="#o-attach-money"/></svg>
+          <span class="o_stat_info"><span class="o_stat_text">Payslips</span><span class="o_stat_value">New</span></span>
+        </button>
+        <button class="oe_stat_button">
+          <svg class="o_stat_icon o_icon"><use href="#o-view-calendar"/></svg>
+          <span class="o_stat_info"><span class="o_stat_text">Time Off</span></span>
+        </button>
+        <button class="oe_stat_button">
+          <svg class="o_stat_icon o_icon"><use href="#o-view-calendar"/></svg>
+          <span class="o_stat_info"><span class="o_stat_text">Timesheets</span></span>
+        </button>
+        <button class="oe_stat_button">
+          <svg class="o_stat_icon o_icon"><use href="#o-contact-page"/></svg>
+          <span class="o_stat_info">History<span class="o_stat_value">1</span></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="o_control_panel_navigation">
+      <div class="o_cp_pager" role="search">
+        <nav class="o_pager" aria-label="Pager">
+          <span class="o_pager_counter"><span class="o_pager_value">1</span><span> / </span><span class="o_pager_limit">1</span></span>
+          <span class="btn-group">
+            <button class="btn btn-secondary o_pager_previous" aria-label="Previous" disabled><svg class="o_icon"><use href="#o-chevron-left"/></svg></button>
+            <button class="btn btn-secondary o_pager_next" aria-label="Next" disabled><svg class="o_icon"><use href="#o-chevron-right"/></svg></button>
+          </span>
+        </nav>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="o_form_view">
+  <div class="o_content_with_chatter">
+  <div class="o_form_sheet_bg">
+
+    <div class="o_form_statusbar">
+      <div class="o_statusbar_buttons">
+        <button class="btn btn-primary">Invite</button>
+        <button class="btn btn-secondary">Launch Plan</button>
+      </div>
+      <div class="o_field_widget o_field_employee_user_status"><button class="btn btn-sm rounded-pill btn-outline-danger"><svg class="o_icon"><use href="#o-user-o"/></svg><span>Not Invited</span></button></div>
+      <div class="o_field_widget o_field_statusbar o_readonly_modifier d-flex gap-1">
+        <div class="o_statusbar_status" role="radiogroup">
+          <button class="btn btn-secondary o_arrow_button o_arrow_button_current" disabled aria-current="step">Sep 1, 2026</button>
+        </div>
+        <button class="btn btn-primary" title="New Employee Record"><svg class="o_icon"><use href="#o-plus"/></svg></button>
+      </div>
+    </div>
+
+    <div class="o_form_sheet">
+
+      <div class="o_employee_header">
+        <div class="o_employee_avatar">
+          <div class="o_field_widget o_field_hr_presence_status_private"><svg class="o_icon o_employee_availability o_icon_employee_absent"><use href="#o-circle"/></svg></div>
+          <div class="o_field_widget o_field_image"><img src="data:image/webp;base64,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" width="128" height="128" alt=""></div>
+        </div>
+        <div class="o_employee_header_info">
+          <h1 class="o_employee_form_header_info"><div class="o_field_widget o_field_char o_required_modifier"><span class="o_input">Abigail Peterson</span></div></h1>
+          <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-envelope"/></svg><div class="o_field_widget o_field_email"><span class="o_input">abigail.peterson39@example.com</span></div></div>
+          <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-phone"/></svg><div class="o_field_widget o_field_phone"><span class="o_input">(555)-233-3393</span></div></div>
+          <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-smartphone"/></svg><div class="o_field_widget o_field_phone"><span class="o_input o_input_placeholder">Work Mobile</span></div></div>
+          <div class="o_employee_header_row"><svg class="o_icon"><use href="#o-tag"/></svg><div class="o_field_widget o_field_many2many_tags"><span class="o_input o_input_placeholder">e.g. Founder, Motorized, Building B, ...</span></div></div>
+        </div>
+        <div class="o_to_review_wrapper"><div class="o_field_widget o_field_dropdown_selection_badge"><button class="btn btn-link rounded-pill btn-outline-success">Reviewed</button></div></div>
+      </div>
+
+      <div class="o_notebook">
+        <div class="o_notebook_headers">
+          <span class="nav-link active" data-mock-tab="payroll">Payroll</span>
+          <span class="nav-link" data-mock-tab="adjustments">Payslip Adjustments</span>
+          <span class="nav-link" data-mock-tab="work">Work</span>
+          <span class="nav-link" data-mock-tab="resume">Resume</span>
+          <span class="nav-link" data-mock-tab="certifications">Certifications</span>
+          <span class="nav-link" data-mock-tab="personal">Personal</span>
+          <span class="nav-link" data-mock-tab="settings">Settings</span>
+        </div>
+        <div class="o_notebook_content">
+          <div data-mock-tabpanel="payroll" class="is-active-tab">
+            <div class="o_group">
+              <div class="o_inner_group">
+                <div class="o_horizontal_separator d-flex"><span>Contract Overview</span><button class="btn btn-link border-0 ms-auto p-0" style="font-size: 0.8125rem;">Load a Template</button></div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Employee Type</label>
+                  <div class="o_field_widget">Employee</div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Contract</label>
+                  <div class="o_field_widget"><div class="d-flex gap-3"><span>Sep 1</span><span>to</span><span>Dec 6</span><button class="btn btn-link ms-auto p-0">New Contract</button></div></div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Wage Type</label>
+                  <div class="o_field_widget">Fixed Wage</div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Wage<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget"><div class="d-flex gap-3"><span>$ 6,500.00</span><span>/</span><span>month</span></div></div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Employer Cost</label>
+                  <div class="o_field_widget"><div class="d-flex gap-3"><span>$ 78,000.00</span><span>/ year</span></div></div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Pay Category</label>
+                  <div class="o_field_widget">Worker</div>
+                </div>
+              </div>
+              <div class="o_inner_group">
+                <div class="o_horizontal_separator">Schedule</div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Working Hours<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget">40 hours/week</div>
+                </div>
+              </div>
+              <div class="o_inner_group">
+                <div class="o_horizontal_separator">W-4 Form</div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Filed in 2019 or Before<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check"><input type="checkbox" class="form-check-input"></div></div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Step 2(c): Multiple Jobs or Spouse Works<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check"><input type="checkbox" class="form-check-input"></div></div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Step 3: Dependents Amount<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget">$ 0.00</div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Step 4(a): Other Income<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget">$ 0.00</div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Step 4(b): Deductions<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget">$ 0.00</div>
+                </div>
+              </div>
+              <div class="o_inner_group">
+                <div class="o_horizontal_separator">W-2 Form</div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Statutory Employee<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check"><input type="checkbox" class="form-check-input"></div></div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Retirement Plan<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check"><input type="checkbox" class="form-check-input"></div></div>
+                </div>
+                <div class="o_field_row">
+                  <label class="o_form_label">Third-Party Sick Pay<span class="o_field_help">?</span></label>
+                  <div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check"><input type="checkbox" class="form-check-input"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<aside class="o-mail-Chatter">
+  <div class="o-mail-Chatter-top">
+    <div class="o-mail-Chatter-topbar">
+      <div class="o-mail-Chatter-topbarButtons">
+        <button class="btn btn-primary o-mail-Chatter-sendMessage">Send message</button>
+        <button class="btn btn-secondary o-mail-Chatter-logNote">Log note</button>
+        <button class="btn btn-secondary o-mail-Chatter-activity"><span>Activity</span></button>
+      </div>
+      <span class="o-mail-Chatter-topbarGrow"></span>
+      <button class="o-mail-Chatter-search" title="Search Messages" aria-label="Search Messages"><svg class="o_icon"><use href="#o-search"/></svg></button>
+      <button class="o-mail-Chatter-attachFiles" title="Attach files" aria-label="Attach files"><svg class="o_icon"><use href="#o-paperclip"/></svg></button>
+      <div class="o-mail-Followers">
+        <button class="o-mail-Followers-button" title="Show Followers"><svg class="o_icon"><use href="#o-user-o"/></svg><sup class="o-mail-Followers-counter">0</sup></button>
+      </div>
+    </div>
+  </div>
+  <div class="o-mail-Chatter-content">
+    <div class="o-mail-Thread">
+      <div class="o-mail-DateSection"><hr/><span>Today</span><hr/></div>
+      <div class="o-mail-Message">
+        <div class="o-mail-Message-core">
+          <div class="o-mail-Message-sidebar"><div class="o-mail-Message-avatarContainer"><span class="o-mail-Message-avatar o_avatar_odoobot"></span></div></div>
+          <div>
+            <div class="o-mail-Message-header"><span class="o-mail-Message-author"><strong>OdooBot</strong></span><small class="o-mail-Message-date">12:28 PM</small></div>
+            <div class="o-mail-Message-contentContainer"><div class="o-mail-Message-textContent">
+              <div class="o-mail-Message-body o-note"><p><b>Congratulations!</b> May I recommend you to setup an <a href="#">onboarding plan</a>?</p></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+      <div class="o-mail-Message">
+        <div class="o-mail-Message-core">
+          <div class="o-mail-Message-sidebar"><div class="o-mail-Message-avatarContainer"><span class="o-mail-Message-avatar o_avatar_odoobot"></span></div></div>
+          <div>
+            <div class="o-mail-Message-header"><span class="o-mail-Message-author"><strong>OdooBot</strong></span><small class="o-mail-Message-date">12:28 PM</small></div>
+            <div class="o-mail-Message-contentContainer"><div class="o-mail-Message-textContent">
+              <div class="o-mail-Message-body o-note"><p>Employee created</p></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+  </div>
+</div>
+
+</div>
+</div>
+</body></html>

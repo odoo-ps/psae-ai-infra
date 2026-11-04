@@ -1,0 +1,172 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Calibration — settings</title><link rel="stylesheet" href="assets/odoo.css"><link rel="stylesheet" href="../../catalog/odoo.css"></head><body>
+<!-- SPRITE -->
+<!-- Calibration page: real Odoo 20 Enterprise /odoo/settings (General Settings),
+     composed only from catalog/components/{navbar,settings}.html. Box bodies
+     follow the real DOM (base_setup res_config_settings_views.xml +
+     web settings_form_view/widgets/res_config_invite_users.xml) using catalog
+     classes; real Odoo class names are kept as inert markers.
+     Not reproducible with the catalog (left out here): the photo avatar in
+     the systray, the div.d-inline o_widget_documentation_link wrapper around
+     the "Active Users" help icon (the catalog has no .d-inline, so it is a
+     span: still breaks the .o_form_label + .o_doc_link 8px rule like the
+     real wrapper), the arch-driven style="width: 90%" on the company address field. -->
+<div class="o_web_client">
+<header class="o_navbar">
+<nav class="o_main_navbar">
+  <a class="o_menu_toggle hasImage" title="Home menu">
+    <svg class="o_menu_toggle_icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <rect width="3" height="3" x="0" y="0"/><rect width="3" height="3" x="5" y="0"/><rect width="3" height="3" x="10" y="0"/>
+      <rect width="3" height="3" x="0" y="5"/><rect width="3" height="3" x="5" y="5"/><rect width="3" height="3" x="10" y="5"/>
+      <rect width="3" height="3" x="0" y="10"/><rect width="3" height="3" x="5" y="10"/><rect width="3" height="3" x="10" y="10"/>
+    </svg>
+    <svg class="o_menu_brand_icon"><use href="#o-app-settings"/></svg>
+    <span class="o_menu_brand">Settings</span>
+  </a>
+  <div class="o_menu_sections" role="menu">
+    <a class="o_nav_entry">General Settings</a>
+    <a class="o_nav_entry">Users &amp; Companies</a>
+  </div>
+  <div class="o_menu_systray" role="menu">
+    <button class="o_systray_item" title="Timesheet timer"><svg class="o_icon text-danger"><use href="#o-play-circle"/></svg></button>
+    <button class="o_systray_item" title="Ask AI"><svg class="o_icon o_icon_ai"><use href="#o-app-ai"/></svg></button>
+    <button class="o_systray_item" title="Messages">
+      <svg class="o_icon"><use href="#o-forum"/></svg>
+      <span class="badge">6</span>
+    </button>
+    <button class="o_systray_item" title="Activities">
+      <svg class="o_icon"><use href="#o-clock"/></svg>
+      <span class="badge">17</span>
+    </button>
+    <button class="o_systray_item" title="Toggle Studio"><svg class="o_icon"><use href="#o-studio"/></svg></button>
+    <button class="o_systray_item o_switch_company_menu" title="YourCompany">
+      <span class="oe_topbar_name">YourCompany</span>
+    </button>
+    <button class="o_systray_item o_user_menu" title="Mitchell Admin">
+      <span class="o_user_avatar o_avatar_c1">M</span>
+    </button>
+  </div>
+</nav>
+</header>
+<div class="o_action_manager">
+
+<div class="o_form_view o_base_settings_view o_field_highlight">
+  <div class="o_control_panel">
+    <div class="o_control_panel_main">
+      <div class="o_control_panel_breadcrumbs">
+        <div class="o_control_panel_main_buttons"><button class="btn btn-primary o_form_button_save">Save</button><button class="btn btn-secondary o_form_button_cancel">Discard</button></div>
+        <div class="o_breadcrumb"><div class="o_last_breadcrumb_item active"><span>Settings</span></div><div class="o_control_panel_breadcrumbs_actions"></div></div>
+      </div>
+      <div class="o_control_panel_actions">
+        <div class="o_cp_searchview" role="search">
+          <div class="o_searchview form-control"><svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg><div class="o_searchview_input_container"><input type="text" class="o_searchview_input focus" placeholder="Search..."/></div></div>
+        </div>
+      </div>
+      <div class="o_control_panel_navigation"></div>
+    </div>
+  </div>
+
+  <div class="o_setting_container">
+    <div class="settings_tab">
+      <a class="tab selected"><svg class="icon"><use href="#o-app-settings"/></svg><span class="app_name">General Settings</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-crm"/></svg><span class="app_name">CRM</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-sales"/></svg><span class="app_name">Sales</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-calendar"/></svg><span class="app_name">Calendar</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-accounting"/></svg><span class="app_name">Accounting</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-project"/></svg><span class="app_name">Project</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-timesheets"/></svg><span class="app_name">Timesheets</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-hr"/></svg><span class="app_name">Employees</span></a>
+      <a class="tab"><svg class="icon"><use href="#o-app-payroll"/></svg><span class="app_name">Payroll</span></a>
+    </div>
+
+    <div class="settings">
+      <div class="app_settings_block" data-key="general_settings">
+        <h2>Users</h2>
+        <div class="o_settings_container">
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <div class="mt16">
+                <div class="o_widget o_widget_res_config_invite_users"><div>
+                  <p class="o_form_label">Invite New Users</p>
+                  <div class="d-flex"><input class="o_user_emails o_input mt8 text-truncate" type="text" placeholder="Enter an email"/><button class="btn btn-primary o_web_settings_invite flex-shrink-0"><strong>Invite</strong></button></div>
+                  <p class="o_form_label pt-3">Pending Invitations:</p>
+                  <div class="d-flex flex-wrap gap-1"><button class="o_web_settings_user btn btn-outline-primary btn-sm rounded-pill"> maggie.davidson@example.com </button><button class="o_web_settings_user btn btn-outline-primary btn-sm rounded-pill"> light </button><button class="o_web_settings_user btn btn-outline-primary btn-sm rounded-pill"> demo </button></div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <div class="mt16"><div class="o_field_widget o_readonly_modifier o_field_integer w-auto ps-3 fw-bold"><span>4</span></div><span class="o_form_label"> Active Users </span><span class="o_widget o_widget_documentation_link d-inline"><a class="o_doc_link" title="Documentation"><svg class="o_icon"><use href="#o-question-circle"/></svg></a></span><br/><button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Manage Users</span></button></div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Languages</h2>
+        <div class="o_settings_container">
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <div class="mt16">
+                <div class="w-50"><div class="o_field_widget o_readonly_modifier o_field_integer w-auto ps-1 fw-bold"><span>1</span></div><span class="o_form_label"> Language </span></div>
+                <div class="mt8"><button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Add Languages</span></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Companies</h2>
+        <div class="o_settings_container">
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <div class="mt16"><div class="o_field_widget o_readonly_modifier o_field_char fw-bold"><span>YourCompany</span></div><br/><div class="o_field_widget o_readonly_modifier o_field_text text-muted"><span>8000 Marina Blvd, Suite 300
+94005 - Brisbane
+California (US)
+United States</span></div><br/><button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Update Info</span></button></div>
+            </div>
+          </div>
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <div class="mt16"><div class="o_field_widget o_readonly_modifier o_field_integer w-auto ps-1 fw-bold"><span>2</span></div><span class="o_form_label"> Companies </span><br/><div class="mt8"><button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Manage Companies</span></button></div></div>
+            </div>
+          </div>
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Document Layout</span><svg class="o_icon o_icon_lg" title="Values set here are company-specific."><use href="#o-business"/></svg>
+              <div class="text-muted">Choose the layout of your documents</div>
+              <div class="mt16"><div class="content-group"><button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Configure Document Layout</span></button></div></div>
+            </div>
+          </div>
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"></div>
+            <div class="o_setting_right_pane">
+              <span class="o_form_label">Email Templates</span><svg class="o_icon o_icon_lg" title="Values set here are company-specific."><use href="#o-business"/></svg>
+              <div class="text-muted">Customize the look and feel of automated emails</div>
+              <div class="mt16">
+                <div class="w-50 row"><span class="d-block w-75 py-2">Button Text</span><div class="o_field_widget o_field_color d-block w-25 p-0 m-0"><div class="o_field_color d-flex" style="background: rgb(255, 255, 255);"></div></div></div>
+                <div class="w-50 row mt-1"><span class="d-block w-75 py-2">Button Color</span><div class="o_field_widget o_field_color d-block w-25 p-0 m-0"><div class="o_field_color d-flex" style="background: rgb(135, 90, 123);"></div></div></div>
+                <button class="btn btn-link"><svg class="o_icon o_button_icon"><use href="#o-east"/></svg><span>Review All Templates</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="o_setting_box col-12 col-lg-6">
+            <div class="o_setting_left_pane"><div class="o_field_widget o_field_boolean"><div class="o-checkbox form-check d-inline-block"><input type="checkbox" class="form-check-input"/></div></div></div>
+            <div class="o_setting_right_pane">
+              <label class="o_form_label">Inter-Company Transactions</label><svg class="o_icon o_icon_lg" title="Values set here are company-specific."><use href="#o-business"/></svg>
+              <div class="text-muted">Create corresponding in/out orders and bills when you sell/buy between your companies</div>
+              <div class="mt16"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+</body></html>

@@ -1,32 +1,93 @@
 # Refreshing the catalog on an Odoo version bump
 
-The `catalog/` (odoo.css + component fragments + icons) is **hand-authored** from
-Odoo source, not generated — a mechanical SCSS→CSS conversion drags in the whole
-Bootstrap layer and defeats the "small, readable, self-contained" goal. So
-refreshing is a deliberate, traceable edit, not a script run.
+The `catalog/` (odoo.css + component fragments + sprites) is **hand-authored**
+from Odoo source, not generated — a mechanical SCSS→CSS conversion drags in the
+whole Bootstrap layer and defeats the "small, readable, self-contained" goal.
+So refreshing is a deliberate, traceable edit, not a script run. (The one
+exception is icon artwork, which is extracted from Odoo's real icon fonts.)
+
+The catalog tracks ONE Odoo version — the latest, stamped on the first line of
+`catalog/odoo.css` ("calibrated to Odoo NN Enterprise"). Mocks built for an
+older version keep the assets they copied; they are not migrated.
 
 ## When to refresh
 
-- The repo's `odoo/` checkout moves to a new major version.
+- A new `versions/v<major>/` stack (Odoo + Enterprise) lands in the repo.
 - A view the catalog covers gets a visible redesign upstream.
 - A mock needs a view type not yet in the catalog (promote it from the
   "NOT in the starter catalog" list in `view_types.md`).
 
 ## How to refresh
 
-1. Re-read the source files listed in the **Source map** at the bottom of
-   `style_guide.md`. Diff against what the catalog currently encodes.
-2. Update **tokens first** (`catalog/odoo.css` `:root`) from
-   `scss/primary_variables.scss` + `scss/secondary_variables.scss`. These cascade
-   to everything else.
-3. Update component styles/fragments only where the upstream DOM/class names or
-   layout actually changed. Keep the real Odoo class names.
-4. Add any new icons to `catalog/icons.svg` and document them in `style_guide.md`.
-5. Re-run the verification before considering the refresh done: render the
-   catalog gallery (`python3 reference/scripts/_render_catalog.py`) and eyeball
-   every component against the previous baseline; then build a sample mock, run
-   `_lint_mock.py`, and open it in a browser. The gallery catches render
-   regressions (stray markers, z-index, broken layout) the lint is blind to.
+Mandatory and in order — a refresh is calibrated against the REAL product, not
+against class names. The kit lives in `reference/scripts/calibrate/` (Node,
+maintainer-only: `npm install` there once; drives the system Chrome via
+puppeteer-core; configure with `ODOO_URL`, `ODOO_LOGIN`, `ODOO_PASSWORD`,
+`CHROME_PATH`). The `node` commands below run from that folder; the `python`
+ones from the skill root.
+
+1. **Stand up the target version and capture real screens.** Create a fresh
+   `--with-demo` database of the target major **with Enterprise** on the
+   addons path (`versions/v<major>/enterprise`) and the modules listed in
+   `screens.json` `_note`, served on its own port. Then
+   `ODOO_URL=http://127.0.0.1:<port> node capture.js <outdir> [screen …]` saves
+   one 1440×900 @2x PNG per `screens.json` entry. These captures are the ground
+   truth. A covered surface with no entry gets one (url + optional `click` /
+   `clickText` / `press` steps).
+2. **Diff SCSS VALUES and DOM, old vs new major — not class existence.** For
+   `web` AND `web_enterprise` (plus `mail` and the app addon of any app
+   surface): diff the variables files (`primary_variables.scss`,
+   `secondary_variables.scss`, `bootstrap_overridden.scss`,
+   `*.variables.scss`), each component's SCSS, and its OWL/QWeb templates
+   (`*.xml`). `web_enterprise/static/src/` mirrors web's paths and carries most
+   of the visual design. Update **tokens first** (`:root` in `odoo.css`), then
+   components, keeping the real class names; bump the stamp and the
+   `Catalog version` header in `odoo.css` — line 1 is the **authoritative**,
+   machine-read stamp (`_scaffold_mock.py` + `_lint_mock.py` parse it); keep the
+   human `Catalog version` header identical. Paths: `style_guide.md` § Source map.
+3. **Probe computed styles, real vs catalog, for every component.**
+   `node probe.js real <odoo-path> '["<css>", …]' [--steps '<json>']` and
+   `node probe.js file <page.html> '["<css>", …]' [--hash <screen-id>]` print
+   rect, font, color, border, radius, padding and gap per selector. Fix the CSS
+   until the numbers agree (sub-pixel noise aside).
+4. **Rebuild icons from the real icon fonts.** Odoo draws UI icons from
+   Material Symbols (`web/static/src/libs/materialsymbols/`, names in
+   `web/icons.py`) and `odoo_ui_icons` (`web/static/lib/odoo_ui_icons/`). For
+   each glyph the new version renders:
+   `python reference/scripts/_extract_icons.py <name>[=id] [--filled]`
+   (needs `fonttools` + `brotli`; `--list` lists names; `--web` points at
+   another version's `web` addon). Paste the printed `<symbol>` into
+   `catalog/icons.svg` under the EXISTING id — ids are the contract mocks use:
+   swap the artwork, never add an alias. App icons: copy each module's
+   `static/description/icon.svg` into `catalog/app-icons.svg`.
+5. **Match the calibration screens.** The key captures have a twin page,
+   `reference/calibration/screens/<name>.html`, built only from catalog markup
+   and `odoo.css` (not every `screens.json` capture has a twin — some are
+   covered by a sibling twin of the same view type). Render a twin with
+   `node render.js ../../calibration/screens/<name>.html <out>.png` and compare
+   it pairwise with its capture. **A refresh is not done until every twin
+   matches its capture at a glance** — same chrome, colors, density and icons
+   (data and photos may differ). When you touch a view type whose twin is
+   missing, add the twin.
+6. **Resync + render the gallery.** `_gallery.html` is a **hand-inlined copy**
+   of the component markup — `_render_catalog.py` only screenshots it, nothing
+   regenerates or diffs it against `components/*.html`. So after editing any
+   fragment, paste the change into `_gallery.html` too, or it silently goes
+   stale. Then `python3 reference/scripts/_render_catalog.py` and eyeball every
+   component — it catches stray markers, z-index and broken layout the lint is
+   blind to (`--baseline` saves the new baseline). Then build a sample mock, run
+   `_lint_mock.py`, and open it in a browser.
+
+> **Why class existence is not enough.** The first 19→20 pass (2026-09-30)
+> compared `o_*` class indexes of the old and new cores, found "0 real drift"
+> and stopped. Odoo 20 kept almost every class name yet redesigned the look —
+> transparent navbar, borderless gray control panel, 16px root, teal active
+> states, white bordered secondary buttons, tinted badges, boxed notebook,
+> Material Symbols icons — almost entirely through SCSS values and
+> `web_enterprise` overrides that a class-name diff cannot see. A passing lint,
+> class or icon-ref check proves internal consistency only, never fidelity.
+> (A class index is still handy for one thing: telling coined mock helpers —
+> `.o_login_card`, `.o_portal_kv` … — from real classes that disappeared.)
 
 ## Catalog fix log
 
@@ -39,6 +100,8 @@ order) on the next version bump.
   Breadcrumbs render as an `<ol>`/`<li>` list (`control_panel.html`) but the
   flex rule never reset the markers, so items showed stray "1."/"2." numbers.
   Added `list-style: none; margin: 0; padding: 0;` to `.o_breadcrumb`.
+  *Obsolete since 2026-10-07: the breadcrumb is now `div.o_breadcrumb`
+  (multi-level: `ol.breadcrumb > li.breadcrumb-item`) — the lesson stands.*
 
 - **Walkthrough bar below the dialog backdrop** — fixed 2026-06-12
   (`annotations.css`). `.o_dialog_backdrop` (`z-index: 1000; position: fixed;
@@ -49,6 +112,9 @@ order) on the next version bump.
 
 ## Design refresh log
 
+Entries are chronological. Those before 2026-10-07 describe the Odoo 19
+calibration; where they conflict with the 2026-10-07 entry, that entry wins.
+
 - **Odoo 19 fidelity pass** — 2026-06-12, calibrated against a real Odoo 19
   Sales Order form. Catalog changes that apply across all views:
   - Removed the persistent **dotted field underline** (`o_field_widget`) — Odoo
@@ -56,7 +122,8 @@ order) on the next version bump.
     solid cue only.
   - Added **teal link styling** (`o_form_link` / `o_list_link`,
     `--o-enterprise-action-color`) for relational/URL values — the look had them
-    flat dark before.
+    flat dark before. *(Lists: superseded 2026-10-07 — list cells are plain
+    text; teal only for readonly `a.o_form_uri` links.)*
   - Field **labels** dropped to normal weight (were medium/bold).
   - **Statusbar buttons** made compact + flat (only primary filled); were full
     bordered Bootstrap buttons.
@@ -120,12 +187,13 @@ order) on the next version bump.
     Payment, category bar + product grid); payment-screen variant noted.
   - **website.html** (`website`/`website_sale`) — public frontend header + shop
     grid (`oe_website_sale`); product-page variant noted.
-  - **account_report.html** (enterprise `account_reports`) — filter bar +
-    hierarchical foldable P&L/Balance-Sheet lines + grandtotal.
-  - **spreadsheet.html** (`spreadsheet`/o-spreadsheet) — toolbar, formula bar,
-    lettered grid, sheet tabs.
-  - **gantt.html** (enterprise `web_gantt`), **activity.html** (`mail`),
-    **dashboard.html** (`spreadsheet_dashboard`, KPI tiles + chart/pivot tiles).
+  - **account_report.html** (enterprise `account_reports`) — hierarchical
+    foldable P&L / Balance-Sheet lines (rebuilt 2026-10-07 as a client action
+    with its own control panel).
+  - **spreadsheet.html** (`spreadsheet`/o-spreadsheet) — navbar
+    (SpreadsheetNavbar), menu row, toolbar + inline composer, canvas-style grid,
+    bottom bar with sheet tabs and statistic.
+  - **gantt.html** (enterprise `web_gantt`).
   Documented in `view_types.md` § App surfaces; all added to `_gallery.html` and
   validated via the render harness. Still on-demand (not yet fragments): map,
   cohort, hierarchy/org-chart, timesheet/planning grid.
@@ -168,7 +236,8 @@ order) on the next version bump.
   that gets inlined.)
 
 - **Navbar = white (Enterprise) + dropdown overlay + navbar consistency** —
-  2026-06-12.
+  2026-06-12. *(Navbar color superseded 2026-10-07: the Enterprise navbar is
+  transparent over the page gray.)*
   - **Navbar color** was the long-standing "header colors off" miss. Odoo 18/19
     **Enterprise** redesigned the top navbar to **white with dark text**
     (`web_enterprise/.../navbar.variables.scss`: `$o-navbar-background: $o-white`);
@@ -213,10 +282,9 @@ order) on the next version bump.
   - **Toast** (`o_notification`): **light bg + dark text** + colored left bar
     (was inverted dark — Odoo notifications are light).
   - Dialog backdrop opacity 0.4 → **0.5**; ribbon gained Odoo's `text-shadow`.
-  Deliberately NOT changed (considered, kept): chatter width (kept ~360 for
-  page-fit vs Odoo's 530 min), notebook active-tab brand underline + labels at
-  normal weight (both match the user's real screenshots), minor kanban spacing
-  and button padding (negligible, not load-bearing).
+  Deliberately NOT changed at the time: chatter width, notebook tab style,
+  label weight, kanban spacing, button padding — all recalibrated to the real
+  values on 2026-10-07.
 
 - **View-type & surface completeness pass** — 2026-06-12. Audited the catalog
   against Odoo's full view-type set (`ir.ui.view` type selection + view registry
@@ -242,9 +310,10 @@ order) on the next version bump.
     `enterprise/web_enterprise/static/src/webclient/home_menu/{home_menu.xml,
     home_menu.scss, home_menu.variables.scss}` and `home_menu_background.scss`.
     Real Odoo loads each app's icon via `web_icon` (either webIconData PNG
-    or font-awesome class + bg + fg color). The catalog uses the
+    or font-awesome class + bg + fg color). The catalog used the
     class-based variant — inline `style="background:#xxx"` on
-    `.o_app_icon` + a single-character glyph. App grid is 6 columns max,
+    `.o_app_icon` + a single-character glyph. *(Superseded 2026-10-07: real
+    multi-color `#o-app-*` artwork, never tinted; dotted background.)* App grid is 6 columns max,
     container max-width 850px (matches `$o-home-menu-container-size`),
     icon tiles 70px square (matches `$o-home-menu-app-icon-max-width`),
     page background `var(--o-gray-200)` (matches the SCSS default).
@@ -399,8 +468,7 @@ magic numbers:
 - `--o-dropdown-hpadding` (20), `--o-dropdown-vpadding` (3),
   `--o-dropdown-max-height` (70vh).
 - `--o-statbutton-spacing` (6) — gap between stat-buttons in the box.
-- `--o-navbar-height` (46) — reference value; the rendered navbar stays at
-  the documented 90%-scaled 42px via the global `html { font-size: 90% }`.
+- `--o-navbar-height` (46).
 - `--o-main-link-color` (#6b4761 = `darken($o-brand-primary, 5%)`),
   `--o-main-headings-color`, `--o-main-code-color` (#d2317b),
   `--o-brand-secondary` (#8f8f8f), `--o-component-active-color`.
@@ -408,7 +476,7 @@ magic numbers:
   modifier classes (and now wired into `.o_form_label_*`).
 - `--o-easing-enter` (`cubic-bezier(0.05, 0.7, 0.1, 1.0)`),
   `--o-easing-exit` (`cubic-bezier(0.3, 0.0, 0.8, 0.15)`) — applied to
-  notification and onboarding transitions; available for walkthrough.js.
+  notification transitions; available for walkthrough.js.
 
 ### New surfaces (recognizable Odoo, source-cited)
 
@@ -417,8 +485,13 @@ distinctive Odoo decoration. Added CSS blocks in `odoo.css` and component
 fragments where the surface stands alone:
 
 - **No-content helper** (`o_view_nocontent` / `o_nocontent_help`) —
-  `views/action_helper.{xml,js}`. Empty-state title + hint + optional
-  illustration glyph. Fragment: `components/no_content.html`.
+  `views/action_helper.xml`, `views/view.scss:7-59`, `scss/utils.scss:290-333`.
+  Odoo 20: absolute overlay centred over the whole view body; 800px text block
+  (sale `services_and_material.scss`); bold black 20px first `<p>`, 16px hint.
+  Illustration chosen by the title `<p>` class (`o_view_nocontent_smiling_face`
+  / `_neutral_face` / `_empty_folder`) and inlined from `#o-nocontent-*` sprite
+  symbols. Sample-data state `o_view_sample_data` (opacity .06). Fragment:
+  `components/no_content.html`.
 - **Tour pointer** (`o_tour_pointer`) — `web_tour/tour_pointer.{xml,scss}`.
   Brand-purple bubble with step number + directional caret (left / right /
   top / bottom). Fragment: `components/tour_pointer.html`.
@@ -426,10 +499,14 @@ fragments where the surface stands alone:
   `core/commands/command_palette.{xml,scss}`. Modal with search input,
   categorised result list, hotkey badges, footer hints. Fragment:
   `components/command_palette.html`.
-- **Onboarding banner** (`o_onboarding_container`, `o_onboarding_step` +
-  `_done` / `_just_done` modifiers) — `addons/onboarding/views/`.
-  Horizontal progress strip on app dashboards. Fragment:
-  `components/onboarding.html`.
+- **In-card onboarding checklist** (`o_widget_account_onboarding` >
+  `.col-auto.my-1` steps; `#o-circle .text-300` = not done, `#o-check-circle
+  .text-success` = done; description only as the link's title tooltip) —
+  `account/static/src/components/onboarding/onboarding.xml`, placed in the
+  Accounting dashboard Tax Returns card (enterprise `account_reports`
+  `account_journal_dashboard_view.xml:52-57`). Odoo 19/20 mount NO horizontal
+  onboarding banner (`onboarding.onboarding_panel` is never rendered; no
+  `banner_route`). Fragment: `components/onboarding.html`.
 - **Grouped-list controls** (`o_group_buttons`, `o_group_pager` inside
   `o_group_header`) — `views/list/list_renderer.scss`. Hover-revealed
   per-group action buttons + record pager. No new fragment — extend
@@ -453,21 +530,9 @@ fragments where the surface stands alone:
 
 ### Deliberately NOT changed (documented intent vs apparent drift)
 
-- **Navbar rendered height 42px (vs source 46px).** Already an intentional
-  10% scale-down via `html { font-size: 90% }` — the new
-  `--o-navbar-height: 46px` token preserves the source value for math
-  (toast positioning) without changing the rendered navbar.
-- **Chatter width ~360-420px (vs source ~530px).** Documented in the
-  earlier "Full source-audit pass" log entry as a deliberate
-  page-fit trade-off.
-- **Form-label weight = normal** (catalog) vs bold (`form_controller.scss:600`).
-  The catalog matches the in-group case (`form_controller.scss:397`
-  `.o_group .o_form_label { font-weight: normal }`) which is overwhelmingly
-  what users see; only labels OUTSIDE a group are bold, and mocks rarely
-  render those.
-- **Form-sheet padding 24px/32px (no breakpoint shrink at xxl).** Catalog
-  intentionally renders one density; the responsive shrink in source is
-  marginal vs the readability cost of variable padding across mocks.
+*(Superseded 2026-10-07: navbar height, chatter width, label weight and sheet
+padding all use the real values now — 46px navbar at a 16px root, 530px
+chatter, 500-weight labels, 24px sheet padding.)*
 
 ## 2026-06-15 — Cross-surface drift audit + reconciliation (Chatter / Portal / Account Reports / Website Forms / POS / Wizards)
 
@@ -503,6 +568,10 @@ follow the canonical shape.
 
 ### Chatter — `o-mail-Chatter`
 
+*(Superseded 2026-10-07: the `is-collapsed` composer, the
+`<ul class="o_mail_tracking_value">` tracking list and the sidebar-beside-core
+message nesting were replaced — see `chatter.html` and the 2026-10-07 entry.)*
+
 - Rewrote the fragment to use the real Odoo three-piece structure:
   `.o-mail-Chatter-top` (sticky topbar + composer) + `.o-mail-Chatter-content`
   (scrollable thread + activities).
@@ -532,6 +601,10 @@ mock-level deviation, not a catalog gap. Added explicit "Portal structural
 rules" to `style_guide.md` so future generations follow the catalog.
 
 ### Account Reports — `.account_report`
+
+*(Superseded 2026-10-07: `.o_account_reports_page`, the `.wrapper` / `.content`
+cells and every `o_account_report_*` alias below are retired — the report is a
+client action with its own control panel.)*
 
 - Rewrote the fragment to use real Odoo class vocabulary:
   `<div class="account_report"><table class="table table-borderless table-hover"><thead class="sticky">…`.
@@ -625,6 +698,10 @@ rules" to `style_guide.md` so future generations follow the catalog.
   visual.
 
 ## 2026-06-17 — Sprite catalog gap-fill (view switcher · pivot/graph toolbar · chrome glyphs · app icons · discuss rebuild)
+
+*(Superseded 2026-10-07: the FontAwesome-shape glyphs and tinted app icons were
+replaced by the real Odoo 20 artwork under the same ids, and `discuss.html` was
+rebuilt for Odoo 20 — no Inbox / Starred / History sidebar.)*
 
 Two-commit pass on the icon catalog. Triggered by a mock author noting
 the control panel didn't carry the right glyphs in the view switcher
@@ -729,11 +806,143 @@ renders. Three failure modes followed:
   version bump the per-symbol citation is what tells you whether a
   shape needs to track Odoo's evolution or stays parked at FA 4.7.
 
+## 2026-10-07 — Recalibrated to real Odoo 20 Enterprise
+
+The 2026-09-30 "19→20 refresh" checked class existence only (see the warning in
+§ How to refresh) and missed the whole v20 redesign. This pass captured real v20
+Enterprise screens on a demo DB, diffed `web` + `web_enterprise` SCSS values
+and DOM, probed computed styles and rebuilt the catalog group by group; the
+calibration kit (`scripts/calibrate/`, `calibration/screens/`) and
+`_extract_icons.py` came out of it. `odoo.css` now opens with the stamp
+"calibrated to Odoo 20 Enterprise". It supersedes every older entry it
+contradicts.
+
+- **Tokens / typography** — root 16px (the `html { font-size: 90% }` scaling and
+  its 42px navbar are gone), body 14px / 21px; backend "bold" = 500, h1 33.6px.
+  Teal `--o-action` #017e84 now drives links, checked, active / selected and
+  focus (`--o-component-active-bg` #e6f2f3); plum only for `btn-primary`,
+  `btn-outline-primary` and the notebook tab bar. Gray-200 #e7ebed, semantic
+  #00a945 / #f59e0b / #ef4444, radius 6 / 4 / 8 / 12px; `body.o-community`
+  switches the whole palette.
+- **Buttons, badges, tags, inputs** — 33px buttons; `btn-secondary` = white with
+  a #ced4da border (`o_btn_outline` a deprecated alias), `btn-light` icon
+  buttons, teal `btn-link`. Status = `badge rounded-pill text-bg-*` 15% tints;
+  tags = `o_tag o_badge badge rounded-pill o_tag_color_N` on the new OKLCH
+  palette (the old palette was NOT "unchanged"). Real Bootstrap checkboxes /
+  radios / switches; rounded-square one-initial avatars (`o_avatar_c0..7`); no
+  resting input underline.
+- **Icons** — `icons.svg` rebuilt from the real Material Symbols Outlined +
+  `odoo_ui_icons` outlines under the same ids (filled vs outline in the id);
+  `app-icons.svg` = the real multi-color `icon.svg` artwork, never tinted; the
+  scaffolder inlines both sprites.
+- **Navbar / home menu** — transparent over the page gray, no border, 46px;
+  `o_menu_toggle.hasImage` with the current app's icon; sections without
+  carets; systray timer / Ask AI / Messages / Activities / Studio / company /
+  avatar. Dotted home background, tiles in menu-sequence order.
+- **Control panel** — no bar of its own; one row: buttons + title + ⋮ action
+  menu (the cog is gone) | centred pill search (tinted-icon facets, 3-column
+  search menu) | pager button group + segmented view switcher. Two-line
+  drill-down breadcrumb; a selection state that replaces the search.
+- **Search panel** — transparent panel, icon section headers, teal active pill,
+  fold toggle + collapsed strip; the view beside it becomes a white card.
+- **List** — plain dark cells (relational included), 40px rows, `N records`
+  group rows, label-less footer aggregates, `o_handle_cell` /
+  `o_list_actions_header`, edge-to-edge inline one2many.
+- **Form / chatter** — statusbar inside `.o_form_sheet_bg` on the gray
+  (`btn-secondary` buttons, one bordered pipeline with a teal current stage);
+  sheet 8px radius / 24px padding; boxed notebook; empty readonly fields render
+  nothing; superscript `?`; real ribbon markup; smart buttons as one joined
+  group. Chatter: 530px on the gray with its buttons on the statusbar row;
+  topbar / composer / activity / thread markup rebuilt (bubbles, DateSection,
+  one-line tracking, Done / Edit only).
+- **Kanban / card** — `article.o_card_record` records, transparent stacked
+  columns with 2-row headers, activity type glyphs, left color stripe,
+  ungrouped tiles and row-style `.o_kanban_list`. **Card view removed**: v20
+  `card` is the record template, not a switchable view (`card.html` deleted).
+- **Settings** — app rail (`settings_tab > a.tab`, real icons, teal selection)
+  + white card with `<h2>` bands and two-per-row checkbox boxes; Save /
+  Discard + search in the one-row control panel.
+- **Dialogs & overlays** — size decides design (sm 460 / md 620 minimal; lg 980
+  / xl 1140 ruled), `h4.modal-title` + `.btn-close`, left-aligned footer with
+  the primary first; UserError title **"Invalid Operation"** (never "User
+  Error"); 25% + grayscale backdrop; shared `.o-dropdown--menu`; v20 toast,
+  tooltip, command palette and tour pointer.
+- **Reporting** — global-size toolbars between control panel and view; pivot
+  add / minus boxes; graph palette + switches; calendar / gantt / map frames
+  with pastel events; teal cohort; `activity_matrix.html` (activity.html
+  removed); borderless timesheet grid; hierarchy cards;
+  `dashboard_sidebar.html` (dashboard.html removed).
+- **Other surfaces** — Discuss rebuilt (tab rail + list card, header card,
+  bubbles, pill composer; no Inbox / Starred sidebar; rules scoped under
+  `.o-mail-DiscussContent`); spreadsheet as a full-screen editor (own navbar,
+  toolbar + composer row, canvas grid); Studio editor (left sidebar, editor
+  menu bar, invisible hooks); account report as a client action with its own
+  control panel (all `o_account_report_*` aliases and `o_account_reports_page`
+  retired); empty state = overlay helper with the real illustrations +
+  sample-data fade; `.alert` with a 3px left accent.
+- **Onboarding retired** — Odoo 19/20 mount no horizontal onboarding banner;
+  `onboarding.html` is now the in-card Accounting checklist.
+- **Tooling** — the scaffolder reads the cover's Odoo version from SPEC_DATA
+  `odoo_version` (fallback: the stamp) and inlines `icons.svg` +
+  `app-icons.svg`; `_lint_mock.py` finds Enterprise under
+  `versions/v*/enterprise` and prints a non-failing NOTE when a mock's cover
+  version differs from the stamp. One catalog tracks the latest version;
+  older-version mocks keep their copied assets.
+- **Scope — NOT recalibrated in this pass (carried over from v19, treated as
+  version-stable).** This pass redesigned the backend webclient. The public /
+  frontend fragments were left as-is and have no v20 calibration-screen twin:
+  `login.html`, `login_website.html`, `website.html`, `website_form.html`,
+  `portal.html`, `portal_my.html`, `pos.html`, `checkout.html`, `report.html`.
+  The single "Odoo 20" stamp does **not** assert these were re-verified against
+  v20 source — it means the catalog's baseline is v20. Re-verify them (capture +
+  twin + probe) on the next pass, or when a mock leans on one of these surfaces.
+
+## 2026-10-30 — Custom-element identification
+
+Mock-layer chrome (`annotations.css` + `walkthrough.js`, like the markers), not
+Odoo chrome, so there is no Odoo screen to calibrate against; it reuses Odoo's
+own pink (tag colour 9 in `odoo.css`: `#fec5d9` / `#671d3f`) and the
+`web_ribbon` geometry (`odoo.css` § `.ribbon`) so it still reads as Odoo.
+
+- **`mock-custom`** marks what the solution adds or changes. On an element:
+  a light-pink highlight (`#ffe2ec`, the tag pink at 50% on white) —
+  `walkthrough.js` appends a `.mock-custom-overlay` multiplied over the
+  element and everything inside it (so a tab panel's list header and alert
+  tint too), with a 3px ring of the same pink except on table cells. A
+  ResizeObserver sizes it to what the element paints, so a list pulled up to
+  the tabs and out to the sheet edges by negative margins is covered edge to
+  edge. White and see-through areas turn pink, coloured ones keep their
+  colour. A child element, not `::before` / `::after`, which the active tab
+  bar, kanban colour stripes and selected-item checks already use. On a
+  `.mock-screen`: a small corner **Custom** banner (`.mock-custom-banner`,
+  one body-level fixed element shown while that screen is active): a 60%
+  opaque band that reads as tag 9's fill `#fec5d9` over white, so the company
+  name, avatar and view switcher under it still show, softened. `_gallery.html` shows
+  the highlight on a field row, a list column and both button kinds.
+- **Walkthrough bar:** a **Custom** chip (Show / Hide → `mock-custom-off` on
+  `<body>`) beside Annotations; the bottom row splits in two like two variant
+  chips, rendered only when the package marks something custom. The control
+  cluster widened 290 → 340px so both halves read untruncated.
+- **Gated like the field "?":** `interactions.md` § Custom elements (placement
+  table), a sixth cover callout (`IF custom`, `_scaffold_mock.py` flag),
+  `_lint_mock.py` `CUSTOM-UNMARKED` (a "?" field outside any custom mark) and
+  `CUSTOM-PLACEMENT` (cover / overview, nested, inside a custom screen), plus
+  rules in both mock anchors. Mocks built before this fail `CUSTOM-UNMARKED`
+  until their custom elements are marked.
+- Fixed in passing: `MARKER-TEXT` (and the absolute-marker `KNOWN-BAD` rule)
+  stopped excluding the cover's `mock-marker-example` after 29f93ef widened the
+  class match, so every canonical cover failed the lint; and
+  `_render_mock_screens.py` only found sections whose class was exactly
+  `mock-screen`, so it skipped any screen with a second class.
+
 ## Current baseline
 
-- **Odoo version:** 19
-- **Derived from:** `odoo/addons/web/static/src/` (see Source map in
-  `style_guide.md` for exact files).
-- Brand color in the catalog defaults to the **enterprise** palette (`#714B67`),
-  the common deployment. Switch `--o-brand-primary`/`--o-action` to
-  `--o-community-color` (`#71639e`) in `odoo.css` if mocking a community instance.
+- **Odoo version:** the one stamped on the first line of `catalog/odoo.css`
+  (Odoo 20 Enterprise as of the 2026-10-07 entry). One catalog tracks the
+  latest version; mocks for an older version keep their copied assets.
+- **Derived from:** `versions/v<NN>/odoo/addons/` + `versions/v<NN>/enterprise/`
+  (see Source map in `style_guide.md` for exact files), verified against the
+  calibration screens.
+- The palette defaults to **Enterprise**; `body.o-community` switches the whole
+  palette (brand, links, radius, semantic colors, badges, tags, navbar) for a
+  Community instance.

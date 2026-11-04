@@ -1,7 +1,7 @@
 ---
 name: odoo-mock-design
-description: Generate a self-contained, click-through HTML mock of the proposed Odoo screens so stakeholders and developers can *see* a solution before it's built. Reads an existing solution artifact (an odoo-write-specifications spec folder, or a written brief), maps each workflow step to an Odoo view type (form / list / kanban / wizard), and composes screens from a baked "recognizably-Odoo" component catalog (real Odoo 19 design tokens, layouts, class names). Output is a portable folder — index.html + assets/ — with workflow navigation and numbered annotation markers, and ZERO external/network dependencies (lint-enforced). Runs two ways: embedded at the finish line of odoo-write-specifications, or standalone against a brief/spec you point it at.
-when_to_use: Use this skill when someone wants a visual mock-up of proposed Odoo screens to explain or sign off a solution — either right after odoo-write-specifications, or standalone against an existing brief/spec. NOT for building a working addon (that's the technical consultant's job — refer it) and NOT for writing the spec itself (that's odoo-write-specifications).
+description: Generate a self-contained, click-through HTML mock of the proposed Odoo screens so stakeholders and developers can *see* a solution before it's built. Reads an existing solution artifact (an odoo-write-specifications spec folder, or a written brief), maps each workflow step to an Odoo view type (form / list / kanban / wizard), and composes screens from a baked "recognizably-Odoo" component catalog (real Odoo design tokens, layouts, class names, calibrated to one Odoo version — the stamp atop catalog/odoo.css). Output is ONE self-contained HTML file (`<name> - mock.html`), bundled after the final checks from the editable index.html + assets/ package kept in the mock folder's `_reference/` — with workflow navigation and numbered annotation markers, and ZERO external/network dependencies (lint-enforced). Runs two ways: embedded at the finish line of odoo-write-specifications, or standalone against a brief/spec you point it at.
+when_to_use: Use this skill when someone wants a visual mock-up of proposed Odoo screens to explain or sign off a solution — either right after odoo-write-specifications, or standalone against an existing brief/spec. NOT for building a working addon (that's odoo-plan-development) and NOT for writing the spec itself (that's odoo-write-specifications).
 allowed-tools: Read, Edit, Write, Bash, Grep, Glob, Agent, AskUserQuestion, ToolSearch, TodoWrite
 ---
 
@@ -12,9 +12,15 @@ Skill-specific discipline below; cross-cutting principles live in
 [`skills/_shared/principles.md`](../_shared/principles.md) and apply here too.
 
 The defining rule: **the catalog is built once; generation composes from it.**
-Odoo source was read at skill-build time to author `reference/catalog/`. Mock
-generation reads the catalog and its reference docs — it does **not** re-derive
-styling from Odoo source per run.
+Odoo source was read — and real screens compared — at skill-build time to author
+`reference/catalog/`. Mock generation reads the catalog and its reference docs —
+it does **not** re-derive styling from Odoo source per run.
+
+**One catalog, one Odoo version.** The catalog tracks the latest supported
+version; the version it is calibrated to is the stamp on the first line of
+`catalog/odoo.css` (sources in `style_guide.md` § Source map). A mock for an
+older version keeps the assets it copied at generation time; `_lint_mock.py`
+prints a non-failing `NOTE` when a mock's cover version differs from the stamp.
 
 ## Entry: two invocation modes (no plan mode)
 
@@ -44,6 +50,11 @@ Inspect the input path:
 
 The rule is *"output lives next to the spec it visualises whenever a spec exists; orphaned mocks only when nothing to attach to."* Mocks generated from a spec but stored at the repo root drift from the spec they explain — keep them adjacent.
 
+Call that output folder `<mocks>`. It holds **two stages** (path rules: `reference/scripts/_mock_paths.py`):
+
+- **`<mocks>/_reference/`** — the editable **working package** (`index.html` + `assets/`, optional `README.md`). All authoring, the lint and both anchors run here; so do visual renders (or render the bundle to eyeball the deliverable).
+- **`<mocks>/<name> - mock.html`** — the **deliverable**: one self-contained file bundled from `_reference/` only after the final checks pass. `<name>` is the spec folder's name for a spec mock (e.g. `TEST010 - INTERNAL - timesheet-payroll-allocation - mock.html`), else the mocks folder's own name.
+
 ## When To Use
 
 A mock explains a *proposed* solution visually. Reach for it after a spec exists
@@ -56,32 +67,33 @@ shows **states and the path between them**.
 
 Produce, in order:
 
-- **A package folder** — destination is derived from the input (see § Entry,
-  *Output destination*): `<spec-folder>/mocks/` whenever the input is or sits
-  under a spec folder; `<repo_root>/mocks/<3-word-kebab>/` only when the input
-  has no spec-folder context. The fallback creates `mocks/` on first run.
-- **`index.html`** at the package root — one `.mock-screen` section per
-  meaningful workflow step, composed from catalog fragments, plus exactly one
+- **A working package in `<mocks>/_reference/`** — `<mocks>` is derived from
+  the input per § Entry (*Output destination*). `_reference/` is the editable
+  source the deliverable is built from; it stays after bundling.
+- **`_reference/index.html`** — one `.mock-screen` section per meaningful
+  workflow step, composed from catalog fragments, plus exactly one
   walkthrough bar.
-- **`assets/`** inside the package — a **copy** of the catalog assets the page
-  uses: `odoo.css`, `annotations.css`, `walkthrough.js`. Copied, not linked;
-  `index.html` references only `./assets/...` for these.
-- **Inline the icon sprite** — paste the contents of `catalog/icons.svg` into
-  `index.html` (a hidden `<svg>` at the top of `<body>`) and reference glyphs
-  with same-document `<use href="#o-id">`. Do **NOT** copy `icons.svg` as a
-  separate asset and link it: external SVG `<use href="file.svg#id">` is blocked
-  over `file://`, so every icon silently vanishes when the package is opened as a
-  local file. (`_lint_mock.py` flags any external `.svg#` ref as `SVG-USE`.)
+- **`_reference/assets/`** — a **copy** of the catalog assets the page uses:
+  `odoo.css`, `annotations.css`, `walkthrough.js`, plus the `odoo-icon.svg` /
+  `odoo-logo.png` images. Copied, not linked; `index.html` references them
+  only as `assets/...`.
+- **Both icon sprites inlined** at the top of `<body>`, glyphs referenced with
+  same-document `<use href="#o-id">` — never linked as external SVG (dies over
+  `file://`). Mechanism + rationale: § Assemble. (`_lint_mock.py` flags an
+  external `.svg#` ref as `SVG-USE`, an unmatched `#id` as `UNRESOLVED-USE`.)
 - **Self-contained & portable** — no `http(s)`/CDN references, no external fonts
-  or images, and no path that escapes the package root (into `skills/`, an
+  or images, and no path that escapes `_reference/` (into `skills/`, an
   absolute path, or a parent dir). Mechanically enforced by `_lint_mock.py`.
 - **Complete** — every workflow step has a screen; the click-path connects them;
   annotation markers are grounded in the brief; no placeholder strings
   (`TODO`/`TBD`/`Lorem ipsum`).
+- **The single-file deliverable `<mocks>/<name> - mock.html`** — what gets
+  shared and opened; bundled from `_reference/` as the LAST step (§ 5 Finish).
 
 A package that references the skill folder, has a step with no screen, carries
 placeholder strings, or fails the self-containment lint does NOT satisfy the
-contract.
+contract — and a mock is not delivered until its bundle is built from the
+final, checked `_reference/`.
 
 ## Reference Material (Read Before Building)
 
@@ -92,22 +104,22 @@ contract.
 - [`reference/style_guide.md`](reference/style_guide.md) — design tokens, the
   rules that make a screen read as Odoo, annotation conventions, source map.
 - [`reference/cover_discipline.md`](reference/cover_discipline.md) — what the
-  cover screen must carry (favicon, brand header, 5-callout block, workflow
+  cover screen must carry (favicon, brand header, 6-callout block, workflow
   narrative table, Get Started). Cover callout text is single-sourced from
   [`reference/templates/cover_callouts.html`](reference/templates/cover_callouts.html).
 - [`reference/catalog_chrome.md`](reference/catalog_chrome.md) — per-fragment
-  author discipline (navbar systray order, home-menu brand colors,
-  control-panel cog placement, settings tab icons, kanban polish, pivot
-  expand affordances) AND § Multi-workflow chrome (cover topology,
+  author discipline (navbar systray order, home-menu app icons,
+  control-panel ⋮ action-menu placement, settings rail, kanban cards, pivot
+  expanders) AND § Multi-workflow chrome (cover topology,
   walkthrough-bar layout, per-workflow overview shape, Next-button labels).
 - [`reference/field_placement.md`](reference/field_placement.md) — how to
   discover where standard fields live, at runtime, from live
-  `/home/odoo/src/{odoo,enterprise}` source. Best-effort warning when source absent is
+  `odoo/` / `enterprise/` source. Best-effort warning when source absent is
   single-sourced from
   [`reference/templates/source_unavailable_warning.md`](reference/templates/source_unavailable_warning.md).
 - [`reference/interactions.md`](reference/interactions.md) — the `data-mock-*`
   interaction API (tabs, modals, toggles, toasts, variant axes, UserError
-  modals, custom-field help). Wired by `walkthrough.js`.
+  modals, custom-field help, custom elements). Wired by `walkthrough.js`.
 - [`reference/templates/coverage_levels.md`](reference/templates/coverage_levels.md)
   — canonical Core / Standard / Comprehensive definitions used by the
   Coverage-level gate (see § Curate the screen list).
@@ -116,18 +128,23 @@ contract.
   footnote.
 - [`reference/catalog/`](reference/catalog/) — the baked component library:
   `odoo.css`, `annotations.css`, `walkthrough.js`, `icons.svg`,
-  `app-icons.svg`, and 38 `components/*.html` fragments covering every
+  `app-icons.svg`, and the `components/*.html` fragments covering every
   standard Odoo view type and every major app surface (backend, POS,
   website, portal, account_report, spreadsheet, dashboard, gantt, activity,
   cohort, map, grid, hierarchy, studio, discuss, settings, printed PDF,
-  login, apps_menu, calendar week). See `view_types.md` § App surfaces for
-  which fragment to pick. Render the gallery with
+  login, apps_menu, calendar week, empty state). See `view_types.md` § App
+  surfaces for which fragment to pick. Render the gallery with
   `reference/scripts/_render_catalog.py` to eyeball after edits.
+- [`reference/calibration/screens/`](reference/calibration/screens/) — one
+  catalog-built page per real calibration screen (`<name>.html`, named after
+  `scripts/calibrate/screens.json`): what the catalog must look like next to
+  the real screen of the calibrated version.
 - [`reference/samples/reference_pattern.md`](reference/samples/reference_pattern.md)
   — annotated walk-through of a polished mock package; the calibration
   target.
-- [`reference/REFRESH.md`](reference/REFRESH.md) — how to refresh the catalog
-  on an Odoo version bump (it's hand-authored, not generated).
+- [`reference/REFRESH.md`](reference/REFRESH.md) — how to refresh/recalibrate
+  the catalog on an Odoo version bump (it's hand-authored, not generated),
+  using the calibration kit in `reference/scripts/calibrate/`.
 
 ## Generation Pipeline (both modes)
 
@@ -144,30 +161,29 @@ field, row, and supporting surface earns its place — pass it through
   Fall back to the `.docx` if absent.
 - **Brief** (Workflow 2 with no spec): read the `.md`/`.txt`.
 - **Source-availability check** (`field_placement.md` Step 0). Without
-  `/home/odoo/src/odoo/` and `/home/odoo/src/enterprise/`, screens become
-  best-effort — say so on the cover.
+  `odoo/`/`enterprise/`, screens become best-effort — say so on the cover.
 - **Model verification (enforced).** Run
-  `python3 skills/_shared/scripts/_check_odoo_source.py --models <comma-list of standard Odoo models named in brief/spec>`
-  once. `exists=false` halts screen composition; `edition=enterprise`
+  `python3 skills/_shared/scripts/_check_odoo_source.py --root-prefix versions/v<major> --models <comma-list of standard Odoo models named in brief/spec>`
+  once, pinned to the target version (the spec's Odoo Version; a brief that
+  names none uses the version in the `odoo.css` stamp) — unpinned, the check
+  spans every stack and passes a model only another version has.
+  `exists=false` halts screen composition; `edition=enterprise`
   on a community instance triggers the enterprise/community cover callout.
 - **Edition gate (ENFORCED — sets the mock's default look & feel; NEVER
   inferred, NEVER silently defaulted).** The chrome edition (Enterprise =
-  white navbar, no `o-community`; Community = purple navbar via
-  `<body class="o-community">`) is DETECTED from source presence, then baked
-  into `<body>` and the cover kicker (`Odoo <ver> · Enterprise` /
+  light navbar on the gray page, no `o-community`; Community = purple navbar
+  via `<body class="o-community">`) is DETECTED from source presence, then
+  baked into `<body>` and the cover kicker (`Odoo <ver> · Enterprise` /
   `· Community`). Decision procedure, in order:
-  1. Probe for Enterprise source once, at its ABSOLUTE Odoo.sh path:
-     `ls -d /home/odoo/src/enterprise/web_enterprise 2>/dev/null`
-     (an `enterprise/` addons tree containing `web_enterprise` is the signal).
-     Never probe a relative `enterprise/` — the writable tree is
-     `/home/odoo/src/user`, so a relative probe always misses and the mock
-     silently ships the wrong chrome.
+  1. Probe for Enterprise source once:
+     `ls -d enterprise/web_enterprise versions/v*/enterprise/web_enterprise 2>/dev/null`
+     (an `enterprise/` addons tree containing `web_enterprise`, flat or under
+     `versions/v<major>/`, is the signal).
   2. **If Enterprise source IS present → the mock MUST default to Enterprise
      chrome.** Do NOT add `o-community` to `<body>`; kicker reads
      `· Enterprise`. This is **not overridable by inferring "Community" from
      where standard models resolve** — standard models ALWAYS live under
-     `/home/odoo/src/odoo/addons` (Community core) even on an Enterprise
-     install, so their
+     `odoo/addons` (Community core) even on an Enterprise install, so their
      resolution path says nothing about the deployment edition. Enterprise
      source present ⇒ Enterprise look.
   3. **If Enterprise source is NOT present → do NOT assume Community. ASK the
@@ -176,11 +192,9 @@ field, row, and supporting surface earns its place — pass it through
      and apply their answer. Only a user "Community" answer (or an explicit
      Community-only workspace the user confirms) sets `o-community`.
 
-  The recurring failure this gate closes: standard models resolving under
-  `/home/odoo/src/odoo/addons` were mistaken for a *Community deployment*, so the mock
-  shipped with the wrong purple chrome even though `enterprise/` was present.
-  Presence of Enterprise source is authoritative; absence is a QUESTION, not
-  a Community default.
+  The recurring failure this gate closes: `enterprise/` present but the mock
+  shipped with the wrong purple Community chrome. Presence of Enterprise source
+  is authoritative; absence is a QUESTION, not a Community default.
 
   **This gate is enforced in three layers, not just this prose:**
   - *By construction* — `_scaffold_mock.py` emits a bare `<body>` + a
@@ -261,7 +275,10 @@ variant axes**:
   marker. "Solution-added" covers stored, computed, related, and relational
   fields (Many2one / One2many / Many2many), plus standard fields the solution
   overrides — see `reference/interactions.md` § Custom-field help. Don't
-  conflate field-rendering with screen-coverage.)
+  conflate field-rendering with screen-coverage. Custom marking is the same
+  kind of per-screen fidelity: every element the solution adds or changes
+  carries `mock-custom`, and a screen that is new from end to end carries it
+  on its `.mock-screen` instead — `interactions.md` § Custom elements.)
 
   **Do NOT derive the screen list from the per-workflow `Screens &
   Interactions` subsection alone** — it is typically operator-centric and
@@ -335,22 +352,18 @@ single-actor, single-app brief where Core = Standard = Comprehensive), say
 so and skip the gate.
 
 **Report-centric / analytics specs collapse Standard into Comprehensive** —
-the Comprehensive add-ons (peripheral config / reports / notifications) are
-the subject itself, so Standard ≈ Comprehensive. Offer the two that actually
-differ (typically Core vs Standard) instead of three identical packages.
+offer the two tiers that actually differ (typically Core vs Standard) instead
+of three identical packages (canonical: `coverage_levels.md` § Report-centric).
 
 Each of the eight step-1 dimensions is reconciled **at the chosen level**:
 in-tier items have a screen / rendering; out-of-tier items are
 **explicit, recorded exclusions** (never silent drops). The anchor audits
 against this contract.
 
-**Tier boundaries are fixed — don't reclassify to dodge work.** A surface
-that is an actor's primary touchpoint or a core workflow step (the website
-page where the journey *starts*, the CRM lead it *creates*, the inventory
-receipt it *performs*, every primary state, every guard) is **Standard** —
-never push it to Comprehensive-only to skip it at Standard. Conversely,
-config / settings, reports, notifications and edge states are
-**Comprehensive-only** — don't pull them into Standard by default.
+**Tier boundaries are fixed — don't reclassify to dodge work** (primary
+touchpoints and core workflow steps = Standard; config/settings, reports,
+notifications and edge states = Comprehensive-only). Full rules:
+`coverage_levels.md` § Tier boundaries.
 
 **For ≤ 6 screens with a clear brief, do NOT confirm the screen list
 with a separate AskUserQuestion.** Proceed directly to assembly. For
@@ -360,9 +373,9 @@ title.
 ### 3. Assemble the package
 - **Compose `index.html` in-conversation; never via a sub-agent. `Agent`
   is reserved for the Verify-step anchors.**
-- Create the output folder + `assets/` subfolder (output destination per
-  § Entry — `<spec-folder>/mocks/` whenever a spec is in the input
-  context; orphan-path fallback only otherwise).
+- Create the working package `<mocks>/_reference/` + its `assets/`
+  subfolder (`<mocks>` per § Entry — `<spec-folder>/mocks/` whenever a
+  spec is in the input context; orphan-path fallback only otherwise).
 - **Optional starter scaffolder — `_scaffold_mock.py`.** If the input
   is a spec folder (Workflow 1 OR Workflow 2 pointed at a spec), you
   can emit a canonical skeleton in one shot:
@@ -371,12 +384,17 @@ title.
       "<spec-folder>"
   ```
   The script reads `_reference/_build_<task-code>.py`'s `SPEC_DATA`
-  dict and writes `<spec-folder>/mocks/index.html` + the 5 catalog
-  assets. The skeleton has:
+  dict and writes the working package
+  `<spec-folder>/mocks/_reference/` — `index.html` + the 5 catalog
+  assets in `_reference/assets/`. The skeleton has:
+    - Both icon sprites inlined; cover kicker `Odoo <ver> · Enterprise`
+      with `<ver>` from `SPEC_DATA['odoo_version']` (fallback: the
+      `odoo.css` stamp)
     - Canonical brand header + favicon link
-    - The conditional five cover callouts (only the ones whose
+    - The conditional six cover callouts (only the ones whose
       trigger fires per the spec — multi-workflow inclusion, axes-
-      hint inclusion, new-fields inclusion)
+      hint inclusion, custom inclusion (new fields or models),
+      new-fields inclusion)
     - Per-workflow `<div class="mock-workflow">` shells with overview
       screens (multi-workflow)
     - One `<section class="mock-screen">` placeholder per `flow_strip`
@@ -395,7 +413,7 @@ title.
 - **Cover discipline** — the cover screen carries the reader's
   onboarding. Full discipline lives in
   [`reference/cover_discipline.md`](reference/cover_discipline.md): five
-  required structural elements (favicon, brand header, canonical 5-callout
+  required structural elements (favicon, brand header, canonical 6-callout
   block, three-cell workflow narrative table, Get Started). Reader-facing
   prose follows [`reference/style_guide.md`](reference/style_guide.md)
   § Cover, overview, and meta-content voice — business, never technical.
@@ -405,23 +423,29 @@ title.
   changes propagate in one edit.
 - **Copy** `odoo.css`, `annotations.css`, `walkthrough.js`,
   `odoo-logo.png`, AND `odoo-icon.svg` from `reference/catalog/`
-  into `<output>/assets/`. The wordmark logo
+  into `<mocks>/_reference/assets/`. The wordmark logo
   (`<img src="assets/odoo-logo.png">`) is the cover's right-side
   watermark; the icon-style logo (`<img src="assets/odoo-icon.svg">`)
   is the kicker icon AND the favicon
   (`<link rel="icon" href="assets/odoo-icon.svg"/>`). Both image
-  assets resolve inside the package and pass the self-containment lint.
-- **Inline `icons.svg`** at the top of `<body>` (do NOT copy it as a
-  linked asset — external SVG `<use>` dies on `file://`).
+  assets resolve inside `_reference/` and pass the self-containment
+  lint; the bundle later inlines them as `data:` URIs.
+- **Inline `icons.svg` + `app-icons.svg`** verbatim at the top of `<body>`
+  (do NOT copy them as linked assets — external SVG `<use>` dies on
+  `file://`; never wrap the sprite in `display:none` — the empty-state
+  illustrations stop painting).
 - Build `index.html` from `components/page_skeleton.html`. **Compose
   screens from `components/*.html` fragments verbatim** — copy the
   markup, fill the SLOT comments, keep the catalog's classnames. Do not
   improvise alternative chrome from scratch. (The most common
   regression: hand-coding a navbar / control-panel / settings page that
   doesn't match the fragment, so the catalog's CSS doesn't recognize
-  it.) When the catalog lacks something the brief needs, *extend the
-  catalog and propose promotion in `REFRESH.md`* — see § Catalog
-  governance below — never invent on the fly inside the package.
+  it. Markup an earlier catalog shipped and a recalibration retired —
+  e.g. a gear action menu instead of the ⋮ — is flagged by the lint as
+  `KNOWN-BAD` with its replacement.) When the catalog lacks something
+  the brief needs, *extend the catalog and propose promotion in
+  `REFRESH.md`* — see § Catalog governance below — never invent on the
+  fly inside the package.
 - **Surface-native vocabulary — backend classes don't cross.** Inside
   `.o_website`, `.o_portal`, or `.pos`, NEVER use backend form chrome
   (`o_field_row`, `o_form_label`, `o_field_widget`, `o_input`, `o_group`,
@@ -456,6 +480,15 @@ title.
 - **Annotation markers**: 4–7 per package; never paste marker
   explanatory text as inline `<p>` body copy — the `data-note`
   attribute is the marker's content, full stop.
+- **Custom marking — non-negotiable, like the "?"**: put `mock-custom` on
+  every element the solution adds or changes (field rows, list column
+  cells, tabs, settings, buttons, menu entries, wizards, the guard messages
+  it raises) — on the outermost element that is entirely custom — and on
+  the `.mock-screen` itself when the whole screen is custom (a custom
+  model's view, a custom report). The
+  reader then sees pink highlights, or the corner Custom banner, with a
+  **Custom** chip beside Annotations to hide them. Placement table:
+  `interactions.md` § Custom elements.
 - Every screen needs `data-screen`, `data-title`, `data-desc`. Wire
   navigation with `data-mock-goto` / `data-mock-next`.
 
@@ -463,15 +496,21 @@ title.
 - **Stage 1 lint** — run ONCE after assembly is complete:
   ```
   python3 skills/odoo-mock-design/reference/scripts/_lint_mock.py \
-      <output_dir> --steps "Screen title 1" "Screen title 2" ...
+      "<mocks>" --steps "Screen title 1" "Screen title 2" ...
   ```
+  (`"<mocks>"` or `"<mocks>/_reference"` — both resolve to the working
+  package; the lint checks `_reference/`, never the bundle.)
   **`--steps` are SCREEN titles (one per content `.mock-screen`, matched
   against `data-title`), NOT the cover's numbered workflow steps and NOT
   variant/state labels.** Passing a state like `"Drill-down"` (a variant axis,
   not a screen) fails with `[COVERAGE] no screen found for workflow step`. List
   the content-screen titles; omit the cover and per-workflow overview screens.
-  Fix mechanical findings (external refs, escapes, placeholders,
-  variant attribute hygiene, multi-workflow shell hygiene). Re-run
+  Fix mechanical findings (external refs, escapes, unresolved icon ids,
+  placeholders, retired catalog markup, variant attribute hygiene,
+  multi-workflow shell hygiene). A `NOTE:` line is informational, not a
+  failure: cover version ≠ the `odoo.css` stamp, or the bundle is missing
+  / older than `_reference/index.html` + `assets/` (expected until § Finish
+  bundles it). Re-run
   only after the fixes — not after every edit.
 - **Pre-anchor hand-author check.** Two patterns the lint can't fully
   catch are worth a quick scan before the anchors fire:
@@ -488,11 +527,14 @@ title.
      it isn't covered; `mock-coverage-anchor` will flag this.
 
   Other anti-patterns previously flagged here as a grep table have moved
-  into `_lint_mock.py` (KNOWN-BAD / GUARD-BANNER / WORKFLOW-TITLE /
-  MARKER-TEXT / SURFACE-LEAK / INLINE-CALLOUT rules). Don't re-grep what
-  the lint already catches.
+  into `_lint_mock.py` (KNOWN-BAD / GUARD-BANNER / GUARD-LANDING / WORKFLOW-TITLE /
+  MARKER-TEXT / SURFACE-LEAK / INLINE-CALLOUT / RIBBON / UNRESOLVED-USE /
+  CUSTOM-UNMARKED / CUSTOM-PLACEMENT rules). Don't re-grep what the lint
+  already catches.
 - **Anchor pass — REQUIRED, NON-SKIPPABLE.** Fire `mock-coverage-anchor`
-  + `mock-fidelity-anchor` in ONE foreground message (parallel). This
+  + `mock-fidelity-anchor` in ONE foreground message (parallel), each
+  handed the absolute path of the working package `<mocks>/_reference/` —
+  the anchors audit the package, not the bundle. This
   replaces `ExitPlanMode`. **The mock is not deliverable until both
   anchors return with zero unresolved `blocker` findings. Lint PASS is
   NOT a substitute** — lint catches mechanical drift (placeholders,
@@ -509,12 +551,12 @@ title.
   When building N mocks in a batch, run the anchors on EVERY mock, not
   just the first one. Concrete outcomes:
     - **Zero blockers from both anchors** → proceed to Finish.
-    - **Any blocker** → fix it in `index.html`, then re-fire the anchor
+    - **Any blocker** → fix it in `_reference/index.html`, then re-fire the anchor
       that flagged it to verify the fix. Don't declare done until the
       re-fire returns clean.
     - **A blocker you cannot fix** (e.g. the spec genuinely contradicts
-      itself) → record it as a documented limitation in the package's
-      README/footer with the anchor's tag (`coverage:…` /
+      itself) → record it as a documented limitation in
+      `_reference/README.md` / the page footer with the anchor's tag (`coverage:…` /
       `fidelity:…`) AND surface it to the user before declaring done.
       Don't silently ship a flagged blocker.
     - **Nits** are not blockers but should be addressed unless the
@@ -546,22 +588,52 @@ title.
     app slip through — app coverage implies none of these. The independent
     yardstick is the complete enumerated inventory judged at the chosen tier.
   - **Tell `mock-fidelity-anchor` to re-derive the edition, not trust it.** In
-    its prompt, instruct it to independently probe `/home/odoo/src/enterprise/` in the
+    its prompt, instruct it to independently probe for `enterprise/` in the
     workspace and check the mock's chrome (`<body>` `o-community` class + cover
     kicker) against the § Edition gate: `enterprise/` present ⇒ must be
     Enterprise. Do NOT state the edition as a settled fact in the prompt — a
     stated edition just gets echoed back as accepted (the exact way the
     Community regression slipped past review). The `EDITION` lint rule is the
     hard gate; the anchor is the second, independent set of eyes.
+  - **Point `mock-fidelity-anchor` at the calibrated chrome, not memory.** It
+    judges "looks like Odoo" against the catalog fragments + the
+    `reference/calibration/screens/` pages (the version in the `odoo.css`
+    stamp) — chrome remembered from another Odoo version is not evidence.
 
 ### 5. Finish
-- **Default**: print "Done — open `<path>`" and stop.
-- **Visual review is opt-in.** If you want a headless screenshot pass
-  before declaring done, run the helper command shown in the
-  "Optional — visual review" appendix below. Otherwise skip it — the
-  Stage-1 lint + anchor pass cover mechanical correctness; pixel
-  inspection is for cases where the catalog has changed or a complex
-  layout was added.
+- **Confirm the spec departures are listed.** Wherever the mock departs
+  from its spec — a spec claim the target version's source contradicts (a
+  tab, button, state or label that isn't where the spec says), or a
+  user-visible text or screen the spec left undefined — it is recorded under
+  `## Spec departures` in `_reference/README.md` as you compose (the
+  coverage anchor reads that list): what the spec says, what the mock shows,
+  and the source `path:line` (or "not defined in the spec"). Departures cover
+  standard-Odoo facts and missing detail only; a change to the solution
+  itself is a question for the user. `odoo-write-specifications` folds this
+  list back into the spec.
+- **Walk the judgment checks** in [`reference/checklist.md`](reference/checklist.md)
+  and fix any miss in `_reference/`.
+- **Bundle the deliverable — always the LAST step**, only after lint PASS
+  + both anchors with zero unresolved blockers + the checklist walk:
+  ```
+  python3 skills/odoo-mock-design/reference/scripts/_bundle_mock.py \
+      "<mocks>" [--steps "Screen title 1" ...]
+  ```
+  It refuses a legacy flat package (see § Iteration Etiquette), re-runs
+  the lint (`--steps` forwarded) and refuses a failing package, then
+  inlines `assets/*.css` / `*.js` as `<style data-asset>` /
+  `<script data-asset>` and local images as `data:` URIs, and writes
+  `<mocks>/<name> - mock.html` only if the result references nothing
+  outside itself. Fix `_reference/` and re-run on a `FAIL` — never patch
+  the bundle by hand. The bundle does not follow later edits — re-bundle.
+- **Visual review is opt-in.** For a headless screenshot pass, render the
+  bundle with the helper in the "Optional — visual review" appendix below.
+  Otherwise skip it — the lint + anchor pass cover mechanical
+  correctness; pixel inspection is for cases where the catalog has
+  changed or a complex layout was added.
+- **Default**: print "Done — open `<mocks>/<name> - mock.html`" (the
+  single file's full path), add the departure count when there are any
+  ("N spec departures — see `_reference/README.md`"), and stop.
 
 ## Multi-workflow cover topology
 
@@ -580,21 +652,32 @@ The Next-button label set is single-sourced from
 
 ## Catalog governance (R7)
 
-The catalog is the source of truth for chrome and design tokens. Two
+The catalog is the source of truth for chrome and design tokens. Three
 disciplines keep it from drifting:
 
 1. **Use catalog fragments verbatim.** When composing a screen, copy
    the relevant `components/*.html` markup and fill the SLOT comments
    — don't invent your own variant of "what a navbar looks like." If
    the catalog's fragment is wrong, fix the catalog, not the package.
-2. **Justify every catalog edit by a real Odoo path.** Edits to
-   `catalog/` must cite the Odoo 19 source path they're derived from
-   (e.g. `/home/odoo/src/odoo/addons/web/static/src/views/form/...`). The reference
-   ensures the catalog stays calibrated to a real version.
+2. **Justify every catalog edit by a real Odoo path — of the calibrated
+   version.** Edits to `catalog/` must cite the source path of the version
+   in the `odoo.css` stamp (e.g. `versions/v<N>/odoo/addons/web/static/src/
+   views/form/...`, `versions/v<N>/enterprise/web_enterprise/...`; see
+   `style_guide.md` § Source map), never a path from an older version.
+3. **Calibrate visually, not by class names.** A class that still exists
+   upstream says nothing about how it renders — a whole redesign can keep
+   every class name. Compare against a real screen of the calibrated
+   version with the maintainer-only calibration kit
+   (`reference/scripts/calibrate/`: `capture.js` screenshots the real
+   screens listed in `screens.json`, `probe.js` dumps computed styles from
+   the real instance or a catalog page, `render.js` renders a catalog page)
+   and keep the matching catalog-built page in
+   `reference/calibration/screens/<name>.html`.
 
 When extending the catalog with a new fragment, render the gallery
-(`reference/scripts/_render_catalog.py`) and visually verify against
-the source. Add the source path + Odoo version to `REFRESH.md`.
+(`reference/scripts/_render_catalog.py`) and verify it against the real
+screen (calibration kit) — or the source when no instance is available.
+Add the source path + Odoo version to `REFRESH.md`.
 
 ## Optional — visual review (headless screenshots)
 
@@ -607,7 +690,10 @@ Run this when (a) the catalog has been edited and you need to confirm
 existing mocks still render, (b) the lint + anchors are clean but you
 suspect a visual gap they can't see (a reversed grid template, an
 unstyled class, a marker floating with no anchor), or (c) the user
-asks for a screenshot review.
+asks for a screenshot review. The yardstick for "looks like real Odoo"
+is the matching `reference/calibration/screens/<name>.html` page (or,
+with a running instance of the calibrated version, a real screen from
+the calibration kit's `capture.js`) — not the previous render.
 
 Use `reference/scripts/_render_mock_screens.py` — it drives walkthrough.js
 via the `#screen-ID` hash convention so each PNG shows exactly one
@@ -616,19 +702,23 @@ reader sees opening the mock and pressing Next to that step):
 
 ```
 python3 skills/odoo-mock-design/reference/scripts/_render_mock_screens.py \
-    "<mock-dir>" [<screen-id> ...]
+    "<mocks>" [<screen-id> ...]
 ```
 
-  - No screen-ids → renders every `.mock-screen` declared in
-    `<mock-dir>/index.html` (cover + every workflow step).
-  - Output defaults to `/tmp/mock_renders/<mock-name>/<screen-id>.png`;
-    override with `--out`.
+  - Accepts `"<mocks>"` or `"<mocks>/_reference"` (renders the working
+    package) or the bundled `"<mocks>/<name> - mock.html"` — render the
+    bundle to eyeball the deliverable exactly as it will be shared.
+  - No screen-ids → renders every `.mock-screen` declared in the page
+    (cover + every workflow step).
+  - Output defaults to `/tmp/mock_renders/<mock-name>/<screen-id>.png`
+    (`<mock-name>-bundle/` for the bundle, so the two compare side by
+    side); override with `--out`.
   - `--width / --height` override the default 1440×900 viewport.
 
 What lint + the fidelity anchor CAN'T catch but the visual review does:
 
   - **Stale `assets/odoo.css`** — markup uses new catalog classes but the
-    mock's `assets/odoo.css` is the old copy, so the classes render
+    mock's `_reference/assets/odoo.css` is the old copy, so the classes render
     un-styled. `_lint_mock.py`'s STALE-ASSET rule SHA-256-diffs every
     `assets/<file>` against `reference/catalog/<file>` now, but the
     visual review confirms the rendered fix.
@@ -648,8 +738,14 @@ and the document/sidebar widths look right for the surface.
 ## Iteration Etiquette
 
 Per principle #8. Skill-specific notes:
-- When the user asks to change a screen, edit `index.html` directly — the package
-  is the artifact (there's no separate builder dict for mocks).
+- When the user asks to change a screen, edit `_reference/index.html` directly —
+  the working package is the source (there's no separate builder dict for
+  mocks). Never hand-edit `<name> - mock.html`; it is regenerated from
+  `_reference/`.
+- **Legacy mocks** (`index.html` + `assets/` directly in `<mocks>/`, no
+  `_reference/`) still lint and render, but `_bundle_mock.py` refuses them
+  until migrated: move `index.html`, `assets/` and `README.md` into
+  `<mocks>/_reference/`, then bundle.
 - **When the user asks for a view type, fragment, widget, or visual element
   that the catalog doesn't have, the FIRST move is to look at the Odoo
   source — NOT to invent it from `odoo.css` tokens.** The catalog is supposed
@@ -658,20 +754,24 @@ Per principle #8. Skill-specific notes:
 
   The lookup loop, in order:
   1. **Verify Odoo source is reachable.** `field_placement.md` Step 0 (the
-     source-availability check) tells you whether `/home/odoo/src/{odoo,enterprise}`
+     source-availability check) tells you whether `odoo/` / `enterprise/`
      are present in the workspace.
   2. **Find the real implementation.** `grep -rn` the SCSS / XML / OWL
-     template under `/home/odoo/src/odoo/addons/` and `/home/odoo/src/enterprise/` for the class name,
-     widget name, or visible label the user described. Read the file(s).
+     template of the calibrated version (the `odoo.css` stamp — e.g.
+     `versions/v<N>/odoo/addons/`, `versions/v<N>/enterprise/`) for the
+     class name, widget name, or visible label the user described. Read
+     the file(s).
   3. **Port it into the catalog.** Add (or extend) the relevant
      `catalog/components/*.html` fragment + the matching block in
      `catalog/odoo.css`. Cite the Odoo source path in a comment above the
      new block, per catalog governance (R7). Render
      `reference/scripts/_render_catalog.py` if the new piece adds visual
-     surface area.
+     surface area, and compare it with the real screen (calibration kit)
+     when an instance of the calibrated version is running.
   4. **Update `REFRESH.md`** with the source path + version, so the next
      Odoo bump knows what to re-verify.
-  5. **Use it from the package** — refresh the package's `assets/` copies.
+  5. **Use it from the package** — refresh the `_reference/assets/` copies
+     (`reference/scripts/_refresh_assets.py "<mocks>"`).
 
   **Fallback (Odoo source NOT present in the workspace).** Only when the
   source-availability check fails — and only then — build the piece from
@@ -684,7 +784,9 @@ Per principle #8. Skill-specific notes:
   source-of-truth FIRST, best-effort fallback ONLY when source isn't
   there. Inventing a "looks-Odoo" widget from tokens is the leading
   cause of catalog drift across iterations.
-- Re-run `_lint_mock.py` after every edit — self-containment rots silently.
+- After every edit to `_reference/`: re-run `_lint_mock.py` (self-containment
+  rots silently), re-fire the anchors when the change is substantive, then
+  re-bundle (§ 5 Finish; the lint's bundle `NOTE` flags a stale one).
 
 ## Production-readiness checklist (before declaring done)
 
@@ -692,4 +794,6 @@ Walk [`reference/checklist.md`](reference/checklist.md). It lists the
 **judgment checks** that a mechanical lint or anchor can't fully see (coverage
 inventory reconciled, marker budget honoured, click-path walkable, etc.) and
 documents the mechanical gates as a footnote so you don't manually re-tick
-them. Lint + anchors fail loud — they don't need a checkbox.
+them. Lint + anchors fail loud — they don't need a checkbox. Walk it in
+§ 5 Finish, before bundling: the single file is built from the checked
+`_reference/` package, never before.

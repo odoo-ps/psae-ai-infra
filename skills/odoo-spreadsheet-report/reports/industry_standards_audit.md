@@ -3,6 +3,7 @@
 **Date:** 2026-06-13
 **Audit subject:** the `odoo-spreadsheet-report` skill as it stands after the Phase-1 calibration commit (`97fbda3`).
 **Auditor:** Claude (Opus 4.7)
+**Corpus baseline:** Odoo **20.0** since 2026-09-30 (release-cadence bump; o-spreadsheet source re-synced to the 20.0 branch). This audit predates that bump and was not re-run for it — industry-standards audits are only lightly version-coupled and stale-tolerant by design; re-run on demand per [`../../_shared/release_cadence.md`](../../_shared/release_cadence.md) (Phase 4).
 **Status:** Reference snapshot. Improvements deferred to future skill iterations, pending user prioritization. Not canonical structure — the canonical structure is [`../SKILL.md`](../SKILL.md) and the design system at [`../reference/design_system.md`](../reference/design_system.md).
 
 ## Purpose of this report
@@ -91,7 +92,7 @@ These frameworks are widely-recognized by BI / analytics practitioners. They're 
 
 - **`cf_operators.md` as a hard reference card.** The Stage-1 verifier hashes against the operator registry — a CI-grade enforcement that's stricter than what Material / Few / Knaflic prescribe (they offer guidelines; this is rejection of an out-of-registry operator).
 - **Pre-flight source sync (`_sync_o_spreadsheet_source.py`).** Reading the runtime's TypeScript source for ground truth rather than the minified bundle. No external framework requires this; it emerged from the skill's troubleshooting log (#12 / #14 / `cf_operators.md`).
-- **`troubleshooting.md` in the shared 4-line format.** Refactored from the original mixed-content shape to match the shared discipline; the linter at `_shared/scripts/_lint_troubleshooting.py` enforces uniformly.
+- **`troubleshooting.md` in plan-dev's 4-line format.** Refactored from the original mixed-content shape to match plan-dev's discipline; the linter at `_shared/scripts/_lint_troubleshooting.py` enforces uniformly.
 - **`design_system.md` as canonical source.** Layout / sizing / palette / styling lives in one file, not duplicated across SKILL.md. The skill's recent refactor reduced SKILL.md by ~130 lines.
 
 ---

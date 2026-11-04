@@ -1,166 +1,220 @@
 <!--
-  account_report.html — Accounting financial report (enterprise account_reports).
-  Source: enterprise/account_reports/static/src/components/account_report/
-          account_report.{xml,scss}.
+  account_report.html — Accounting financial report, Odoo 20 Enterprise
+  (enterprise/account_reports/static/src/components/account_report/
+   account_report.{xml,scss}, header/, line/, line_name/, line_cell/,
+   filters/, buttons_bar/, cog_menu/, warnings.xml).
 
-  Used for: Balance Sheet, Profit & Loss, General Ledger, Aged Receivable,
-  Cash Flow Forecast, etc.
+  Used for: Profit and Loss, Balance Sheet, General Ledger, Aged
+  Receivable / Payable, Tax Return, Partner Ledger, Cash Flow …
 
-  Render inside the backend shell (navbar + control panel above it). Wrap
-  the whole report body in `.account_report` so Odoo's CSS variable scope
-  (--row-action-color, --row-muted-color) applies.
+  Render INSIDE .o_action_manager (navbar above). The report is an ordinary
+  client action: it brings its OWN control panel (the standard shell, not a
+  separate toolbar row) and an .o_content holding the warnings + the table.
+  The page stays gray; only the table is a white card.
 
-  ===== STRUCTURE (real Odoo class vocabulary) =====
-
-  - `<div class="account_report">` — outer scope
-    - `<div class="o_account_report_toolbar">` — filter chips + export
-      (the catalog renders this as its own toolbar BELOW the control panel;
-      real Odoo wires the filters into the control panel via slots, but the
-      visual outcome is the same)
-    - `<table class="table table-borderless table-hover">` — Bootstrap table
-      - `<thead class="sticky">` — sticks to the top while body scrolls
-        - row 1: period name(s) ("2026", "2025", "Variance" …)
-        - row 2 (.o_account_report_subhead): column kind ("Balance" / "Debit" / "Credit")
-      - `<tbody>` — rows, each `<tr>` carries:
-        - `line_level_N` (N = 0…16). Level 0 = top section (Revenue, Costs).
-          Level 2+ = indented sub-lines.
-        - `total` for sum rows (bold)
-        - `unfolded` when the parent is expanded
-        - `empty` for spacer rows between sections (no bottom border)
-        - `<td class="line_name">` for the name (with optional .btn_foldable
-          inside .wrapper for fold/unfold)
-        - `<td class="line_cell numeric">` or `<td class="line_cell o_list_number">`
-          for value cells (right-aligned)
-        - Use `.muted` on a `<td>` to fade non-total values
+  ===== STRUCTURE (real v20 DOM) =====
+  div.o_action.account_report
+    .o_control_panel > .o_control_panel_main
+      .o_control_panel_breadcrumbs
+        .o_control_panel_main_buttons > button.btn.text-nowrap.btn-primary "Print"
+                     (the FIRST bar button is btn-primary; any other always-shown
+                      report button — "Generate entry", "Adjustment Entry" … —
+                      follows as btn-secondary. v19's PDF + XLSX pair is gone:
+                      XLSX moved into the cog menu)
+        .o_breadcrumb > .o_last_breadcrumb_item (title, 16.8px regular)
+                      + .o_control_panel_breadcrumbs_actions > cog (#o-cog, 18px)
+                        — the report's OWN cog menu; there is NO ⋮ actions menu here
+      .o_control_panel_actions > div.d-flex.gap-1 > #reportFilterCollapse > div.d-flex.gap-1.flex-wrap
+        [div.o_searchview.form-control.py-1.w-auto  — GL / Partner Ledger only]
+        div#filter_<x> > button.btn.btn-secondary.o-dropdown.dropdown-toggle (33px, NO caret)
+          date        #o-calendar-fill   "2026" / "As of 10/06/2026" / "Oct 2026"
+          comparison  (no icon)          "Comparison"
+          extra opts  #o-settings-adjust "Posted Entries, Accrual Basis"
+          variant     #o-book            "Report: Profit and Loss (US)"
+          journals    #o-book            (filter_journal)
+          budget      #o-bar-chart       "Budget"           (P&L only)
+          rounding    (no icon)          "In .$"
+      .o_control_panel_navigation (empty: no pager, no view switcher)
+    div.o_content > div
+      [#section_selector — multi-section reports only, see Variants]
+      #warnings.warnings > .alert.alert-info.alert-dismissible.fade.show.text-center
+                (full-bleed, square, 3px left rule, empty button.btn-close)
+      div.mx-auto.o_account_report_scroll_container.overflow-x-auto
+        > div.d-flex.align-items-start.o_account_report_scroll_content
+          > table.table.table-borderless.table-hover.mx-auto[.striped when >1 value column]
+          thead#table_header.sticky
+            tr[data-id=column_companies_row]  (ALWAYS present, empty unless multi-company;
+                                               the header rules count rows from it)
+            [tr[data-id=column_headers_row] > th.column_header "2026" | "2025"  — ONLY with
+              a comparison / several periods: bordered, centred boxes]
+            tr[data-id=column_subheaders_row] > th + th.text-nowrap.text-end.numeric-header "Balance"
+          tbody
+            tr.empty                     ← spacer BEFORE every line_level_0 (no cells, 32px)
+            tr.line_level_N[.unfolded][.total][.fw-bold]
+              td.line_name.text[.unfoldable] > [i.btn.btn_foldable] + name text (no wrapper divs)
+              td.line_cell[.auditable].numeric[.muted|.text-danger][.line_cell_odd] > a.cursor-pointer
 
   ===== HARD RULES =====
-  - **Numbers right-align via `.line_cell.numeric` (or `.line_cell.o_list_number`)**,
-    NOT via inline `style="text-align:right;"`.
-  - **Fold/unfold uses `<button class="btn_foldable">`** with an SVG caret
-    inside, NOT a literal `[+]` / `[−]` text marker (the lint flags those).
-  - **Section + total + grand-total use the real-Odoo combos:**
-      Section header → `<tr class="line_level_0">`
-      Section sum   → `<tr class="line_level_0 total">` (or just `total`)
-      Grand total   → `<tr class="line_level_0 total">` styled by context;
-                       OR use the catalog's alias `.o_account_report_line_grandtotal`
-                       for emphasized rows (thicker top border + larger font).
-  - **Empty rows between sections** use `<tr class="empty"><td></td>…</tr>`
-    (their tds have no border-bottom — pure visual spacers).
+  - Indent comes from the LINE LEVEL on the first <td> (padding), never from
+    wrapper divs: level 1 = 32px, level N>=2 = (N-1)*8 + 32px; an .unfoldable
+    name cell is 20px less and starts with the 20px fold icon.
+  - line_level_0 = the gray band (#dee2e6, bold, #495057). Its fold icon is
+    gray-300 on gray-300, i.e. practically invisible. A level-0 line with no
+    children (P&L "Net Income") has no icon and sits at 12px.
+  - Bold sub-results that are not section totals use .fw-bold on the <tr>
+    and the name <td> (500, P&L "Gross Profit"); real total lines use .total
+    (700). An unfolded parent (.unfolded, 700) has EMPTY amount cells and is
+    followed by its children, then a "Total …" .total row. No tfoot, no
+    font-size change, no grand-total class.
+  - .muted = an amount that is exactly zero (#dee2e6, #ced4da on the band);
+    negative amounts = .text-danger. Never fade or colour other values —
+    except comparison output: the Change (%) cell is td.text-end.fw-bold
+    + .text-success / .text-danger / .muted ("n/a").
+  - Numbers right-align via td.line_cell.numeric (32px right padding),
+    never inline style. Fold toggles are i.btn.btn_foldable with
+    #o-caret-right (folded) / #o-caret-down (unfolded) — never [+]/[−]/▾ text.
+  - No period row / period pill for a single period: the thead shows only
+    "Balance" (or Debit / Credit / Balance …), right-aligned, no rules.
+  - Don't invent: o_account_report_toolbar / _title / _filters / _banner /
+    _card / _period / _subhead / _line* / _caret / _group / _pos / _neg,
+    o_report_filter, o_report_pdf, .line_cell.o_list_number — none exist in
+    v20. o_account_reports_page exists only in follow-up / asset QWeb, not in
+    the report client action. Real o_account_report_* classes a mock may use:
+    _scroll_container, _scroll_content (plus _chatter* for the annotation panel).
 -->
-<div class="account_report">
-  <div class="o_account_reports_page">
-
-    <!-- Report-page toolbar — distinct from the standard control_panel.
-         Title + cog on the LEFT, filter chips on the RIGHT, then Export. -->
-    <div class="o_account_report_toolbar">
-      <span class="o_account_report_title">
-        Profit and Loss
-        <svg class="o_icon o_icon_xs"><use href="#o-cog"/></svg>
-      </span>
-      <span class="o_account_report_filters">
-        <button class="btn o_btn_outline o_report_filter">
-          <svg class="o_icon o_icon_xs"><use href="#o-view-calendar"/></svg>
-          2026
-        </button>
-        <button class="btn o_btn_outline o_report_filter">Comparison</button>
-        <button class="btn o_btn_outline o_report_filter">
-          <svg class="o_icon o_icon_xs"><use href="#o-list"/></svg>
-          All Journals
-        </button>
-        <button class="btn o_btn_outline o_report_filter">Options</button>
-      </span>
-      <span class="ms-auto">
-        <button class="btn btn-primary o_report_pdf">PDF</button>
-        <button class="btn o_btn_outline">XLSX</button>
-      </span>
-    </div>
-
-    <!-- Warning banner shown when the period has unposted entries / mismatch.
-         Drop when irrelevant. -->
-    <div class="o_account_report_banner">
-      There are <a class="o_form_link">unposted Journal Entries</a> prior to or included in this period.
-    </div>
-
-    <!-- The report table. Two-row thead: period name on row 1, column kind on row 2. -->
-    <table class="table table-borderless table-hover">
-      <thead class="sticky">
-        <tr>
-          <th></th>
-          <th><span class="o_account_report_period">2026</span></th>
-        </tr>
-        <tr class="o_account_report_subhead">
-          <th></th>
-          <th>Balance</th>
-        </tr>
-      </thead>
-      <tbody>
-
-        <!-- Level-0 section: Revenue -->
-        <tr class="line_level_0">
-          <td class="line_name">
-            <div class="wrapper">
-              <button class="btn_foldable" title="Collapse">
-                <svg class="o_icon"><use href="#o-caret-down"/></svg>
-              </button>
-              <div class="content">Revenue</div>
+<div class="o_action account_report">
+  <div class="o_control_panel">
+    <div class="o_control_panel_main">
+      <div class="o_control_panel_breadcrumbs">
+        <div class="o_control_panel_main_buttons"><button class="btn text-nowrap btn-primary">Print</button></div>
+        <div class="o_breadcrumb">
+          <div class="o_last_breadcrumb_item active"><span>Profit and Loss</span></div>
+          <div class="o_control_panel_breadcrumbs_actions">
+            <button class="btn p-0 ms-1 border-0 o-dropdown dropdown-toggle"><svg class="o_icon"><use href="#o-cog"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="o_control_panel_actions">
+        <div class="d-flex gap-1">
+          <div id="reportFilterCollapse">
+            <div class="d-flex gap-1 flex-wrap">
+              <div id="filter_date" class="filter_date"><button class="btn btn-secondary o-dropdown dropdown-toggle"><svg class="o_icon"><use href="#o-calendar-fill"/></svg>2026</button></div>
+              <div id="filter_comparison" class="filter_comparison"><button class="btn btn-secondary o-dropdown dropdown-toggle"><span>Comparison</span></button></div>
+              <div id="filter_extra_options"><button class="btn btn-secondary o-dropdown dropdown-toggle"><svg class="o_icon"><use href="#o-settings-adjust"/></svg>Posted Entries, Accrual Basis</button></div>
+              <div id="filter_variant"><button class="btn btn-secondary o-dropdown dropdown-toggle"><svg class="o_icon"><use href="#o-book"/></svg>Report: Profit and Loss (US)</button></div>
+              <div id="filter_budget"><button class="btn btn-secondary o-dropdown dropdown-toggle"><svg class="o_icon"><use href="#o-bar-chart"/></svg>Budget</button></div>
+              <div id="filter_rounding_unit"><button class="btn btn-secondary o-dropdown dropdown-toggle">In .$</button></div>
             </div>
-          </td>
-          <td class="line_cell numeric muted">0.00</td>
-        </tr>
+          </div>
+        </div>
+      </div>
+      <div class="o_control_panel_navigation"></div>
+    </div>
+  </div>
 
-        <!-- Level-2 line under Revenue (unfolded → indented + visible) -->
-        <tr class="line_level_2">
-          <td class="line_name"><div class="wrapper"><div class="content">Sales of goods</div></div></td>
-          <td class="line_cell numeric muted">0.00</td>
-        </tr>
-        <tr class="line_level_2">
-          <td class="line_name"><div class="wrapper"><div class="content">Service revenue</div></div></td>
-          <td class="line_cell numeric muted">0.00</td>
-        </tr>
+  <div class="o_content">
+    <div>
+      <!-- Warnings: drop when irrelevant. Several stack edge to edge. -->
+      <div id="warnings" class="warnings">
+        <div class="alert alert-info alert-dismissible fade show text-center">
+          There are <a type="button">unposted Journal Entries</a> prior or included in this period.
+          <button type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+      </div>
 
-        <tr class="empty"><td></td><td></td></tr>
-
-        <!-- Level-0 section: Costs of Revenue -->
-        <tr class="line_level_0">
-          <td class="line_name">
-            <div class="wrapper">
-              <button class="btn_foldable" title="Expand">
-                <svg class="o_icon"><use href="#o-caret-right"/></svg>
-              </button>
-              <div class="content">Less Cost of Revenue</div>
-            </div>
-          </td>
-          <td class="line_cell numeric muted">0.00</td>
-        </tr>
-
-        <tr class="empty"><td></td><td></td></tr>
-
-        <!-- Total / grand-total row: line_level_0 + total combine bold + bg + emphasis -->
-        <tr class="line_level_0 total">
-          <td class="line_name"><div class="wrapper"><div class="content">Gross Profit</div></div></td>
-          <td class="line_cell numeric">0.00</td>
-        </tr>
-
-      </tbody>
-    </table>
+      <div class="mx-auto o_account_report_scroll_container overflow-x-auto">
+        <div class="d-flex align-items-start o_account_report_scroll_content">
+          <table class="table table-borderless table-hover mx-auto">
+            <thead id="table_header" class="sticky">
+              <tr data-id="column_companies_row"></tr>
+              <tr data-id="column_subheaders_row"><th></th><th class="text-nowrap text-end numeric-header">Balance</th></tr>
+            </thead>
+            <tbody>
+              <tr class="empty"></tr>
+              <tr class="line_level_0">
+                <td class="line_name text unfoldable"><i class="btn btn_foldable"><svg class="o_icon"><use href="#o-caret-right"/></svg></i>Revenue</td>
+                <td class="line_cell auditable numeric"><a class="cursor-pointer">85,344.00</a></td>
+              </tr>
+              <tr class="line_level_1"><td class="line_name text">Cost of Sales</td><td class="line_cell auditable numeric muted"><a class="cursor-pointer">0.00</a></td></tr>
+              <tr class="line_level_1 fw-bold"><td class="line_name text fw-bold">Gross Profit</td><td class="line_cell auditable numeric"><a class="cursor-pointer">85,344.00</a></td></tr>
+              <tr class="empty"></tr>
+              <tr class="line_level_0">
+                <td class="line_name text unfoldable"><i class="btn btn_foldable"><svg class="o_icon"><use href="#o-caret-right"/></svg></i>Expense</td>
+                <td class="line_cell auditable numeric"><a class="cursor-pointer">622.27</a></td>
+              </tr>
+              <tr class="line_level_1 fw-bold"><td class="line_name text fw-bold">Net Operating Income</td><td class="line_cell auditable numeric"><a class="cursor-pointer">84,721.73</a></td></tr>
+              <tr class="line_level_1"><td class="line_name text">Other Income</td><td class="line_cell auditable numeric muted"><a class="cursor-pointer">0.00</a></td></tr>
+              <tr class="line_level_1"><td class="line_name text">Other Expense</td><td class="line_cell auditable numeric muted"><a class="cursor-pointer">0.00</a></td></tr>
+              <tr class="line_level_1 fw-bold"><td class="line_name text fw-bold">Net Other Income</td><td class="line_cell auditable numeric muted"><a class="cursor-pointer">0.00</a></td></tr>
+              <tr class="empty"></tr>
+              <!-- Grand total: a plain childless line_level_0 band (no icon, 12px) -->
+              <tr class="line_level_0"><td class="line_name text">Net Income</td><td class="line_cell auditable numeric"><a class="cursor-pointer">84,721.73</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ===== Common variants =====
+<!-- ===== Variants (real v20 markup) =====
 
-  - **Comparison columns:** add columns to thead + every row. Each value cell
-    is its own `<td class="line_cell numeric">`. Add a "Variance %" column
-    for ranged comparisons.
-  - **Unposted-only / Posted-only toggle:** flips the toolbar's "Options"
-    chip text + active state. Mock by duplicating the toolbar with both
-    states.
-  - **No-content state:** when no journal entries match, render the
-    `.o_view_nocontent` helper INSIDE `.account_report` (real Odoo uses
-    `z-index: -1` so the toolbar still shows above it — already in the
-    catalog css).
-  - **Drill-down link:** clickable amount in a body cell. Render as
-    `<a class="o_form_link">$ 1,234.00</a>` — opens the audit view.
-  - **Caret state:** `<use href="#o-caret-down"/>` when row is expanded,
-    `<use href="#o-caret-right"/>` when collapsed. Match the `unfolded`
-    state on the parent `<tr>`.
+  - UNFOLDED section (Balance Sheet "Assets" ▸ "Current Assets"): the parent
+    row gets .unfolded (bold, gray-300 rule) and its amount cells go EMPTY;
+    the sum moves to a "Total …" row:
+      <tr class="line_level_3 unfolded"><td class="line_name text">Current Assets</td><td class="line_cell auditable numeric"></td></tr>
+      <tr class="line_level_5"><td class="line_name text unfoldable"><i class="btn btn_foldable"><svg class="o_icon"><use href="#o-caret-right"/></svg></i>Bank and Cash</td><td class="line_cell auditable numeric"><a class="cursor-pointer">5,040.93</a></td></tr>
+      <tr class="line_level_5"><td class="line_name text unfoldable"><i class="btn btn_foldable"><svg class="o_icon"><use href="#o-caret-right"/></svg></i>Other Current Assets</td><td class="line_cell auditable numeric text-danger"><a class="cursor-pointer">-1,149.45</a></td></tr>
+      <tr class="line_level_3 total"><td class="line_name text">Total Current Assets</td><td class="line_cell auditable numeric"><a class="cursor-pointer">96,274.73</a></td></tr>
+      <tr class="line_level_1 total"><td class="line_name text">Total Assets</td><td class="line_cell auditable numeric"><a class="cursor-pointer">96,274.73</a></td></tr>
+    An unfolded line's toggle is <use href="#o-caret-down"/>.
+
+  - COMPARISON (Comparison: Previous Period): table gets .striped; a period
+    row of bordered, centred boxes is inserted between the companies row and
+    the subheaders; its last box is "Change (%)", which has no subheader:
+      <tr data-id="column_headers_row"><th></th><th class="column_header">2026</th><th class="column_header">2025</th><th class="column_percent_comparison_header">Change (%)</th></tr>
+      <tr data-id="column_subheaders_row"><th></th><th class="text-nowrap text-end numeric-header">Balance</th><th class="text-nowrap text-end numeric-header">Balance</th></tr>
+    Every 2nd value cell carries .line_cell_odd (gray-100 stripe). Each body
+    row ends with the growth cell — NOT a .line_cell, so it keeps the 12px
+    right padding:
+      <tr class="line_level_1"><td class="line_name text">Cost of Sales</td><td class="line_cell auditable numeric muted"><a class="cursor-pointer">0.00</a></td><td class="line_cell auditable numeric muted line_cell_odd"><a class="cursor-pointer">0.00</a></td><td class="text-end fw-bold muted">n/a</td></tr>
+    (.text-success "12.5%" when up, .text-danger "-8.0%" when down.)
+
+  - GENERAL LEDGER (multi-column, account unfolded): a search box is the
+    first item in #reportFilterCollapse
+      <div class="o_searchview form-control py-1 w-auto" role="search"><svg class="o_searchview_icon o_icon"><use href="#o-search"/></svg><div class="o_searchview_input_container"><input type="text" class="o_searchview_input o_input" placeholder="Search..."/></div></div>
+    no Comparison / variant / budget filters; table.striped:
+      <tr data-id="column_subheaders_row"><th></th><th class="text-nowrap text-center">Date</th><th class="text-nowrap text-center">Partner</th><th class="text-nowrap text-end numeric-header">Debit</th><th class="text-nowrap text-end numeric-header">Credit</th><th class="text-nowrap text-end numeric-header">Balance</th></tr>
+      <tr class="line_level_2 unfolded"><td class="line_name text unfoldable"><i class="btn btn_foldable"><svg class="o_icon"><use href="#o-caret-down"/></svg></i>101401 Bank<button class="btn btn_action">Journal Items</button></td><td class="line_cell date"></td><td class="line_cell text line_cell_odd"></td><td class="line_cell auditable numeric"></td><td class="line_cell auditable numeric line_cell_odd"></td><td class="line_cell auditable numeric"></td></tr>
+      <tr class="line_level_4"><td class="line_name text">Initial Balance</td><td class="line_cell date"></td><td class="line_cell text line_cell_odd"></td><td class="line_cell auditable numeric"><a class="cursor-pointer">$&nbsp;5,775.00</a></td><td class="line_cell auditable numeric line_cell_odd"><a class="cursor-pointer">$&nbsp;850.00</a></td><td class="line_cell auditable numeric"><a class="cursor-pointer">$&nbsp;4,925.00</a></td></tr>
+      <tr class="line_level_4"><td class="line_name text">BNK1/2026/00004 BILL/2024/01/0001<i class="btn btn_dropdown"><svg class="o_icon"><use href="#o-ellipsis-v"/></svg></i></td><td class="line_cell date">10/06/2026</td><td class="line_cell text line_cell_odd">Gemini Furniture</td><td class="line_cell auditable numeric muted"><a class="cursor-pointer">$&nbsp;0.00</a></td><td class="line_cell auditable numeric line_cell_odd"><a class="cursor-pointer">$&nbsp;622.27</a></td><td class="line_cell numeric">$&nbsp;4,302.73</td></tr>
+      <tr class="line_level_2 total"><td class="line_name text">Total 101401 Bank</td> … </tr>
+      <tr class="line_level_2"><td class="line_name text unfoldable"><i class="btn btn_foldable"><svg class="o_icon"><use href="#o-caret-right"/></svg></i>101402 Bank Suspense Account<button class="btn btn_action">Journal Items</button></td> … <td class="line_cell auditable numeric text-danger"><a class="cursor-pointer">$&nbsp;-1,149.45</a></td></tr>
+      <tr class="line_level_1 total"><td class="line_name text">Total General Ledger</td> … </tr>
+    (.btn_action chips are invisible until the row is hovered or unfolded.)
+
+  - AGED RECEIVABLE / PAYABLE: filters = As of … (#o-calendar-fill),
+    "Account: Receivable" (#o-user), "Partners" (#o-folder-open), "Based on
+    Due Date" (#o-description), "30 Days" (#o-view-calendar), "Posted
+    Entries" (#o-settings-adjust), "In .$". Columns Date | At Date | 1-30 |
+    31-60 | 61-90 | 91-120 | Older | Total, each header prefixed by a sort toggle
+      <th class="text-nowrap text-end numeric-header"><button class="btn btn_sortable"><svg class="o_icon"><use href="#o-sort"/></svg></button>1-30</th>
+    Rows: line_level_1 unfolded "Aged Receivable" (no amounts), partners as
+    line_level_2 unfoldable, "Total Aged Receivable" line_level_1 total.
+
+  - TAX RETURN: title "Tax Return", columns Total Sales | Exempt | Non-Taxable
+    | Taxable | Tax Rate | Tax; a second stacked alert whose classed link
+    keeps the teal link colour:
+      <div class="alert alert-info alert-dismissible fade show text-center">Review or submit <a type="button" class="ps-1">Tax Return</a><button type="button" class="btn-close" aria-label="Close"></button></div>
+
+  - SECTIONS (multi-section reports): first child of .o_content > div,
+    before #warnings; the ACTIVE section is btn-outline-primary:
+      <div id="section_selector" class="section_selector"><button class="btn btn-outline-primary">Section A</button><button class="btn btn-secondary">Section B</button></div>
+
+  - OTHER BAR BUTTONS: only the first is primary —
+      <div class="o_control_panel_main_buttons"><button class="btn text-nowrap btn-primary">Print</button><button class="btn text-nowrap btn-secondary">Generate entry</button></div>
+
+  - NO DATA: replace the scroll container with
+      <div class="o_view_nocontent"><div class="o_nocontent_help"><p class="o_view_nocontent_neutral_face"><svg class="o_nocontent_img"><use href="#o-nocontent-neutral-face"/></svg>No data to display !</p><p>There is no data to display for the given filters.</p></div></div>
+    (illustration + title convention: components/no_content.html)
 -->
